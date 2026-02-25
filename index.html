@@ -20,10 +20,10 @@
     --white: #ffffff;
     --green: #22c55e;
     --red: #ef4444;
-    --adam: #000000;
-    --anthony: #666666;
-    --mick: #333333;
-    --lyam: #999999;
+    --blue: #2563eb;
+    --orange: #f97316;
+    --purple: #7c3aed;
+    --teal: #0d9488;
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -405,15 +405,31 @@ let DATA = {};
 let EMPLOYEES = [];
 let ALL_MONTHS = [];
 
-const EMP_STYLES = {};
-const STYLE_PRESETS = [
-  { border: "#000000", bg: "rgba(0,0,0,0.08)", dash: [] },
-  { border: "#555555", bg: "rgba(85,85,85,0.08)", dash: [6,3] },
-  { border: "#333333", bg: "rgba(51,51,51,0.08)", dash: [2,2] },
-  { border: "#999999", bg: "rgba(153,153,153,0.08)", dash: [8,4,2,4] }
+// ==================== COLOUR CONFIG ====================
+// Each employee gets a distinct colour. To change colours or add employees,
+// just edit this object. Use any hex colour code.
+const EMPLOYEE_COLOURS = {
+  "Adam Charlton":  { solid: "#2563eb", light: "rgba(37,99,235,0.12)" },   // Blue
+  "Anthony Lowe":   { solid: "#f97316", light: "rgba(249,115,22,0.12)" },   // Orange
+  "Mick Farrell":   { solid: "#7c3aed", light: "rgba(124,58,237,0.12)" },   // Purple
+  "Lyam Roche":     { solid: "#0d9488", light: "rgba(13,148,136,0.12)" }    // Teal
+};
+
+// Fallback colours if a new employee is added to Airtable but not to the list above
+const FALLBACK_COLOURS = [
+  { solid: "#e11d48", light: "rgba(225,29,72,0.12)" },   // Rose
+  { solid: "#ca8a04", light: "rgba(202,138,4,0.12)" },    // Amber
+  { solid: "#0284c7", light: "rgba(2,132,199,0.12)" },    // Sky
+  { solid: "#16a34a", light: "rgba(22,163,74,0.12)" }     // Green
 ];
 
-const BAR_FILLS = ["#000000", "#555555", "#333333", "#999999"];
+function getEmployeeColour(name) {
+  if (EMPLOYEE_COLOURS[name]) return EMPLOYEE_COLOURS[name];
+  // Assign a fallback colour based on position
+  const idx = EMPLOYEES.indexOf(name);
+  const fb = FALLBACK_COLOURS[idx % FALLBACK_COLOURS.length];
+  return fb || { solid: "#888888", light: "rgba(136,136,136,0.12)" };
+}
 
 // ==================== FETCH DATA ====================
 async function loadData() {
@@ -451,10 +467,6 @@ async function loadData() {
 
     DATA = grouped;
     EMPLOYEES = Object.keys(DATA).sort();
-
-    EMPLOYEES.forEach((e, i) => {
-      EMP_STYLES[e] = STYLE_PRESETS[i % STYLE_PRESETS.length];
-    });
 
     const monthSet = new Set();
     for (const emp in DATA) DATA[emp].forEach(d => monthSet.add(d.date));
@@ -598,7 +610,7 @@ function updateIndividual() {
 
   const months = getFilteredMonths('periodSelect', 'dateFrom', 'dateTo');
   const data = getDataForMonths(emp, months);
-  const style = EMP_STYLES[emp] || STYLE_PRESETS[0];
+  const colour = getEmployeeColour(emp);
 
   if (data.length === 0) {
     document.getElementById('kpiRow').innerHTML = '<div class="data-note">No data for this period. Try a different range.</div>';
@@ -627,30 +639,30 @@ function updateIndividual() {
   }
 
   document.getElementById('kpiRow').innerHTML = `
-    <div class="kpi-card"><div class="label">Total Enquiries</div><div class="value">${totalEnq.toLocaleString()}</div><div class="trend">${data.length} month${data.length>1?'s':''}</div></div>
-    <div class="kpi-card"><div class="label">Total Orders</div><div class="value">${totalOrders.toLocaleString()}</div><div class="trend">from ${totalEnq} enquiries</div></div>
-    <div class="kpi-card"><div class="label">Avg Conversion Rate</div><div class="value">${fmtPct(avgConv)}</div>${convTrendHtml}</div>
-    <div class="kpi-card"><div class="label">Total Sales</div><div class="value">${fmt(totalSales)}</div>${salesTrendHtml}</div>
-    <div class="kpi-card"><div class="label">Avg Order Value</div><div class="value">${fmt(avgAOV)}</div></div>
+    <div class="kpi-card" style="border-top: 3px solid ${colour.solid}"><div class="label">Total Enquiries</div><div class="value">${totalEnq.toLocaleString()}</div><div class="trend">${data.length} month${data.length>1?'s':''}</div></div>
+    <div class="kpi-card" style="border-top: 3px solid ${colour.solid}"><div class="label">Total Orders</div><div class="value">${totalOrders.toLocaleString()}</div><div class="trend">from ${totalEnq} enquiries</div></div>
+    <div class="kpi-card" style="border-top: 3px solid ${colour.solid}"><div class="label">Avg Conversion Rate</div><div class="value">${fmtPct(avgConv)}</div>${convTrendHtml}</div>
+    <div class="kpi-card" style="border-top: 3px solid ${colour.solid}"><div class="label">Total Sales</div><div class="value">${fmt(totalSales)}</div>${salesTrendHtml}</div>
+    <div class="kpi-card" style="border-top: 3px solid ${colour.solid}"><div class="label">Avg Order Value</div><div class="value">${fmt(avgAOV)}</div></div>
   `;
 
   const labels = data.map(d => monthLabel(d.date));
 
   createLineChart('chartEnqOrders', labels, [
-    { label: 'Enquiries', data: data.map(d=>d.enq), borderColor: '#000', backgroundColor: 'rgba(0,0,0,0.06)', fill: true, tension: 0.3, borderWidth: 2 },
-    { label: 'Orders', data: data.map(d=>d.orders), borderColor: '#888', backgroundColor: 'rgba(136,136,136,0.06)', fill: true, tension: 0.3, borderWidth: 2, borderDash: [6,3] }
+    { label: 'Enquiries', data: data.map(d=>d.enq), borderColor: colour.solid, backgroundColor: colour.light, fill: true, tension: 0.3, borderWidth: 2.5, pointRadius: 3 },
+    { label: 'Orders', data: data.map(d=>d.orders), borderColor: colour.solid, backgroundColor: 'transparent', fill: false, tension: 0.3, borderWidth: 2, borderDash: [6,3], pointRadius: 3 }
   ]);
 
   createLineChart('chartConvRate', labels, [
-    { label: 'Conversion Rate', data: data.map(d=>d.convRate), borderColor: '#000', backgroundColor: 'rgba(0,0,0,0.06)', fill: true, tension: 0.3, pointRadius: 4, borderWidth: 2 }
+    { label: 'Conversion Rate', data: data.map(d=>d.convRate), borderColor: colour.solid, backgroundColor: colour.light, fill: true, tension: 0.3, pointRadius: 4, borderWidth: 2.5 }
   ], 'pct');
 
   createLineChart('chartSales', labels, [
-    { label: 'Order Value', data: data.map(d=>d.valueOrd), borderColor: '#000', backgroundColor: 'rgba(0,0,0,0.06)', fill: true, tension: 0.3, borderWidth: 2 }
+    { label: 'Order Value', data: data.map(d=>d.valueOrd), borderColor: colour.solid, backgroundColor: colour.light, fill: true, tension: 0.3, borderWidth: 2.5 }
   ], 'currency');
 
   createLineChart('chartAOV', labels, [
-    { label: 'Avg Order Value', data: data.map(d=>d.aov), borderColor: '#000', backgroundColor: 'rgba(0,0,0,0.06)', fill: true, tension: 0.3, pointRadius: 4, borderWidth: 2 }
+    { label: 'Avg Order Value', data: data.map(d=>d.aov), borderColor: colour.solid, backgroundColor: colour.light, fill: true, tension: 0.3, pointRadius: 4, borderWidth: 2.5 }
   ], 'currency');
 }
 
@@ -671,8 +683,8 @@ function updateTeam() {
   document.getElementById('teamChartTitle').textContent = mc.label + ' \u2014 All Employees';
   document.getElementById('teamBarTitle').textContent = mc.label + ' \u2014 Period Totals';
 
-  const datasets = EMPLOYEES.map((emp, i) => {
-    const style = EMP_STYLES[emp] || STYLE_PRESETS[0];
+  const datasets = EMPLOYEES.map((emp) => {
+    const colour = getEmployeeColour(emp);
     const values = months.map(m => {
       const row = (DATA[emp]||[]).find(d => d.date === m);
       return row ? row[mc.key] : null;
@@ -680,18 +692,18 @@ function updateTeam() {
     return {
       label: emp,
       data: values,
-      borderColor: style.border,
-      backgroundColor: style.bg,
-      borderDash: style.dash,
+      borderColor: colour.solid,
+      backgroundColor: colour.light,
       tension: 0.3,
       spanGaps: true,
       pointRadius: 4,
-      borderWidth: 2
+      borderWidth: 2.5
     };
   });
 
   createLineChart('chartTeamLine', labels, datasets, mc.fmt);
 
+  // Bar totals
   const totals = EMPLOYEES.map(emp => {
     const empData = getDataForMonths(emp, months);
     if (mc.key === 'convRate') {
@@ -709,7 +721,7 @@ function updateTeam() {
 
   createBarChart('chartTeamBar', EMPLOYEES.map(n => n.split(' ')[0]), [{
     data: totals,
-    backgroundColor: EMPLOYEES.map((e,i) => BAR_FILLS[i % BAR_FILLS.length]),
+    backgroundColor: EMPLOYEES.map(e => getEmployeeColour(e).solid),
     borderRadius: 4
   }], mc.fmt);
 
@@ -723,7 +735,10 @@ function updateTeam() {
   document.getElementById('teamNote').textContent = notes.length > 0 ? 'Note: ' + notes.join('. ') + '.' : '';
 
   let html = '<table class="ranking-table"><thead><tr><th>Month</th>';
-  EMPLOYEES.forEach((e,i) => html += `<th><span class="employee-dot" style="background:${BAR_FILLS[i%BAR_FILLS.length]}"></span>${e.split(' ')[0]}</th>`);
+  EMPLOYEES.forEach(e => {
+    const colour = getEmployeeColour(e);
+    html += `<th><span class="employee-dot" style="background:${colour.solid}"></span>${e.split(' ')[0]}</th>`;
+  });
   html += '</tr></thead><tbody>';
   months.forEach(m => {
     html += `<tr><td style="font-weight:600">${monthLabel(m)}</td>`;
@@ -759,14 +774,13 @@ function updateRankings() {
     months = ALL_MONTHS.slice(-n);
   }
 
-  const stats = EMPLOYEES.map((emp, i) => {
+  const stats = EMPLOYEES.map((emp) => {
     const empData = getDataForMonths(emp, months);
     const totalEnq = empData.reduce((s,d) => s+d.enq, 0);
     const totalOrd = empData.reduce((s,d) => s+d.orders, 0);
     const totalSales = empData.reduce((s,d) => s+d.valueOrd, 0);
     return {
       name: emp,
-      idx: i,
       months: empData.length,
       enq: totalEnq,
       convRate: totalEnq > 0 ? totalOrd / totalEnq : 0,
@@ -785,13 +799,14 @@ function updateRankings() {
     const maxVal = sorted.length > 0 ? sorted[0][key] : 1;
     let html = '<thead><tr><th>#</th><th>Employee</th><th style="width:55%">Performance</th></tr></thead><tbody>';
     sorted.forEach((s, i) => {
+      const colour = getEmployeeColour(s.name);
       const pct = maxVal > 0 ? (s[key] / maxVal * 100) : 0;
       const valStr = format === 'currency' ? fmt(s[key]) : format === 'pct' ? fmtPct(s[key]) : s[key].toLocaleString();
       const note = s.months < months.length ? ` <span style="font-size:10px;color:#999">(${s.months}mo)</span>` : '';
       html += `<tr>
         <td><span class="rank-badge rank-${i+1}">${i+1}</span></td>
-        <td><span class="employee-dot" style="background:${BAR_FILLS[s.idx % BAR_FILLS.length]}"></span>${s.name}${note}</td>
-        <td><div class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:${pct}%;background:${BAR_FILLS[s.idx % BAR_FILLS.length]}"></div></div><div class="bar-value">${valStr}</div></div></td>
+        <td><span class="employee-dot" style="background:${colour.solid}"></span>${s.name}${note}</td>
+        <td><div class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:${pct}%;background:${colour.solid}"></div></div><div class="bar-value">${valStr}</div></div></td>
       </tr>`;
     });
     html += '</tbody>';
