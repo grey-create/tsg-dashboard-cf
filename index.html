@@ -655,9 +655,9 @@ async function loadData() {
 }
 
 // ==================== UTILITY ====================
-function fmt(n) { return '\u00a3' + Math.round(n).toLocaleString('en-GB'); }
-function fmtPct(n) { return (n * 100).toFixed(1) + '%'; }
-function fmtPctRaw(n) { return n.toFixed(1) + '%'; }
+function fmt(n) { return '\u00a3' + Math.round(Number(n)||0).toLocaleString('en-GB'); }
+function fmtPct(n) { return (Number(n) * 100).toFixed(1) + '%'; }
+function fmtPctRaw(n) { return Number(n).toFixed(1) + '%'; }
 function monthLabel(d) {
   const [y,m] = d.split('-');
   const names = ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
