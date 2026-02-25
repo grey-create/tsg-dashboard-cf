@@ -132,6 +132,51 @@
 
   @keyframes spin { to { transform: rotate(360deg); } }
 
+  /* ===== SECTION HEADERS ===== */
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .section-header h2 {
+    font-size: 15px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--dark);
+  }
+
+  .section-header .section-badge {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 12px;
+    background: var(--dark);
+    color: var(--white);
+  }
+
+  .section-header .toggle-icon {
+    font-size: 18px;
+    color: var(--gray2);
+    transition: transform 0.2s;
+  }
+
+  .section-header .toggle-icon.collapsed { transform: rotate(-90deg); }
+
+  .section-content { transition: all 0.3s; overflow: hidden; }
+  .section-content.collapsed { display: none; }
+
+  .section-divider {
+    border: none;
+    border-top: 2px solid var(--gray4);
+    margin: 28px 0 20px 0;
+  }
+
+  /* ===== KPI CARDS ===== */
   .kpi-row {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
@@ -158,7 +203,87 @@
   .kpi-card .trend { font-size: 11px; margin-top: 4px; font-weight: 500; }
   .kpi-card .trend.up { color: var(--green); }
   .kpi-card .trend.down { color: var(--red); }
+  .kpi-card .trend.neutral { color: var(--gray2); }
 
+  /* ===== MTD COMPARISON GRID ===== */
+  .mtd-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .mtd-card {
+    background: var(--white);
+    border-radius: 10px;
+    padding: 16px 18px;
+    border: 1px solid var(--gray4);
+    text-align: center;
+  }
+
+  .mtd-card .mtd-label {
+    font-size: 10px;
+    color: var(--gray2);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+
+  .mtd-card .mtd-value {
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.3px;
+  }
+
+  .mtd-card .mtd-compare {
+    font-size: 11px;
+    margin-top: 4px;
+    font-weight: 500;
+  }
+
+  .mtd-card .mtd-compare.up { color: var(--green); }
+  .mtd-card .mtd-compare.down { color: var(--red); }
+  .mtd-card .mtd-compare.neutral { color: var(--gray2); }
+
+  /* ===== INSIGHTS ROW ===== */
+  .insights-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 14px;
+    margin-bottom: 24px;
+  }
+
+  .insight-card {
+    background: var(--white);
+    border-radius: 10px;
+    padding: 18px 20px;
+    border: 1px solid var(--gray4);
+  }
+
+  .insight-card h4 {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    color: var(--dark);
+    margin-bottom: 12px;
+  }
+
+  .insight-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0;
+    font-size: 13px;
+    border-bottom: 1px solid var(--gray5);
+  }
+
+  .insight-item:last-child { border-bottom: none; }
+  .insight-item .insight-label { color: var(--gray1); font-weight: 500; }
+  .insight-item .insight-value { font-weight: 700; }
+
+  /* ===== CHARTS ===== */
   .chart-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -186,6 +311,7 @@
 
   canvas { width: 100% !important; }
 
+  /* ===== TABLES ===== */
   .ranking-table {
     width: 100%;
     border-collapse: collapse;
@@ -267,6 +393,7 @@
 
   @media (max-width: 768px) {
     .chart-grid { grid-template-columns: 1fr; }
+    .insights-row { grid-template-columns: 1fr; }
     header { flex-direction: column; gap: 12px; align-items: flex-start; }
     .nav-tabs { flex-wrap: wrap; }
   }
@@ -296,42 +423,75 @@
 
   <div id="mainContent" style="display:none;">
 
-    <!-- INDIVIDUAL REVIEW -->
+    <!-- ==================== INDIVIDUAL REVIEW ==================== -->
     <div id="page-individual" class="page active">
       <div class="controls">
         <div class="control-group">
           <label>Employee</label>
           <select id="employeeSelect" onchange="updateIndividual()"></select>
         </div>
-        <div class="control-group">
-          <label>Period</label>
-          <select id="periodSelect" onchange="handlePeriodChange()">
-            <option value="mtd">Month to Date</option>
-            <option value="lastMonth">Last Month</option>
-            <option value="last3">Last 3 Months</option>
-            <option value="last6">Last 6 Months</option>
-            <option value="last12" selected>Last 12 Months</option>
-            <option value="all">All Available</option>
-            <option value="custom">Custom Date Range</option>
-          </select>
-        </div>
-        <div class="date-range" id="dateRange">
-          <span>From</span>
-          <input type="month" id="dateFrom" onchange="updateIndividual()">
-          <span>To</span>
-          <input type="month" id="dateTo" onchange="updateIndividual()">
-        </div>
       </div>
-      <div class="kpi-row" id="kpiRow"></div>
-      <div class="chart-grid">
-        <div class="chart-card"><h3>Enquiries &amp; Orders</h3><canvas id="chartEnqOrders"></canvas></div>
-        <div class="chart-card"><h3>Conversion Rate (%)</h3><canvas id="chartConvRate"></canvas></div>
-        <div class="chart-card"><h3>Total Sales (Value of Orders)</h3><canvas id="chartSales"></canvas></div>
-        <div class="chart-card"><h3>Average Order Value</h3><canvas id="chartAOV"></canvas></div>
+
+      <!-- THIS MONTH SECTION -->
+      <div class="section-header" onclick="toggleSection('mtdSection', this)">
+        <h2>This Month <span class="section-badge" id="mtdMonthLabel">Feb 2026</span></h2>
+        <span class="toggle-icon">▼</span>
+      </div>
+      <div class="section-content" id="mtdSection">
+        <div class="mtd-grid" id="mtdGrid"></div>
+        <div class="insights-row" id="mtdInsights"></div>
+      </div>
+
+      <!-- LAST MONTH SNAPSHOT -->
+      <hr class="section-divider">
+      <div class="section-header" onclick="toggleSection('lastMonthSection', this)">
+        <h2>Last Month <span class="section-badge" id="lastMonthLabel">Jan 2026</span></h2>
+        <span class="toggle-icon">▼</span>
+      </div>
+      <div class="section-content" id="lastMonthSection">
+        <div class="mtd-grid" id="lastMonthGrid"></div>
+        <div class="insights-row" id="lastMonthInsights"></div>
+      </div>
+
+      <!-- HISTORICAL SECTION -->
+      <hr class="section-divider">
+      <div class="section-header" onclick="toggleSection('histSection', this)">
+        <h2>Historical Performance</h2>
+        <span class="toggle-icon">▼</span>
+      </div>
+      <div class="section-content" id="histSection">
+        <div class="controls" style="margin-top:4px;">
+          <div class="control-group">
+            <label>Period</label>
+            <select id="periodSelect" onchange="handlePeriodChange()">
+              <option value="last3">Last 3 Months</option>
+              <option value="last6">Last 6 Months</option>
+              <option value="last12" selected>Last 12 Months</option>
+              <option value="all">All Available</option>
+              <option value="custom">Custom Date Range</option>
+            </select>
+          </div>
+          <div class="date-range" id="dateRange">
+            <span>From</span>
+            <input type="month" id="dateFrom" onchange="updateHistorical()">
+            <span>To</span>
+            <input type="month" id="dateTo" onchange="updateHistorical()">
+          </div>
+        </div>
+        <div class="kpi-row" id="kpiRow"></div>
+        <div class="insights-row" id="histInsights"></div>
+        <div class="chart-grid">
+          <div class="chart-card"><h3>Enquiries &amp; Orders</h3><canvas id="chartEnqOrders"></canvas></div>
+          <div class="chart-card"><h3>Conversion Rate (%)</h3><canvas id="chartConvRate"></canvas></div>
+          <div class="chart-card"><h3>Sales &amp; Gross Profit</h3><canvas id="chartSales"></canvas></div>
+          <div class="chart-card"><h3>Average Order Value</h3><canvas id="chartAOV"></canvas></div>
+          <div class="chart-card"><h3>Profit Margin (%)</h3><canvas id="chartMargin"></canvas></div>
+          <div class="chart-card"><h3>Pipeline: Rejected &amp; To Follow</h3><canvas id="chartPipeline"></canvas></div>
+        </div>
       </div>
     </div>
 
-    <!-- TEAM COMPARISON -->
+    <!-- ==================== TEAM COMPARISON ==================== -->
     <div id="page-team" class="page">
       <div class="controls">
         <div class="control-group">
@@ -342,6 +502,8 @@
             <option value="convRate">Conversion Rate</option>
             <option value="sales" selected>Total Sales</option>
             <option value="aov">Average Order Value</option>
+            <option value="margin">Profit Margin</option>
+            <option value="gp">Gross Profit</option>
           </select>
         </div>
         <div class="control-group">
@@ -371,7 +533,7 @@
       </div>
     </div>
 
-    <!-- RANKINGS -->
+    <!-- ==================== RANKINGS ==================== -->
     <div id="page-rankings" class="page">
       <div class="controls">
         <div class="control-group">
@@ -392,6 +554,8 @@
         <div class="chart-card"><h3>Conversion Rate</h3><table class="ranking-table" id="rankConv"></table></div>
         <div class="chart-card"><h3>Total Sales</h3><table class="ranking-table" id="rankSales"></table></div>
         <div class="chart-card"><h3>Average Order Value</h3><table class="ranking-table" id="rankAOV"></table></div>
+        <div class="chart-card"><h3>Gross Profit</h3><table class="ranking-table" id="rankGP"></table></div>
+        <div class="chart-card"><h3>Profit Margin</h3><table class="ranking-table" id="rankMargin"></table></div>
       </div>
     </div>
 
@@ -406,26 +570,22 @@ let EMPLOYEES = [];
 let ALL_MONTHS = [];
 
 // ==================== COLOUR CONFIG ====================
-// Each employee gets a distinct colour. To change colours or add employees,
-// just edit this object. Use any hex colour code.
 const EMPLOYEE_COLOURS = {
-  "Adam Charlton":  { solid: "#2563eb", light: "rgba(37,99,235,0.12)" },   // Blue
-  "Anthony Lowe":   { solid: "#f97316", light: "rgba(249,115,22,0.12)" },   // Orange
-  "Mick Farrell":   { solid: "#7c3aed", light: "rgba(124,58,237,0.12)" },   // Purple
-  "Lyam Roche":     { solid: "#0d9488", light: "rgba(13,148,136,0.12)" }    // Teal
+  "Adam Charlton":  { solid: "#2563eb", light: "rgba(37,99,235,0.12)" },
+  "Anthony Lowe":   { solid: "#f97316", light: "rgba(249,115,22,0.12)" },
+  "Mick Farrell":   { solid: "#7c3aed", light: "rgba(124,58,237,0.12)" },
+  "Lyam Roche":     { solid: "#0d9488", light: "rgba(13,148,136,0.12)" }
 };
 
-// Fallback colours if a new employee is added to Airtable but not to the list above
 const FALLBACK_COLOURS = [
-  { solid: "#e11d48", light: "rgba(225,29,72,0.12)" },   // Rose
-  { solid: "#ca8a04", light: "rgba(202,138,4,0.12)" },    // Amber
-  { solid: "#0284c7", light: "rgba(2,132,199,0.12)" },    // Sky
-  { solid: "#16a34a", light: "rgba(22,163,74,0.12)" }     // Green
+  { solid: "#e11d48", light: "rgba(225,29,72,0.12)" },
+  { solid: "#ca8a04", light: "rgba(202,138,4,0.12)" },
+  { solid: "#0284c7", light: "rgba(2,132,199,0.12)" },
+  { solid: "#16a34a", light: "rgba(22,163,74,0.12)" }
 ];
 
 function getEmployeeColour(name) {
   if (EMPLOYEE_COLOURS[name]) return EMPLOYEE_COLOURS[name];
-  // Assign a fallback colour based on position
   const idx = EMPLOYEES.indexOf(name);
   const fb = FALLBACK_COLOURS[idx % FALLBACK_COLOURS.length];
   return fb || { solid: "#888888", light: "rgba(136,136,136,0.12)" };
@@ -497,10 +657,16 @@ async function loadData() {
 // ==================== UTILITY ====================
 function fmt(n) { return '\u00a3' + Math.round(n).toLocaleString('en-GB'); }
 function fmtPct(n) { return (n * 100).toFixed(1) + '%'; }
+function fmtPctRaw(n) { return n.toFixed(1) + '%'; }
 function monthLabel(d) {
   const [y,m] = d.split('-');
   const names = ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   return names[parseInt(m)] + ' ' + y.slice(2);
+}
+function monthLabelFull(d) {
+  const [y,m] = d.split('-');
+  const names = ['','January','February','March','April','May','June','July','August','September','October','November','December'];
+  return names[parseInt(m)] + ' ' + y;
 }
 
 function getFilteredMonths(periodSelectId, dateFromId, dateToId) {
@@ -525,6 +691,23 @@ function getFilteredMonths(periodSelectId, dateFromId, dateToId) {
 
 function getDataForMonths(emp, months) {
   return DATA[emp] ? DATA[emp].filter(d => months.includes(d.date)) : [];
+}
+
+function compareArrow(current, previous) {
+  if (previous === 0 && current === 0) return { html: '<span class="mtd-compare neutral">\u2014 No change</span>', cls: 'neutral' };
+  if (previous === 0) return { html: '<span class="mtd-compare up">\u2191 New</span>', cls: 'up' };
+  const pct = ((current - previous) / Math.abs(previous) * 100);
+  const dir = pct >= 0 ? 'up' : 'down';
+  const arrow = pct >= 0 ? '\u2191' : '\u2193';
+  return { html: `<span class="mtd-compare ${dir}">${arrow} ${Math.abs(pct).toFixed(0)}% vs prev month</span>`, cls: dir };
+}
+
+// ==================== SECTION TOGGLE ====================
+function toggleSection(sectionId, headerEl) {
+  const section = document.getElementById(sectionId);
+  const icon = headerEl.querySelector('.toggle-icon');
+  section.classList.toggle('collapsed');
+  icon.classList.toggle('collapsed');
 }
 
 // ==================== CHARTS ====================
@@ -555,7 +738,7 @@ function createLineChart(canvasId, labels, datasets, yFormat) {
           grid: { color: '#e5e5e5' },
           ticks: {
             font: { family: 'Inter', size: 11 },
-            callback: yFormat === 'currency' ? v => fmt(v) : yFormat === 'pct' ? v => (v*100).toFixed(0)+'%' : v => v
+            callback: yFormat === 'currency' ? v => fmt(v) : yFormat === 'pct' ? v => (v*100).toFixed(0)+'%' : yFormat === 'pctRaw' ? v => v.toFixed(0)+'%' : v => v
           }
         },
         x: { grid: { display: false }, ticks: { font: { family: 'Inter', size: 11 } } }
@@ -574,7 +757,7 @@ function createBarChart(canvasId, labels, datasets, yFormat) {
       responsive: true,
       maintainAspectRatio: true,
       aspectRatio: 1.8,
-      plugins: { legend: { display: false } },
+      plugins: { legend: { display: datasets.length > 1, position: 'top', labels: { usePointStyle: true, padding: 16, font: { family: 'Inter', size: 12 } } } },
       scales: {
         y: {
           beginAtZero: true,
@@ -594,7 +777,7 @@ function createBarChart(canvasId, labels, datasets, yFormat) {
 function handlePeriodChange() {
   const period = document.getElementById('periodSelect').value;
   document.getElementById('dateRange').classList.toggle('visible', period === 'custom');
-  updateIndividual();
+  updateHistorical();
 }
 
 function handleTeamPeriodChange() {
@@ -603,26 +786,175 @@ function handleTeamPeriodChange() {
   updateTeam();
 }
 
-// ==================== INDIVIDUAL PAGE ====================
+// ==================== INDIVIDUAL PAGE (MASTER) ====================
 function updateIndividual() {
+  updateMTD();
+  updateLastMonth();
+  updateHistorical();
+}
+
+// ==================== MTD SECTION ====================
+function updateMTD() {
   const emp = document.getElementById('employeeSelect').value;
   if (!emp || !DATA[emp]) return;
-
-  const months = getFilteredMonths('periodSelect', 'dateFrom', 'dateTo');
-  const data = getDataForMonths(emp, months);
   const colour = getEmployeeColour(emp);
 
-  if (data.length === 0) {
-    document.getElementById('kpiRow').innerHTML = '<div class="data-note">No data for this period. Try a different range.</div>';
-    ['chartEnqOrders','chartConvRate','chartSales','chartAOV'].forEach(destroyChart);
+  const now = new Date();
+  const currentYM = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+  const prevDate = new Date(now.getFullYear(), now.getMonth()-1, 1);
+  const prevYM = prevDate.getFullYear() + '-' + String(prevDate.getMonth()+1).padStart(2,'0');
+
+  document.getElementById('mtdMonthLabel').textContent = monthLabelFull(currentYM);
+
+  const mtdData = getDataForMonths(emp, [currentYM]);
+  const prevData = getDataForMonths(emp, [prevYM]);
+  const curr = mtdData[0] || null;
+  const prev = prevData[0] || null;
+
+  if (!curr) {
+    document.getElementById('mtdGrid').innerHTML = '<div class="data-note">No data for this month yet.</div>';
+    document.getElementById('mtdInsights').innerHTML = '';
     return;
   }
 
+  const metrics = [
+    { label: 'Enquiries', curr: curr.enq, prev: prev ? prev.enq : 0, format: 'num' },
+    { label: 'Orders', curr: curr.orders, prev: prev ? prev.orders : 0, format: 'num' },
+    { label: 'Conversion', curr: curr.convRate, prev: prev ? prev.convRate : 0, format: 'pct' },
+    { label: 'Sales', curr: curr.valueOrd, prev: prev ? prev.valueOrd : 0, format: 'currency' },
+    { label: 'Avg Order Value', curr: curr.aov, prev: prev ? prev.aov : 0, format: 'currency' },
+    { label: 'Gross Profit', curr: curr.gp, prev: prev ? prev.gp : 0, format: 'currency' },
+    { label: 'Profit Margin', curr: curr.margin, prev: prev ? prev.margin : 0, format: 'pctRaw' },
+    { label: 'Enquiry Value', curr: curr.valueEnq, prev: prev ? prev.valueEnq : 0, format: 'currency' }
+  ];
+
+  let gridHtml = '';
+  metrics.forEach(m => {
+    const valStr = m.format === 'currency' ? fmt(m.curr) : m.format === 'pct' ? fmtPct(m.curr) : m.format === 'pctRaw' ? fmtPctRaw(m.curr) : m.curr.toLocaleString();
+    const comp = compareArrow(m.curr, m.prev);
+    gridHtml += `<div class="mtd-card" style="border-top: 3px solid ${colour.solid}">
+      <div class="mtd-label">${m.label}</div>
+      <div class="mtd-value">${valStr}</div>
+      ${comp.html}
+    </div>`;
+  });
+  document.getElementById('mtdGrid').innerHTML = gridHtml;
+
+  // MTD Insights
+  const rejectRate = curr.enq > 0 ? (curr.rejected / curr.enq * 100).toFixed(1) : '0';
+  const followRate = curr.enq > 0 ? (curr.follow / curr.enq * 100).toFixed(1) : '0';
+  const revenuePerEnq = curr.enq > 0 ? fmt(curr.valueOrd / curr.enq) : fmt(0);
+  const costRatio = curr.valueOrd > 0 ? ((curr.ordCost / curr.valueOrd) * 100).toFixed(1) : '0';
+
+  document.getElementById('mtdInsights').innerHTML = `
+    <div class="insight-card">
+      <h4>Pipeline Health</h4>
+      <div class="insight-item"><span class="insight-label">Quotes Rejected</span><span class="insight-value">${curr.rejected} (${rejectRate}%)</span></div>
+      <div class="insight-item"><span class="insight-label">Quotes to Follow Up</span><span class="insight-value">${curr.follow} (${followRate}%)</span></div>
+      <div class="insight-item"><span class="insight-label">Open Pipeline</span><span class="insight-value">${curr.follow} quotes pending</span></div>
+    </div>
+    <div class="insight-card">
+      <h4>Efficiency</h4>
+      <div class="insight-item"><span class="insight-label">Revenue per Enquiry</span><span class="insight-value">${revenuePerEnq}</span></div>
+      <div class="insight-item"><span class="insight-label">Cost Ratio</span><span class="insight-value">${costRatio}%</span></div>
+      <div class="insight-item"><span class="insight-label">Order Cost</span><span class="insight-value">${fmt(curr.ordCost)}</span></div>
+    </div>
+  `;
+}
+
+// ==================== LAST MONTH SECTION ====================
+function updateLastMonth() {
+  const emp = document.getElementById('employeeSelect').value;
+  if (!emp || !DATA[emp]) return;
+  const colour = getEmployeeColour(emp);
+
+  const now = new Date();
+  const lastDate = new Date(now.getFullYear(), now.getMonth()-1, 1);
+  const lastYM = lastDate.getFullYear() + '-' + String(lastDate.getMonth()+1).padStart(2,'0');
+  const prevDate = new Date(now.getFullYear(), now.getMonth()-2, 1);
+  const prevYM = prevDate.getFullYear() + '-' + String(prevDate.getMonth()+1).padStart(2,'0');
+
+  document.getElementById('lastMonthLabel').textContent = monthLabelFull(lastYM);
+
+  const lmData = getDataForMonths(emp, [lastYM]);
+  const prevData = getDataForMonths(emp, [prevYM]);
+  const curr = lmData[0] || null;
+  const prev = prevData[0] || null;
+
+  if (!curr) {
+    document.getElementById('lastMonthGrid').innerHTML = '<div class="data-note">No data for last month.</div>';
+    document.getElementById('lastMonthInsights').innerHTML = '';
+    return;
+  }
+
+  const metrics = [
+    { label: 'Enquiries', curr: curr.enq, prev: prev ? prev.enq : 0, format: 'num' },
+    { label: 'Orders', curr: curr.orders, prev: prev ? prev.orders : 0, format: 'num' },
+    { label: 'Conversion', curr: curr.convRate, prev: prev ? prev.convRate : 0, format: 'pct' },
+    { label: 'Sales', curr: curr.valueOrd, prev: prev ? prev.valueOrd : 0, format: 'currency' },
+    { label: 'Avg Order Value', curr: curr.aov, prev: prev ? prev.aov : 0, format: 'currency' },
+    { label: 'Gross Profit', curr: curr.gp, prev: prev ? prev.gp : 0, format: 'currency' },
+    { label: 'Profit Margin', curr: curr.margin, prev: prev ? prev.margin : 0, format: 'pctRaw' },
+    { label: 'Enquiry Value', curr: curr.valueEnq, prev: prev ? prev.valueEnq : 0, format: 'currency' }
+  ];
+
+  let gridHtml = '';
+  metrics.forEach(m => {
+    const valStr = m.format === 'currency' ? fmt(m.curr) : m.format === 'pct' ? fmtPct(m.curr) : m.format === 'pctRaw' ? fmtPctRaw(m.curr) : m.curr.toLocaleString();
+    const comp = compareArrow(m.curr, m.prev);
+    gridHtml += `<div class="mtd-card" style="border-top: 3px solid ${colour.solid}">
+      <div class="mtd-label">${m.label}</div>
+      <div class="mtd-value">${valStr}</div>
+      ${comp.html}
+    </div>`;
+  });
+  document.getElementById('lastMonthGrid').innerHTML = gridHtml;
+
+  const rejectRate = curr.enq > 0 ? (curr.rejected / curr.enq * 100).toFixed(1) : '0';
+  const followRate = curr.enq > 0 ? (curr.follow / curr.enq * 100).toFixed(1) : '0';
+  const revenuePerEnq = curr.enq > 0 ? fmt(curr.valueOrd / curr.enq) : fmt(0);
+  const costRatio = curr.valueOrd > 0 ? ((curr.ordCost / curr.valueOrd) * 100).toFixed(1) : '0';
+
+  document.getElementById('lastMonthInsights').innerHTML = `
+    <div class="insight-card">
+      <h4>Pipeline Health</h4>
+      <div class="insight-item"><span class="insight-label">Quotes Rejected</span><span class="insight-value">${curr.rejected} (${rejectRate}%)</span></div>
+      <div class="insight-item"><span class="insight-label">Quotes to Follow Up</span><span class="insight-value">${curr.follow} (${followRate}%)</span></div>
+    </div>
+    <div class="insight-card">
+      <h4>Efficiency</h4>
+      <div class="insight-item"><span class="insight-label">Revenue per Enquiry</span><span class="insight-value">${revenuePerEnq}</span></div>
+      <div class="insight-item"><span class="insight-label">Cost Ratio</span><span class="insight-value">${costRatio}%</span></div>
+    </div>
+  `;
+}
+
+// ==================== HISTORICAL SECTION ====================
+function updateHistorical() {
+  const emp = document.getElementById('employeeSelect').value;
+  if (!emp || !DATA[emp]) return;
+  const colour = getEmployeeColour(emp);
+
+  const months = getFilteredMonths('periodSelect', 'dateFrom', 'dateTo');
+  const data = getDataForMonths(emp, months);
+
+  if (data.length === 0) {
+    document.getElementById('kpiRow').innerHTML = '<div class="data-note">No data for this period.</div>';
+    document.getElementById('histInsights').innerHTML = '';
+    ['chartEnqOrders','chartConvRate','chartSales','chartAOV','chartMargin','chartPipeline'].forEach(destroyChart);
+    return;
+  }
+
+  // KPIs
   const totalEnq = data.reduce((s,d) => s + d.enq, 0);
   const totalOrders = data.reduce((s,d) => s + d.orders, 0);
   const avgConv = totalEnq > 0 ? totalOrders / totalEnq : 0;
   const totalSales = data.reduce((s,d) => s + d.valueOrd, 0);
+  const totalGP = data.reduce((s,d) => s + d.gp, 0);
   const avgAOV = totalOrders > 0 ? totalSales / totalOrders : 0;
+  const avgMargin = totalSales > 0 ? (totalGP / totalSales * 100) : 0;
+  const totalRejected = data.reduce((s,d) => s + d.rejected, 0);
+  const totalFollow = data.reduce((s,d) => s + d.follow, 0);
 
   let convTrendHtml = '', salesTrendHtml = '';
   if (data.length >= 4) {
@@ -641,9 +973,33 @@ function updateIndividual() {
   document.getElementById('kpiRow').innerHTML = `
     <div class="kpi-card" style="border-top: 3px solid ${colour.solid}"><div class="label">Total Enquiries</div><div class="value">${totalEnq.toLocaleString()}</div><div class="trend">${data.length} month${data.length>1?'s':''}</div></div>
     <div class="kpi-card" style="border-top: 3px solid ${colour.solid}"><div class="label">Total Orders</div><div class="value">${totalOrders.toLocaleString()}</div><div class="trend">from ${totalEnq} enquiries</div></div>
-    <div class="kpi-card" style="border-top: 3px solid ${colour.solid}"><div class="label">Avg Conversion Rate</div><div class="value">${fmtPct(avgConv)}</div>${convTrendHtml}</div>
+    <div class="kpi-card" style="border-top: 3px solid ${colour.solid}"><div class="label">Avg Conversion</div><div class="value">${fmtPct(avgConv)}</div>${convTrendHtml}</div>
     <div class="kpi-card" style="border-top: 3px solid ${colour.solid}"><div class="label">Total Sales</div><div class="value">${fmt(totalSales)}</div>${salesTrendHtml}</div>
-    <div class="kpi-card" style="border-top: 3px solid ${colour.solid}"><div class="label">Avg Order Value</div><div class="value">${fmt(avgAOV)}</div></div>
+    <div class="kpi-card" style="border-top: 3px solid ${colour.solid}"><div class="label">Total GP</div><div class="value">${fmt(totalGP)}</div><div class="trend">Margin: ${avgMargin.toFixed(1)}%</div></div>
+  `;
+
+  // Historical Insights
+  const bestMonth = [...data].sort((a,b) => b.valueOrd - a.valueOrd)[0];
+  const worstMonth = [...data].sort((a,b) => a.valueOrd - b.valueOrd)[0];
+  const bestConvMonth = [...data].sort((a,b) => b.convRate - a.convRate)[0];
+  const avgRevenuePerEnq = totalEnq > 0 ? totalSales / totalEnq : 0;
+  const rejectRate = totalEnq > 0 ? (totalRejected / totalEnq * 100).toFixed(1) : '0';
+
+  document.getElementById('histInsights').innerHTML = `
+    <div class="insight-card">
+      <h4>Highlights</h4>
+      <div class="insight-item"><span class="insight-label">Best Sales Month</span><span class="insight-value">${monthLabel(bestMonth.date)} (${fmt(bestMonth.valueOrd)})</span></div>
+      <div class="insight-item"><span class="insight-label">Lowest Sales Month</span><span class="insight-value">${monthLabel(worstMonth.date)} (${fmt(worstMonth.valueOrd)})</span></div>
+      <div class="insight-item"><span class="insight-label">Best Conversion Month</span><span class="insight-value">${monthLabel(bestConvMonth.date)} (${fmtPct(bestConvMonth.convRate)})</span></div>
+      <div class="insight-item"><span class="insight-label">Avg Revenue per Enquiry</span><span class="insight-value">${fmt(avgRevenuePerEnq)}</span></div>
+    </div>
+    <div class="insight-card">
+      <h4>Pipeline Summary</h4>
+      <div class="insight-item"><span class="insight-label">Total Quotes Rejected</span><span class="insight-value">${totalRejected.toLocaleString()} (${rejectRate}%)</span></div>
+      <div class="insight-item"><span class="insight-label">Total Quotes to Follow</span><span class="insight-value">${totalFollow.toLocaleString()}</span></div>
+      <div class="insight-item"><span class="insight-label">Avg Order Value</span><span class="insight-value">${fmt(avgAOV)}</span></div>
+      <div class="insight-item"><span class="insight-label">Avg Profit Margin</span><span class="insight-value">${avgMargin.toFixed(1)}%</span></div>
+    </div>
   `;
 
   const labels = data.map(d => monthLabel(d.date));
@@ -658,12 +1014,22 @@ function updateIndividual() {
   ], 'pct');
 
   createLineChart('chartSales', labels, [
-    { label: 'Order Value', data: data.map(d=>d.valueOrd), borderColor: colour.solid, backgroundColor: colour.light, fill: true, tension: 0.3, borderWidth: 2.5 }
+    { label: 'Sales', data: data.map(d=>d.valueOrd), borderColor: colour.solid, backgroundColor: colour.light, fill: true, tension: 0.3, borderWidth: 2.5 },
+    { label: 'Gross Profit', data: data.map(d=>d.gp), borderColor: '#22c55e', backgroundColor: 'rgba(34,197,94,0.08)', fill: true, tension: 0.3, borderWidth: 2, borderDash: [6,3] }
   ], 'currency');
 
   createLineChart('chartAOV', labels, [
     { label: 'Avg Order Value', data: data.map(d=>d.aov), borderColor: colour.solid, backgroundColor: colour.light, fill: true, tension: 0.3, pointRadius: 4, borderWidth: 2.5 }
   ], 'currency');
+
+  createLineChart('chartMargin', labels, [
+    { label: 'Profit Margin %', data: data.map(d=>d.margin), borderColor: '#22c55e', backgroundColor: 'rgba(34,197,94,0.08)', fill: true, tension: 0.3, pointRadius: 4, borderWidth: 2.5 }
+  ], 'pctRaw');
+
+  createBarChart('chartPipeline', labels, [
+    { label: 'Rejected', data: data.map(d=>d.rejected), backgroundColor: '#ef4444', borderRadius: 4 },
+    { label: 'To Follow Up', data: data.map(d=>d.follow), backgroundColor: '#f97316', borderRadius: 4 }
+  ]);
 }
 
 // ==================== TEAM PAGE ====================
@@ -677,7 +1043,9 @@ function updateTeam() {
     orders: { key: 'orders', label: 'Orders', fmt: 'number' },
     convRate: { key: 'convRate', label: 'Conversion Rate', fmt: 'pct' },
     sales: { key: 'valueOrd', label: 'Total Sales', fmt: 'currency' },
-    aov: { key: 'aov', label: 'Average Order Value', fmt: 'currency' }
+    aov: { key: 'aov', label: 'Average Order Value', fmt: 'currency' },
+    margin: { key: 'margin', label: 'Profit Margin', fmt: 'pctRaw' },
+    gp: { key: 'gp', label: 'Gross Profit', fmt: 'currency' }
   }[metric];
 
   document.getElementById('teamChartTitle').textContent = mc.label + ' \u2014 All Employees';
@@ -703,7 +1071,6 @@ function updateTeam() {
 
   createLineChart('chartTeamLine', labels, datasets, mc.fmt);
 
-  // Bar totals
   const totals = EMPLOYEES.map(emp => {
     const empData = getDataForMonths(emp, months);
     if (mc.key === 'convRate') {
@@ -715,6 +1082,11 @@ function updateTeam() {
       const tSales = empData.reduce((s,d)=>s+d.valueOrd,0);
       const tOrd = empData.reduce((s,d)=>s+d.orders,0);
       return tOrd > 0 ? tSales / tOrd : 0;
+    }
+    if (mc.key === 'margin') {
+      const tSales = empData.reduce((s,d)=>s+d.valueOrd,0);
+      const tGP = empData.reduce((s,d)=>s+d.gp,0);
+      return tSales > 0 ? (tGP / tSales * 100) : 0;
     }
     return empData.reduce((s,d) => s + d[mc.key], 0);
   });
@@ -748,6 +1120,7 @@ function updateTeam() {
       if (row) {
         if (mc.fmt === 'currency') val = fmt(row[mc.key]);
         else if (mc.fmt === 'pct') val = fmtPct(row[mc.key]);
+        else if (mc.fmt === 'pctRaw') val = fmtPctRaw(row[mc.key]);
         else val = row[mc.key].toLocaleString();
       }
       html += `<td>${val}</td>`;
@@ -779,13 +1152,16 @@ function updateRankings() {
     const totalEnq = empData.reduce((s,d) => s+d.enq, 0);
     const totalOrd = empData.reduce((s,d) => s+d.orders, 0);
     const totalSales = empData.reduce((s,d) => s+d.valueOrd, 0);
+    const totalGP = empData.reduce((s,d) => s+d.gp, 0);
     return {
       name: emp,
       months: empData.length,
       enq: totalEnq,
       convRate: totalEnq > 0 ? totalOrd / totalEnq : 0,
       sales: totalSales,
-      aov: totalOrd > 0 ? totalSales / totalOrd : 0
+      aov: totalOrd > 0 ? totalSales / totalOrd : 0,
+      gp: totalGP,
+      margin: totalSales > 0 ? (totalGP / totalSales * 100) : 0
     };
   });
 
@@ -801,7 +1177,7 @@ function updateRankings() {
     sorted.forEach((s, i) => {
       const colour = getEmployeeColour(s.name);
       const pct = maxVal > 0 ? (s[key] / maxVal * 100) : 0;
-      const valStr = format === 'currency' ? fmt(s[key]) : format === 'pct' ? fmtPct(s[key]) : s[key].toLocaleString();
+      const valStr = format === 'currency' ? fmt(s[key]) : format === 'pct' ? fmtPct(s[key]) : format === 'pctRaw' ? fmtPctRaw(s[key]) : s[key].toLocaleString();
       const note = s.months < months.length ? ` <span style="font-size:10px;color:#999">(${s.months}mo)</span>` : '';
       html += `<tr>
         <td><span class="rank-badge rank-${i+1}">${i+1}</span></td>
@@ -817,6 +1193,8 @@ function updateRankings() {
   renderRankTable('rankConv', 'convRate', 'pct');
   renderRankTable('rankSales', 'sales', 'currency');
   renderRankTable('rankAOV', 'aov', 'currency');
+  renderRankTable('rankGP', 'gp', 'currency');
+  renderRankTable('rankMargin', 'margin', 'pctRaw');
 }
 
 // ==================== NAVIGATION ====================
