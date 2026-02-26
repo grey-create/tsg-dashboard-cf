@@ -61,60 +61,24 @@
   header .subtitle { font-size: 12px; color: var(--gray2); margin-top: 2px; font-weight: 400; }
   #lastUpdated { font-size: 11px; color: var(--gray2); }
 
-  .nav-tabs {
-    display: flex;
-    gap: 2px;
-    background: var(--dark2);
-    border-radius: 8px;
-    padding: 3px;
-  }
-
+  .nav-tabs { display: flex; gap: 2px; background: var(--dark2); border-radius: 8px; padding: 3px; }
   .nav-tab {
-    padding: 8px 20px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--gray2);
-    transition: all 0.2s;
-    border: none;
-    background: none;
-    font-family: 'Inter', sans-serif;
+    padding: 8px 20px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500;
+    color: var(--gray2); transition: all 0.2s; border: none; background: none; font-family: 'Inter', sans-serif;
   }
-
   .nav-tab:hover { color: var(--white); }
   .nav-tab.active { color: var(--black); background: var(--white); }
 
   .container { max-width: 1400px; margin: 0 auto; padding: 24px; }
 
-  .controls {
-    display: flex;
-    gap: 12px;
-    align-items: center;
-    margin-bottom: 24px;
-    flex-wrap: wrap;
-  }
-
+  .controls { display: flex; gap: 12px; align-items: center; margin-bottom: 24px; flex-wrap: wrap; }
   .control-group { display: flex; align-items: center; gap: 8px; }
-  .control-group label {
-    font-size: 11px;
-    font-weight: 700;
-    color: var(--gray1);
-    text-transform: uppercase;
-    letter-spacing: 0.8px;
-  }
+  .control-group label { font-size: 11px; font-weight: 700; color: var(--gray1); text-transform: uppercase; letter-spacing: 0.8px; }
 
   select, input[type="date"], input[type="month"] {
-    padding: 8px 12px;
-    border: 1px solid var(--gray4);
-    border-radius: 6px;
-    font-size: 13px;
-    font-family: 'Inter', sans-serif;
-    background: var(--white);
-    color: var(--dark);
-    font-weight: 500;
+    padding: 8px 12px; border: 1px solid var(--gray4); border-radius: 6px; font-size: 13px;
+    font-family: 'Inter', sans-serif; background: var(--white); color: var(--dark); font-weight: 500;
   }
-
   select:focus, input:focus { outline: none; border-color: var(--black); }
 
   .date-range { display: none; align-items: center; gap: 8px; }
@@ -124,371 +88,130 @@
   .page { display: none; }
   .page.active { display: block; }
 
-  .loading-overlay {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 400px;
-    font-size: 14px;
-    color: var(--gray1);
-  }
-
-  .loading-spinner {
-    width: 24px; height: 24px;
-    border: 3px solid var(--gray4);
-    border-top-color: var(--black);
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-    margin-right: 12px;
-  }
-
+  .loading-overlay { display: flex; align-items: center; justify-content: center; min-height: 400px; font-size: 14px; color: var(--gray1); }
+  .loading-spinner { width: 24px; height: 24px; border: 3px solid var(--gray4); border-top-color: var(--black); border-radius: 50%; animation: spin 0.8s linear infinite; margin-right: 12px; }
   @keyframes spin { to { transform: rotate(360deg); } }
 
   /* ===== SECTION HEADERS ===== */
-  .section-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 16px;
-    cursor: pointer;
-    user-select: none;
-  }
-
-  .section-header h2 {
-    font-size: 15px;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    color: var(--dark);
-  }
-
-  .section-header .section-badge {
-    font-size: 11px;
-    font-weight: 600;
-    padding: 3px 10px;
-    border-radius: 12px;
-    background: var(--dark);
-    color: var(--white);
-  }
-
-  .section-header .toggle-icon {
-    font-size: 18px;
-    color: var(--gray2);
-    transition: transform 0.2s;
-  }
-
+  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; cursor: pointer; user-select: none; }
+  .section-header h2 { font-size: 15px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: var(--dark); }
+  .section-header .section-badge { font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 12px; background: var(--dark); color: var(--white); }
+  .section-header .toggle-icon { font-size: 18px; color: var(--gray2); transition: transform 0.2s; }
   .section-header .toggle-icon.collapsed { transform: rotate(-90deg); }
 
   .section-content { transition: all 0.3s; overflow: hidden; }
   .section-content.collapsed { display: none; }
+  .section-divider { border: none; border-top: 2px solid var(--gray4); margin: 28px 0 20px 0; }
 
-  .section-divider {
-    border: none;
-    border-top: 2px solid var(--gray4);
-    margin: 28px 0 20px 0;
+  /* ===== INDIVIDUAL SECTION BLOCKS ===== */
+  .individual-section-block { background: var(--white); border: 1px solid var(--gray4); border-radius: 12px; padding: 24px; margin-bottom: 24px; }
+  .individual-section-block .section-header { margin-bottom: 20px; }
+
+  /* ===== METRIC GROUP HEADERS (Individual page) ===== */
+  .metric-group-label {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: var(--gray2);
+    margin-bottom: 10px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--gray4);
   }
 
-  /* ===== INDIVIDUAL PAGE SECTION BLOCKS ===== */
-  .individual-section-block {
-    background: var(--white);
-    border: 1px solid var(--gray4);
-    border-radius: 12px;
-    padding: 24px;
-    margin-bottom: 24px;
-  }
+  .metric-group { margin-bottom: 18px; }
 
-  .individual-section-block .section-header {
-    margin-bottom: 20px;
+  /* ===== MTD CARDS (Individual) ===== */
+  .mtd-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 20px; }
+
+  .mtd-card {
+    background: var(--white); border-radius: 10px; padding: 16px 18px;
+    border: 1px solid var(--gray4); text-align: center;
   }
+  .mtd-card .mtd-label {
+    font-size: 12px; color: var(--dark); text-transform: uppercase; letter-spacing: 0.4px;
+    font-weight: 700; margin-bottom: 6px;
+  }
+  .mtd-card .mtd-value { font-size: 24px; font-weight: 800; letter-spacing: -0.3px; }
+  .mtd-card .mtd-compare { font-size: 11px; margin-top: 4px; font-weight: 500; }
+  .mtd-card .mtd-compare.up { color: var(--green); }
+  .mtd-card .mtd-compare.down { color: var(--red); }
+  .mtd-card .mtd-compare.neutral { color: var(--gray2); }
+
+  /* Key metric emphasis */
+  .mtd-card.key-metric { border-width: 2px; }
+  .mtd-card.key-metric .mtd-label { font-size: 13px; font-weight: 800; color: var(--black); }
+  .mtd-card.key-metric .mtd-value { font-size: 28px; }
 
   /* ===== KPI CARDS ===== */
-  .kpi-row {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-    gap: 14px;
-    margin-bottom: 24px;
-  }
-
-  .kpi-card {
-    background: var(--white);
-    border-radius: 10px;
-    padding: 18px 20px;
-    border: 1px solid var(--gray4);
-  }
-
-  .kpi-card .label {
-    font-size: 11px;
-    color: var(--gray1);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    font-weight: 600;
-  }
-
+  .kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; margin-bottom: 24px; }
+  .kpi-card { background: var(--white); border-radius: 10px; padding: 18px 20px; border: 1px solid var(--gray4); }
+  .kpi-card .label { font-size: 11px; color: var(--gray1); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
   .kpi-card .value { font-size: 26px; font-weight: 800; margin-top: 4px; letter-spacing: -0.5px; }
   .kpi-card .trend { font-size: 11px; margin-top: 4px; font-weight: 500; }
   .kpi-card .trend.up { color: var(--green); }
   .kpi-card .trend.down { color: var(--red); }
   .kpi-card .trend.neutral { color: var(--gray2); }
 
-  /* ===== MTD COMPARISON GRID ===== */
-  .mtd-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 12px;
-    margin-bottom: 20px;
-  }
-
-  .mtd-card {
-    background: var(--white);
-    border-radius: 10px;
-    padding: 16px 18px;
-    border: 1px solid var(--gray4);
-    text-align: center;
-  }
-
-  .mtd-card .mtd-label {
-    font-size: 10px;
-    color: var(--gray2);
-    text-transform: uppercase;
-    letter-spacing: 0.6px;
-    font-weight: 600;
-    margin-bottom: 6px;
-  }
-
-  .mtd-card .mtd-value {
-    font-size: 22px;
-    font-weight: 800;
-    letter-spacing: -0.3px;
-  }
-
-  .mtd-card .mtd-compare {
-    font-size: 11px;
-    margin-top: 4px;
-    font-weight: 500;
-  }
-
-  .mtd-card .mtd-compare.up { color: var(--green); }
-  .mtd-card .mtd-compare.down { color: var(--red); }
-  .mtd-card .mtd-compare.neutral { color: var(--gray2); }
-
   /* ===== TEAM SUMMARY TABLE ===== */
-  .team-summary-wrap {
-    margin-bottom: 28px;
-  }
+  .team-summary-wrap { margin-bottom: 28px; }
 
   .team-summary-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 13px;
-    background: var(--white);
-    border-radius: 10px;
-    overflow: hidden;
-    border: 1px solid var(--gray4);
+    width: 100%; border-collapse: collapse; font-size: 13px;
+    background: var(--white); border-radius: 10px; overflow: hidden; border: 1px solid var(--gray4);
   }
-
   .team-summary-table th {
-    text-align: left;
-    padding: 12px 16px;
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.6px;
-    color: var(--gray1);
-    border-bottom: 2px solid var(--dark);
-    font-weight: 700;
-    background: var(--gray5);
+    text-align: left; padding: 12px 16px; font-size: 11px; text-transform: uppercase;
+    letter-spacing: 0.6px; color: var(--gray1); border-bottom: 2px solid var(--dark);
+    font-weight: 700; background: var(--gray5);
   }
-
   .team-summary-table th:first-child { width: 160px; }
-
-  .team-summary-table td {
-    padding: 11px 16px;
-    border-bottom: 1px solid var(--gray4);
-    font-weight: 600;
-    text-align: left;
-  }
-
+  .team-summary-table td { padding: 11px 16px; border-bottom: 1px solid var(--gray4); font-weight: 600; text-align: left; }
   .team-summary-table tr:last-child td { border-bottom: none; }
   .team-summary-table tr:hover { background: var(--gray5); }
+  .team-summary-table .metric-label { font-weight: 700; color: var(--dark); font-size: 12px; text-transform: uppercase; letter-spacing: 0.3px; }
 
-  .team-summary-table .metric-label {
-    font-weight: 700;
-    color: var(--dark);
-    font-size: 12px;
-    text-transform: uppercase;
-    letter-spacing: 0.3px;
-  }
-
-  /* Target-based cell colouring */
-  .cell-below-target {
-    background: rgba(239,68,68,0.10);
-    color: #b91c1c;
-    font-weight: 700;
-  }
-
-  .cell-above-target {
-    background: rgba(34,197,94,0.10);
-    color: #15803d;
-    font-weight: 700;
-  }
-
-  .cell-best {
-    background: rgba(234,179,8,0.15);
-    color: #92400e;
-    font-weight: 800;
-    position: relative;
-  }
-
-  .cell-best::after {
-    content: '\2605';
-    margin-left: 4px;
-    font-size: 10px;
-    color: #ca8a04;
-  }
+  .cell-below-target { background: rgba(239,68,68,0.10); color: #b91c1c; font-weight: 700; }
+  .cell-above-target { background: rgba(34,197,94,0.10); color: #15803d; font-weight: 700; }
+  .cell-best { background: rgba(234,179,8,0.15); color: #92400e; font-weight: 800; position: relative; }
+  .cell-best::after { content: '\2605'; margin-left: 4px; font-size: 10px; color: #ca8a04; }
 
   /* ===== INSIGHTS ROW ===== */
-  .insights-row {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 14px;
-    margin-bottom: 24px;
-  }
-
-  .insight-card {
-    background: var(--white);
-    border-radius: 10px;
-    padding: 18px 20px;
-    border: 1px solid var(--gray4);
-  }
-
-  .insight-card h4 {
-    font-size: 12px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.3px;
-    color: var(--dark);
-    margin-bottom: 12px;
-  }
-
-  .insight-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 6px 0;
-    font-size: 13px;
-    border-bottom: 1px solid var(--gray5);
-  }
-
+  .insights-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; margin-bottom: 24px; }
+  .insight-card { background: var(--white); border-radius: 10px; padding: 18px 20px; border: 1px solid var(--gray4); }
+  .insight-card h4 { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; color: var(--dark); margin-bottom: 12px; }
+  .insight-item { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; font-size: 13px; border-bottom: 1px solid var(--gray5); }
   .insight-item:last-child { border-bottom: none; }
   .insight-item .insight-label { color: var(--gray1); font-weight: 500; }
   .insight-item .insight-value { font-weight: 700; }
 
   /* ===== CHARTS ===== */
-  .chart-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 18px;
-    margin-bottom: 24px;
-  }
-
-  .chart-card {
-    background: var(--white);
-    border-radius: 10px;
-    padding: 20px;
-    border: 1px solid var(--gray4);
-  }
-
+  .chart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 24px; }
+  .chart-card { background: var(--white); border-radius: 10px; padding: 20px; border: 1px solid var(--gray4); }
   .chart-card.full-width { grid-column: 1 / -1; }
-
-  .chart-card h3 {
-    font-size: 13px;
-    font-weight: 700;
-    margin-bottom: 14px;
-    color: var(--dark);
-    text-transform: uppercase;
-    letter-spacing: 0.3px;
-  }
-
+  .chart-card h3 { font-size: 13px; font-weight: 700; margin-bottom: 14px; color: var(--dark); text-transform: uppercase; letter-spacing: 0.3px; }
   canvas { width: 100% !important; }
 
   /* ===== TABLES ===== */
-  .ranking-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 13px;
-  }
-
-  .ranking-table th {
-    text-align: left;
-    padding: 10px 14px;
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.6px;
-    color: var(--gray1);
-    border-bottom: 2px solid var(--dark);
-    font-weight: 700;
-  }
-
-  .ranking-table td {
-    padding: 12px 14px;
-    border-bottom: 1px solid var(--gray4);
-    font-weight: 500;
-  }
-
+  .ranking-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .ranking-table th { text-align: left; padding: 10px 14px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.6px; color: var(--gray1); border-bottom: 2px solid var(--dark); font-weight: 700; }
+  .ranking-table td { padding: 12px 14px; border-bottom: 1px solid var(--gray4); font-weight: 500; }
   .ranking-table tr:hover { background: var(--gray5); }
 
-  .rank-badge {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 26px;
-    height: 26px;
-    border-radius: 50%;
-    font-weight: 800;
-    font-size: 11px;
-  }
-
+  .rank-badge { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; font-weight: 800; font-size: 11px; }
   .rank-1 { background: var(--black); color: var(--white); }
   .rank-2 { background: var(--dark3); color: var(--white); }
   .rank-3 { background: var(--gray2); color: var(--white); }
   .rank-4 { background: var(--gray4); color: var(--dark); }
 
   .bar-cell { display: flex; align-items: center; gap: 8px; }
-
-  .bar-bg {
-    flex: 1;
-    height: 8px;
-    background: var(--gray4);
-    border-radius: 4px;
-    overflow: hidden;
-  }
-
+  .bar-bg { flex: 1; height: 8px; background: var(--gray4); border-radius: 4px; overflow: hidden; }
   .bar-fill { height: 100%; border-radius: 4px; transition: width 0.5s; }
   .bar-value { font-size: 13px; font-weight: 700; min-width: 75px; text-align: right; }
 
-  .employee-dot {
-    display: inline-block;
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    margin-right: 6px;
-  }
-
-  .data-note {
-    font-size: 12px;
-    color: var(--gray1);
-    font-style: italic;
-    margin-bottom: 14px;
-  }
-
-  .error-msg {
-    background: #fef2f2;
-    border: 1px solid #fecaca;
-    color: #991b1b;
-    padding: 16px;
-    border-radius: 8px;
-    font-size: 13px;
-    margin-bottom: 16px;
-  }
+  .employee-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; }
+  .data-note { font-size: 12px; color: var(--gray1); font-style: italic; margin-bottom: 14px; }
+  .error-msg { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; padding: 16px; border-radius: 8px; font-size: 13px; margin-bottom: 16px; }
 
   @media (max-width: 768px) {
     .chart-grid { grid-template-columns: 1fr; }
@@ -511,8 +234,8 @@
     </div>
   </div>
   <div class="nav-tabs">
-    <button class="nav-tab" onclick="showPage('individual', this)">Individual Review</button>
     <button class="nav-tab active" onclick="showPage('team', this)">Team Comparison</button>
+    <button class="nav-tab" onclick="showPage('individual', this)">Individual Review</button>
     <button class="nav-tab" onclick="showPage('rankings', this)">Rankings</button>
   </div>
 </header>
@@ -522,10 +245,89 @@
     <div class="loading-spinner"></div>
     Fetching data from Airtable...
   </div>
-
   <div id="errorContainer"></div>
 
   <div id="mainContent" style="display:none;">
+
+    <!-- ==================== TEAM COMPARISON ==================== -->
+    <div id="page-team" class="page active">
+
+      <div class="team-summary-wrap">
+        <div class="section-header" style="cursor:default;">
+          <h2>Team Overview <span class="section-badge" id="teamSummaryPeriodLabel">Month to Date</span></h2>
+        </div>
+        <div id="teamSummaryTable"></div>
+      </div>
+
+      <hr class="section-divider">
+
+      <!-- TEAM COMPARISON CHARTS (all key metrics) -->
+      <div class="section-header" onclick="toggleSection('teamChartsSection', this)">
+        <h2>Performance Comparison</h2>
+        <span class="toggle-icon">&#9660;</span>
+      </div>
+      <div class="section-content" id="teamChartsSection">
+        <div class="controls">
+          <div class="control-group">
+            <label>Period</label>
+            <select id="teamPeriod" onchange="handleTeamPeriodChange()">
+              <option value="mtd" selected>Month to Date</option>
+              <option value="lastMonth">Last Month</option>
+              <option value="last3">Last 3 Months</option>
+              <option value="last6">Last 6 Months</option>
+              <option value="last12">Last 12 Months</option>
+              <option value="all">All Available</option>
+              <option value="custom">Custom Date Range</option>
+            </select>
+          </div>
+          <div class="date-range" id="teamDateRange">
+            <span>From</span>
+            <input type="month" id="teamDateFrom" onchange="updateTeam()">
+            <span>To</span>
+            <input type="month" id="teamDateTo" onchange="updateTeam()">
+          </div>
+        </div>
+        <div class="data-note" id="teamNote"></div>
+
+        <div class="chart-grid">
+          <div class="chart-card"><h3>Enquiries &amp; Orders</h3><canvas id="teamChartEnqOrd"></canvas></div>
+          <div class="chart-card"><h3>Conversion Rate (%)</h3><canvas id="teamChartConv"></canvas></div>
+          <div class="chart-card"><h3>Total Sales</h3><canvas id="teamChartSales"></canvas></div>
+          <div class="chart-card"><h3>Average Order Value</h3><canvas id="teamChartAOV"></canvas></div>
+          <div class="chart-card"><h3>Gross Profit</h3><canvas id="teamChartGP"></canvas></div>
+          <div class="chart-card"><h3>Profit Margin (%)</h3><canvas id="teamChartMargin"></canvas></div>
+        </div>
+      </div>
+
+      <hr class="section-divider">
+
+      <!-- DEEP DIVE: single metric selector -->
+      <div class="section-header" onclick="toggleSection('teamDeepDive', this)">
+        <h2>Deep Dive</h2>
+        <span class="toggle-icon">&#9660;</span>
+      </div>
+      <div class="section-content" id="teamDeepDive">
+        <div class="controls">
+          <div class="control-group">
+            <label>Metric</label>
+            <select id="teamMetric" onchange="updateTeamDeepDive()">
+              <option value="enquiries">Enquiries</option>
+              <option value="orders">Orders</option>
+              <option value="convRate">Conversion Rate</option>
+              <option value="sales" selected>Total Sales</option>
+              <option value="aov">Average Order Value</option>
+              <option value="margin">Profit Margin</option>
+              <option value="gp">Gross Profit</option>
+            </select>
+          </div>
+        </div>
+        <div class="chart-grid">
+          <div class="chart-card full-width"><h3 id="teamChartTitle">Total Sales — All Employees</h3><canvas id="chartTeamLine"></canvas></div>
+          <div class="chart-card"><h3 id="teamBarTitle">Total Sales — Period Totals</h3><canvas id="chartTeamBar"></canvas></div>
+          <div class="chart-card"><h3>Monthly Breakdown</h3><div style="overflow-x:auto;max-height:400px;overflow-y:auto;" id="teamTableWrap"></div></div>
+        </div>
+      </div>
+    </div>
 
     <!-- ==================== INDIVIDUAL REVIEW ==================== -->
     <div id="page-individual" class="page">
@@ -542,8 +344,7 @@
           <span class="toggle-icon">&#9660;</span>
         </div>
         <div class="section-content" id="mtdSection">
-          <div class="mtd-grid" id="mtdGrid"></div>
-          <div class="insights-row" id="mtdInsights"></div>
+          <div id="mtdContent"></div>
         </div>
       </div>
 
@@ -553,8 +354,7 @@
           <span class="toggle-icon">&#9660;</span>
         </div>
         <div class="section-content" id="lastMonthSection">
-          <div class="mtd-grid" id="lastMonthGrid"></div>
-          <div class="insights-row" id="lastMonthInsights"></div>
+          <div id="lastMonthContent"></div>
         </div>
       </div>
 
@@ -596,58 +396,6 @@
       </div>
     </div>
 
-    <!-- ==================== TEAM COMPARISON ==================== -->
-    <div id="page-team" class="page active">
-
-      <div class="team-summary-wrap">
-        <div class="section-header" style="cursor:default;">
-          <h2>Team Overview <span class="section-badge" id="teamSummaryPeriodLabel">Month to Date</span></h2>
-        </div>
-        <div id="teamSummaryTable"></div>
-      </div>
-
-      <hr class="section-divider">
-
-      <div class="controls">
-        <div class="control-group">
-          <label>Metric</label>
-          <select id="teamMetric" onchange="updateTeam()">
-            <option value="enquiries">Enquiries</option>
-            <option value="orders">Orders</option>
-            <option value="convRate">Conversion Rate</option>
-            <option value="sales" selected>Total Sales</option>
-            <option value="aov">Average Order Value</option>
-            <option value="margin">Profit Margin</option>
-            <option value="gp">Gross Profit</option>
-          </select>
-        </div>
-        <div class="control-group">
-          <label>Period</label>
-          <select id="teamPeriod" onchange="handleTeamPeriodChange()">
-            <option value="mtd" selected>Month to Date</option>
-            <option value="lastMonth">Last Month</option>
-            <option value="last3">Last 3 Months</option>
-            <option value="last6">Last 6 Months</option>
-            <option value="last12">Last 12 Months</option>
-            <option value="all">All Available</option>
-            <option value="custom">Custom Date Range</option>
-          </select>
-        </div>
-        <div class="date-range" id="teamDateRange">
-          <span>From</span>
-          <input type="month" id="teamDateFrom" onchange="updateTeam()">
-          <span>To</span>
-          <input type="month" id="teamDateTo" onchange="updateTeam()">
-        </div>
-      </div>
-      <div class="data-note" id="teamNote"></div>
-      <div class="chart-grid">
-        <div class="chart-card full-width"><h3 id="teamChartTitle">Total Sales — All Employees</h3><canvas id="chartTeamLine"></canvas></div>
-        <div class="chart-card"><h3 id="teamBarTitle">Total Sales — Period Totals</h3><canvas id="chartTeamBar"></canvas></div>
-        <div class="chart-card"><h3>Monthly Breakdown</h3><div style="overflow-x:auto;max-height:400px;overflow-y:auto;" id="teamTableWrap"></div></div>
-      </div>
-    </div>
-
     <!-- ==================== RANKINGS ==================== -->
     <div id="page-rankings" class="page">
       <div class="controls">
@@ -679,46 +427,33 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script>
-// ==================== STATE ====================
-let DATA = {};
-let EMPLOYEES = [];
-let ALL_MONTHS = [];
+let DATA = {}, EMPLOYEES = [], ALL_MONTHS = [];
+const TARGETS = { convRate: 0.30, aov: 1500 };
 
-// ==================== MIN TARGETS ====================
-const TARGETS = {
-  convRate: 0.30,
-  aov: 1500
-};
-
-// ==================== COLOUR CONFIG ====================
 const EMPLOYEE_COLOURS = {
   "Adam Charlton":  { solid: "#2563eb", light: "rgba(37,99,235,0.12)" },
   "Anthony Lowe":   { solid: "#f97316", light: "rgba(249,115,22,0.12)" },
   "Mick Farrell":   { solid: "#7c3aed", light: "rgba(124,58,237,0.12)" },
   "Lyam Roche":     { solid: "#0d9488", light: "rgba(13,148,136,0.12)" }
 };
-
 const FALLBACK_COLOURS = [
   { solid: "#e11d48", light: "rgba(225,29,72,0.12)" },
   { solid: "#ca8a04", light: "rgba(202,138,4,0.12)" },
   { solid: "#0284c7", light: "rgba(2,132,199,0.12)" },
   { solid: "#16a34a", light: "rgba(22,163,74,0.12)" }
 ];
-
 function getEmployeeColour(name) {
   if (EMPLOYEE_COLOURS[name]) return EMPLOYEE_COLOURS[name];
   const idx = EMPLOYEES.indexOf(name);
-  const fb = FALLBACK_COLOURS[idx % FALLBACK_COLOURS.length];
-  return fb || { solid: "#888888", light: "rgba(136,136,136,0.12)" };
+  return FALLBACK_COLOURS[idx % FALLBACK_COLOURS.length] || { solid: "#888", light: "rgba(136,136,136,0.12)" };
 }
 
-// ==================== FETCH DATA ====================
+// ==================== FETCH ====================
 async function loadData() {
   try {
     const res = await fetch("/airtable");
     if (!res.ok) throw new Error(`API returned ${res.status}`);
     const json = await res.json();
-
     const grouped = {};
     json.records.forEach(r => {
       if (!r.employee || !r.date) return;
@@ -726,159 +461,83 @@ async function loadData() {
       const d = new Date(r.date);
       const ym = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
       grouped[r.employee].push({
-        date: ym,
-        month: r.monthYear || ym,
-        enq: Number(r.enq) || 0,
-        orders: Number(r.orders) || 0,
-        convRate: Number(r.convRate) || 0,
-        rejected: Number(r.rejected) || 0,
-        follow: Number(r.follow) || 0,
-        valueEnq: Number(r.valueEnq) || 0,
-        valueOrd: Number(r.valueOrd) || 0,
-        ordCost: Number(r.ordCost) || 0,
-        gp: Number(r.gp) || 0,
-        margin: Number(r.margin) || 0,
-        aov: Number(r.aov) || 0
+        date: ym, month: r.monthYear || ym,
+        enq: Number(r.enq)||0, orders: Number(r.orders)||0, convRate: Number(r.convRate)||0,
+        rejected: Number(r.rejected)||0, follow: Number(r.follow)||0,
+        valueEnq: Number(r.valueEnq)||0, valueOrd: Number(r.valueOrd)||0,
+        ordCost: Number(r.ordCost)||0, gp: Number(r.gp)||0,
+        margin: Number(r.margin)||0, aov: Number(r.aov)||0
       });
     });
-
-    for (const emp in grouped) {
-      grouped[emp].sort((a,b) => a.date.localeCompare(b.date));
-    }
-
+    for (const emp in grouped) grouped[emp].sort((a,b) => a.date.localeCompare(b.date));
     DATA = grouped;
     EMPLOYEES = Object.keys(DATA).sort();
-
     const monthSet = new Set();
     for (const emp in DATA) DATA[emp].forEach(d => monthSet.add(d.date));
     ALL_MONTHS = [...monthSet].sort();
-
-    const empSelect = document.getElementById('employeeSelect');
-    empSelect.innerHTML = EMPLOYEES.map(e => `<option value="${e}">${e}</option>`).join('');
-
-    const lastMonth = ALL_MONTHS[ALL_MONTHS.length - 1];
-    const firstMonth = ALL_MONTHS[0];
-    ['dateFrom','teamDateFrom'].forEach(id => document.getElementById(id).value = firstMonth);
-    ['dateTo','teamDateTo'].forEach(id => document.getElementById(id).value = lastMonth);
-
-    const fetchTime = new Date(json.lastFetched);
-    document.getElementById('lastUpdated').textContent = 'Live from Airtable \u2022 ' + fetchTime.toLocaleString('en-GB', {day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
-
+    document.getElementById('employeeSelect').innerHTML = EMPLOYEES.map(e => `<option value="${e}">${e}</option>`).join('');
+    const last = ALL_MONTHS[ALL_MONTHS.length-1], first = ALL_MONTHS[0];
+    ['dateFrom','teamDateFrom'].forEach(id => document.getElementById(id).value = first);
+    ['dateTo','teamDateTo'].forEach(id => document.getElementById(id).value = last);
+    const ft = new Date(json.lastFetched);
+    document.getElementById('lastUpdated').textContent = 'Live from Airtable \u2022 ' + ft.toLocaleString('en-GB',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
     document.getElementById('loadingOverlay').style.display = 'none';
     document.getElementById('mainContent').style.display = 'block';
-
     updateTeam();
   } catch (err) {
     document.getElementById('loadingOverlay').style.display = 'none';
-    document.getElementById('errorContainer').innerHTML = `<div class="error-msg"><strong>Failed to load data:</strong> ${err.message}<br><br>Check that AIRTABLE_TOKEN is set in your Cloudflare Pages environment variables.</div>`;
-    console.error(err);
+    document.getElementById('errorContainer').innerHTML = `<div class="error-msg"><strong>Failed to load data:</strong> ${err.message}<br><br>Check that AIRTABLE_TOKEN is set in Cloudflare Pages environment variables.</div>`;
   }
 }
 
 // ==================== UTILITY ====================
 function fmt(n) { return '\u00a3' + Math.round(Number(n)||0).toLocaleString('en-GB'); }
-function fmtPct(n) { return (Number(n) * 100).toFixed(1) + '%'; }
-function fmtPctRaw(n) { return Number(n).toFixed(1) + '%'; }
-function monthLabel(d) {
-  const [y,m] = d.split('-');
-  const names = ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  return names[parseInt(m)] + ' ' + y.slice(2);
-}
-function monthLabelFull(d) {
-  const [y,m] = d.split('-');
-  const names = ['','January','February','March','April','May','June','July','August','September','October','November','December'];
-  return names[parseInt(m)] + ' ' + y;
-}
+function fmtPct(n) { return (Number(n)*100).toFixed(1)+'%'; }
+function fmtPctRaw(n) { return Number(n).toFixed(1)+'%'; }
+function monthLabel(d) { const [y,m]=d.split('-'); return ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][parseInt(m)]+' '+y.slice(2); }
+function monthLabelFull(d) { const [y,m]=d.split('-'); return ['','January','February','March','April','May','June','July','August','September','October','November','December'][parseInt(m)]+' '+y; }
 
 function getFilteredMonths(periodSelectId, dateFromId, dateToId) {
   const period = document.getElementById(periodSelectId).value;
   const now = new Date();
-  const currentYM = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
-  const lastYM = new Date(now.getFullYear(), now.getMonth()-1, 1);
-  const lastMonthStr = lastYM.getFullYear() + '-' + String(lastYM.getMonth()+1).padStart(2,'0');
-
-  if (period === 'mtd') return [currentYM];
-  if (period === 'lastMonth') return [lastMonthStr];
-  if (period === 'custom') {
-    const from = document.getElementById(dateFromId).value;
-    const to = document.getElementById(dateToId).value;
-    if (!from || !to) return ALL_MONTHS;
-    return ALL_MONTHS.filter(m => m >= from && m <= to);
-  }
-
-  const n = period === 'last3' ? 3 : period === 'last6' ? 6 : period === 'last12' ? 12 : 9999;
+  const curYM = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+  const lm = new Date(now.getFullYear(), now.getMonth()-1, 1);
+  const lmStr = lm.getFullYear()+'-'+String(lm.getMonth()+1).padStart(2,'0');
+  if (period==='mtd') return [curYM];
+  if (period==='lastMonth') return [lmStr];
+  if (period==='custom') { const f=document.getElementById(dateFromId).value, t=document.getElementById(dateToId).value; return (!f||!t)?ALL_MONTHS:ALL_MONTHS.filter(m=>m>=f&&m<=t); }
+  const n = period==='last3'?3:period==='last6'?6:period==='last12'?12:9999;
   return ALL_MONTHS.slice(-n);
 }
+function getDataForMonths(emp, months) { return DATA[emp] ? DATA[emp].filter(d => months.includes(d.date)) : []; }
 
-function getDataForMonths(emp, months) {
-  return DATA[emp] ? DATA[emp].filter(d => months.includes(d.date)) : [];
+function compareArrow(curr, prev) {
+  if (prev===0 && curr===0) return { html: '<span class="mtd-compare neutral">\u2014 No change</span>' };
+  if (prev===0) return { html: '<span class="mtd-compare up">\u2191 New</span>' };
+  const pct = ((curr-prev)/Math.abs(prev)*100);
+  const dir = pct>=0?'up':'down', arrow = pct>=0?'\u2191':'\u2193';
+  return { html: `<span class="mtd-compare ${dir}">${arrow} ${Math.abs(pct).toFixed(0)}% vs prev month</span>` };
 }
-
-function compareArrow(current, previous) {
-  if (previous === 0 && current === 0) return { html: '<span class="mtd-compare neutral">\u2014 No change</span>', cls: 'neutral' };
-  if (previous === 0) return { html: '<span class="mtd-compare up">\u2191 New</span>', cls: 'up' };
-  const pct = ((current - previous) / Math.abs(previous) * 100);
-  const dir = pct >= 0 ? 'up' : 'down';
-  const arrow = pct >= 0 ? '\u2191' : '\u2193';
-  return { html: `<span class="mtd-compare ${dir}">${arrow} ${Math.abs(pct).toFixed(0)}% vs prev month</span>`, cls: dir };
-}
-
-function toggleSection(sectionId, headerEl) {
-  const section = document.getElementById(sectionId);
-  const icon = headerEl.querySelector('.toggle-icon');
-  section.classList.toggle('collapsed');
-  icon.classList.toggle('collapsed');
-}
+function toggleSection(id, el) { document.getElementById(id).classList.toggle('collapsed'); el.querySelector('.toggle-icon').classList.toggle('collapsed'); }
 
 // ==================== CHARTS ====================
 let charts = {};
-function destroyChart(id) { if (charts[id]) { charts[id].destroy(); delete charts[id]; } }
+function destroyChart(id) { if(charts[id]) { charts[id].destroy(); delete charts[id]; } }
 
 function createLineChart(canvasId, labels, datasets, yFormat, targetLines) {
   destroyChart(canvasId);
-  const ctx = document.getElementById(canvasId).getContext('2d');
-
-  if (targetLines && targetLines.length > 0) {
-    targetLines.forEach(t => {
-      datasets.push({
-        label: t.label,
-        data: labels.map(() => t.value),
-        borderColor: t.color || '#ef4444',
-        borderWidth: 2,
-        borderDash: [8, 4],
-        pointRadius: 0,
-        pointHoverRadius: 0,
-        fill: false,
-        tension: 0
-      });
-    });
-  }
-
-  charts[canvasId] = new Chart(ctx, {
-    type: 'line',
-    data: { labels, datasets },
-    options: {
-      responsive: true,
-      maintainAspectRatio: true,
-      aspectRatio: 2,
-      interaction: { mode: 'index', intersect: false },
-      plugins: {
-        legend: {
-          display: datasets.length > 1,
-          position: 'top',
-          labels: { usePointStyle: true, padding: 16, font: { family: 'Inter', size: 12 } }
-        }
-      },
-      scales: {
-        y: {
-          beginAtZero: true,
-          grid: { color: '#e5e5e5' },
-          ticks: {
-            font: { family: 'Inter', size: 11 },
-            callback: yFormat === 'currency' ? v => fmt(v) : yFormat === 'pct' ? v => (v*100).toFixed(0)+'%' : yFormat === 'pctRaw' ? v => v.toFixed(0)+'%' : v => v
-          }
-        },
-        x: { grid: { display: false }, ticks: { font: { family: 'Inter', size: 11 } } }
+  if (targetLines) targetLines.forEach(t => {
+    datasets.push({ label:t.label, data:labels.map(()=>t.value), borderColor:t.color||'#ef4444', borderWidth:2, borderDash:[8,4], pointRadius:0, pointHoverRadius:0, fill:false, tension:0 });
+  });
+  charts[canvasId] = new Chart(document.getElementById(canvasId).getContext('2d'), {
+    type:'line', data:{labels, datasets},
+    options:{
+      responsive:true, maintainAspectRatio:true, aspectRatio:2,
+      interaction:{mode:'index',intersect:false},
+      plugins:{legend:{display:datasets.length>1,position:'top',labels:{usePointStyle:true,padding:16,font:{family:'Inter',size:12}}}},
+      scales:{
+        y:{beginAtZero:true,grid:{color:'#e5e5e5'},ticks:{font:{family:'Inter',size:11},callback:yFormat==='currency'?v=>fmt(v):yFormat==='pct'?v=>(v*100).toFixed(0)+'%':yFormat==='pctRaw'?v=>v.toFixed(0)+'%':v=>v}},
+        x:{grid:{display:false},ticks:{font:{family:'Inter',size:11}}}
       }
     }
   });
@@ -886,613 +545,386 @@ function createLineChart(canvasId, labels, datasets, yFormat, targetLines) {
 
 function createBarChart(canvasId, labels, datasets, yFormat) {
   destroyChart(canvasId);
-  const ctx = document.getElementById(canvasId).getContext('2d');
-  charts[canvasId] = new Chart(ctx, {
-    type: 'bar',
-    data: { labels, datasets },
-    options: {
-      responsive: true,
-      maintainAspectRatio: true,
-      aspectRatio: 1.8,
-      plugins: { legend: { display: datasets.length > 1, position: 'top', labels: { usePointStyle: true, padding: 16, font: { family: 'Inter', size: 12 } } } },
-      scales: {
-        y: {
-          beginAtZero: true,
-          grid: { color: '#e5e5e5' },
-          ticks: {
-            font: { family: 'Inter', size: 11 },
-            callback: yFormat === 'currency' ? v => fmt(v) : yFormat === 'pctRaw' ? v => v.toFixed(0)+'%' : yFormat === 'pct' ? v => (v*100).toFixed(0)+'%' : v => v
-          }
-        },
-        x: { grid: { display: false }, ticks: { font: { family: 'Inter', size: 11 } } }
+  charts[canvasId] = new Chart(document.getElementById(canvasId).getContext('2d'), {
+    type:'bar', data:{labels, datasets},
+    options:{
+      responsive:true, maintainAspectRatio:true, aspectRatio:1.8,
+      plugins:{legend:{display:datasets.length>1,position:'top',labels:{usePointStyle:true,padding:16,font:{family:'Inter',size:12}}}},
+      scales:{
+        y:{beginAtZero:true,grid:{color:'#e5e5e5'},ticks:{font:{family:'Inter',size:11},callback:yFormat==='currency'?v=>fmt(v):yFormat==='pctRaw'?v=>v.toFixed(0)+'%':yFormat==='pct'?v=>(v*100).toFixed(0)+'%':v=>v}},
+        x:{grid:{display:false},ticks:{font:{family:'Inter',size:11}}}
       }
     }
   });
 }
 
-// Grouped bar chart for single-month team comparison with optional target line
-function createGroupedBarChart(canvasId, empLabels, values, colours, yFormat, targetValue, targetLabel) {
+function createGroupedBarChart(canvasId, empLabels, values, colours, yFormat, targetVal, targetLbl) {
   destroyChart(canvasId);
-  const ctx = document.getElementById(canvasId).getContext('2d');
-
-  const datasets = [{
-    data: values,
-    backgroundColor: colours,
-    borderRadius: 6,
-    barPercentage: 0.6,
-    categoryPercentage: 0.7
-  }];
-
-  // Add target line as a second dataset (line type on bar chart)
-  if (targetValue !== undefined && targetValue !== null) {
-    datasets.push({
-      label: targetLabel || 'Target',
-      data: empLabels.map(() => targetValue),
-      type: 'line',
-      borderColor: '#ef4444',
-      borderWidth: 2,
-      borderDash: [8, 4],
-      pointRadius: 0,
-      pointHoverRadius: 0,
-      fill: false
-    });
-  }
-
-  charts[canvasId] = new Chart(ctx, {
-    type: 'bar',
-    data: { labels: empLabels, datasets },
-    options: {
-      responsive: true,
-      maintainAspectRatio: true,
-      aspectRatio: 2,
-      plugins: {
-        legend: { display: targetValue !== undefined && targetValue !== null, position: 'top', labels: { usePointStyle: true, padding: 16, font: { family: 'Inter', size: 12 }, filter: item => item.text !== undefined } }
-      },
-      scales: {
-        y: {
-          beginAtZero: true,
-          grid: { color: '#e5e5e5' },
-          ticks: {
-            font: { family: 'Inter', size: 11 },
-            callback: yFormat === 'currency' ? v => fmt(v) : yFormat === 'pct' ? v => (v*100).toFixed(0)+'%' : yFormat === 'pctRaw' ? v => v.toFixed(0)+'%' : v => v
-          }
-        },
-        x: { grid: { display: false }, ticks: { font: { family: 'Inter', size: 12, weight: 600 } } }
+  const ds = [{ data:values, backgroundColor:colours, borderRadius:6, barPercentage:0.6, categoryPercentage:0.7 }];
+  if (targetVal!=null) ds.push({ label:targetLbl||'Target', data:empLabels.map(()=>targetVal), type:'line', borderColor:'#ef4444', borderWidth:2, borderDash:[8,4], pointRadius:0, pointHoverRadius:0, fill:false });
+  charts[canvasId] = new Chart(document.getElementById(canvasId).getContext('2d'), {
+    type:'bar', data:{labels:empLabels, datasets:ds},
+    options:{
+      responsive:true, maintainAspectRatio:true, aspectRatio:2,
+      plugins:{legend:{display:targetVal!=null,position:'top',labels:{usePointStyle:true,padding:16,font:{family:'Inter',size:12},filter:i=>i.text!==undefined}}},
+      scales:{
+        y:{beginAtZero:true,grid:{color:'#e5e5e5'},ticks:{font:{family:'Inter',size:11},callback:yFormat==='currency'?v=>fmt(v):yFormat==='pct'?v=>(v*100).toFixed(0)+'%':yFormat==='pctRaw'?v=>v.toFixed(0)+'%':v=>v}},
+        x:{grid:{display:false},ticks:{font:{family:'Inter',size:12,weight:600}}}
       }
     }
   });
 }
 
 // ==================== PERIOD HANDLERS ====================
-function handlePeriodChange() {
-  const period = document.getElementById('periodSelect').value;
-  document.getElementById('dateRange').classList.toggle('visible', period === 'custom');
-  updateHistorical();
+function handlePeriodChange() { document.getElementById('dateRange').classList.toggle('visible', document.getElementById('periodSelect').value==='custom'); updateHistorical(); }
+function handleTeamPeriodChange() { document.getElementById('teamDateRange').classList.toggle('visible', document.getElementById('teamPeriod').value==='custom'); updateTeam(); }
+
+// ==================== INDIVIDUAL: BUILD METRIC HTML ====================
+function buildIndividualMetrics(containerId, curr, prev, colour) {
+  if (!curr) { document.getElementById(containerId).innerHTML = '<div class="data-note">No data available.</div>'; return; }
+
+  const keyMetrics = [
+    { label:'Sales', curr:curr.valueOrd, prev:prev?prev.valueOrd:0, format:'currency', key:true },
+    { label:'Conversion', curr:curr.convRate, prev:prev?prev.convRate:0, format:'pct', key:true },
+    { label:'Avg Order Value', curr:curr.aov, prev:prev?prev.aov:0, format:'currency', key:true },
+    { label:'Profit Margin', curr:Number(curr.margin)*100, prev:prev?Number(prev.margin)*100:0, format:'pctRaw', key:true },
+  ];
+  const volumeMetrics = [
+    { label:'Enquiries', curr:curr.enq, prev:prev?prev.enq:0, format:'num' },
+    { label:'Orders', curr:curr.orders, prev:prev?prev.orders:0, format:'num' },
+    { label:'Enquiry Value', curr:curr.valueEnq, prev:prev?prev.valueEnq:0, format:'currency' },
+    { label:'Gross Profit', curr:curr.gp, prev:prev?prev.gp:0, format:'currency' },
+  ];
+
+  function renderCards(metrics) {
+    return metrics.map(m => {
+      const valStr = m.format==='currency'?fmt(m.curr):m.format==='pct'?fmtPct(m.curr):m.format==='pctRaw'?fmtPctRaw(m.curr):m.curr.toLocaleString();
+      const comp = compareArrow(m.curr, m.prev);
+      const cls = m.key ? 'mtd-card key-metric' : 'mtd-card';
+      return `<div class="${cls}" style="border-top: 3px solid ${colour.solid}">
+        <div class="mtd-label">${m.label}</div>
+        <div class="mtd-value">${valStr}</div>
+        ${comp.html}
+      </div>`;
+    }).join('');
+  }
+
+  const rejectRate = curr.enq>0 ? (curr.rejected/curr.enq*100).toFixed(1) : '0';
+  const followRate = curr.enq>0 ? (curr.follow/curr.enq*100).toFixed(1) : '0';
+  const revenuePerEnq = curr.enq>0 ? fmt(curr.valueOrd/curr.enq) : fmt(0);
+  const costRatio = curr.valueOrd>0 ? ((curr.ordCost/curr.valueOrd)*100).toFixed(1) : '0';
+
+  document.getElementById(containerId).innerHTML = `
+    <div class="metric-group">
+      <div class="metric-group-label">Key Performance</div>
+      <div class="mtd-grid" style="grid-template-columns: repeat(4, 1fr);">${renderCards(keyMetrics)}</div>
+    </div>
+    <div class="metric-group">
+      <div class="metric-group-label">Volume &amp; Value</div>
+      <div class="mtd-grid" style="grid-template-columns: repeat(4, 1fr);">${renderCards(volumeMetrics)}</div>
+    </div>
+    <div class="insights-row">
+      <div class="insight-card">
+        <h4>Pipeline Health</h4>
+        <div class="insight-item"><span class="insight-label">Quotes Rejected</span><span class="insight-value">${curr.rejected} (${rejectRate}%)</span></div>
+        <div class="insight-item"><span class="insight-label">Quotes to Follow Up</span><span class="insight-value">${curr.follow} (${followRate}%)</span></div>
+        <div class="insight-item"><span class="insight-label">Open Pipeline</span><span class="insight-value">${curr.follow} quotes pending</span></div>
+      </div>
+      <div class="insight-card">
+        <h4>Efficiency</h4>
+        <div class="insight-item"><span class="insight-label">Revenue per Enquiry</span><span class="insight-value">${revenuePerEnq}</span></div>
+        <div class="insight-item"><span class="insight-label">Cost Ratio</span><span class="insight-value">${costRatio}%</span></div>
+        <div class="insight-item"><span class="insight-label">Order Cost</span><span class="insight-value">${fmt(curr.ordCost)}</span></div>
+      </div>
+    </div>
+  `;
 }
 
-function handleTeamPeriodChange() {
-  const period = document.getElementById('teamPeriod').value;
-  document.getElementById('teamDateRange').classList.toggle('visible', period === 'custom');
-  updateTeam();
-}
+// ==================== INDIVIDUAL PAGE ====================
+function updateIndividual() { updateMTD(); updateLastMonth(); updateHistorical(); }
 
-// ==================== INDIVIDUAL PAGE (MASTER) ====================
-function updateIndividual() {
-  updateMTD();
-  updateLastMonth();
-  updateHistorical();
-}
-
-// ==================== MTD SECTION ====================
 function updateMTD() {
   const emp = document.getElementById('employeeSelect').value;
-  if (!emp || !DATA[emp]) return;
+  if (!emp||!DATA[emp]) return;
   const colour = getEmployeeColour(emp);
-
   const now = new Date();
-  const currentYM = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
-  const prevDate = new Date(now.getFullYear(), now.getMonth()-1, 1);
-  const prevYM = prevDate.getFullYear() + '-' + String(prevDate.getMonth()+1).padStart(2,'0');
-
-  document.getElementById('mtdMonthLabel').textContent = monthLabelFull(currentYM);
-
-  const mtdData = getDataForMonths(emp, [currentYM]);
-  const prevData = getDataForMonths(emp, [prevYM]);
-  const curr = mtdData[0] || null;
-  const prev = prevData[0] || null;
-
-  if (!curr) {
-    document.getElementById('mtdGrid').innerHTML = '<div class="data-note">No data for this month yet.</div>';
-    document.getElementById('mtdInsights').innerHTML = '';
-    return;
-  }
-
-  const metrics = [
-    { label: 'Enquiries', curr: curr.enq, prev: prev ? prev.enq : 0, format: 'num' },
-    { label: 'Orders', curr: curr.orders, prev: prev ? prev.orders : 0, format: 'num' },
-    { label: 'Conversion', curr: curr.convRate, prev: prev ? prev.convRate : 0, format: 'pct' },
-    { label: 'Sales', curr: curr.valueOrd, prev: prev ? prev.valueOrd : 0, format: 'currency' },
-    { label: 'Avg Order Value', curr: curr.aov, prev: prev ? prev.aov : 0, format: 'currency' },
-    { label: 'Gross Profit', curr: curr.gp, prev: prev ? prev.gp : 0, format: 'currency' },
-    { label: 'Profit Margin', curr: Number(curr.margin) * 100, prev: prev ? Number(prev.margin) * 100 : 0, format: 'pctRaw' },
-    { label: 'Enquiry Value', curr: curr.valueEnq, prev: prev ? prev.valueEnq : 0, format: 'currency' }
-  ];
-
-  let gridHtml = '';
-  metrics.forEach(m => {
-    const valStr = m.format === 'currency' ? fmt(m.curr) : m.format === 'pct' ? fmtPct(m.curr) : m.format === 'pctRaw' ? fmtPctRaw(m.curr) : m.curr.toLocaleString();
-    const comp = compareArrow(m.curr, m.prev);
-    gridHtml += `<div class="mtd-card" style="border-top: 3px solid ${colour.solid}">
-      <div class="mtd-label">${m.label}</div>
-      <div class="mtd-value">${valStr}</div>
-      ${comp.html}
-    </div>`;
-  });
-  document.getElementById('mtdGrid').innerHTML = gridHtml;
-
-  const rejectRate = curr.enq > 0 ? (curr.rejected / curr.enq * 100).toFixed(1) : '0';
-  const followRate = curr.enq > 0 ? (curr.follow / curr.enq * 100).toFixed(1) : '0';
-  const revenuePerEnq = curr.enq > 0 ? fmt(curr.valueOrd / curr.enq) : fmt(0);
-  const costRatio = curr.valueOrd > 0 ? ((curr.ordCost / curr.valueOrd) * 100).toFixed(1) : '0';
-
-  document.getElementById('mtdInsights').innerHTML = `
-    <div class="insight-card">
-      <h4>Pipeline Health</h4>
-      <div class="insight-item"><span class="insight-label">Quotes Rejected</span><span class="insight-value">${curr.rejected} (${rejectRate}%)</span></div>
-      <div class="insight-item"><span class="insight-label">Quotes to Follow Up</span><span class="insight-value">${curr.follow} (${followRate}%)</span></div>
-      <div class="insight-item"><span class="insight-label">Open Pipeline</span><span class="insight-value">${curr.follow} quotes pending</span></div>
-    </div>
-    <div class="insight-card">
-      <h4>Efficiency</h4>
-      <div class="insight-item"><span class="insight-label">Revenue per Enquiry</span><span class="insight-value">${revenuePerEnq}</span></div>
-      <div class="insight-item"><span class="insight-label">Cost Ratio</span><span class="insight-value">${costRatio}%</span></div>
-      <div class="insight-item"><span class="insight-label">Order Cost</span><span class="insight-value">${fmt(curr.ordCost)}</span></div>
-    </div>
-  `;
+  const curYM = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+  const prevYM = new Date(now.getFullYear(),now.getMonth()-1,1); const pYM = prevYM.getFullYear()+'-'+String(prevYM.getMonth()+1).padStart(2,'0');
+  document.getElementById('mtdMonthLabel').textContent = monthLabelFull(curYM);
+  const curr = (getDataForMonths(emp,[curYM]))[0]||null;
+  const prev = (getDataForMonths(emp,[pYM]))[0]||null;
+  buildIndividualMetrics('mtdContent', curr, prev, colour);
 }
 
-// ==================== LAST MONTH SECTION ====================
 function updateLastMonth() {
   const emp = document.getElementById('employeeSelect').value;
-  if (!emp || !DATA[emp]) return;
+  if (!emp||!DATA[emp]) return;
   const colour = getEmployeeColour(emp);
-
   const now = new Date();
-  const lastDate = new Date(now.getFullYear(), now.getMonth()-1, 1);
-  const lastYM = lastDate.getFullYear() + '-' + String(lastDate.getMonth()+1).padStart(2,'0');
-  const prevDate = new Date(now.getFullYear(), now.getMonth()-2, 1);
-  const prevYM = prevDate.getFullYear() + '-' + String(prevDate.getMonth()+1).padStart(2,'0');
-
-  document.getElementById('lastMonthLabel').textContent = monthLabelFull(lastYM);
-
-  const lmData = getDataForMonths(emp, [lastYM]);
-  const prevData = getDataForMonths(emp, [prevYM]);
-  const curr = lmData[0] || null;
-  const prev = prevData[0] || null;
-
-  if (!curr) {
-    document.getElementById('lastMonthGrid').innerHTML = '<div class="data-note">No data for last month.</div>';
-    document.getElementById('lastMonthInsights').innerHTML = '';
-    return;
-  }
-
-  const metrics = [
-    { label: 'Enquiries', curr: curr.enq, prev: prev ? prev.enq : 0, format: 'num' },
-    { label: 'Orders', curr: curr.orders, prev: prev ? prev.orders : 0, format: 'num' },
-    { label: 'Conversion', curr: curr.convRate, prev: prev ? prev.convRate : 0, format: 'pct' },
-    { label: 'Sales', curr: curr.valueOrd, prev: prev ? prev.valueOrd : 0, format: 'currency' },
-    { label: 'Avg Order Value', curr: curr.aov, prev: prev ? prev.aov : 0, format: 'currency' },
-    { label: 'Gross Profit', curr: curr.gp, prev: prev ? prev.gp : 0, format: 'currency' },
-    { label: 'Profit Margin', curr: Number(curr.margin) * 100, prev: prev ? Number(prev.margin) * 100 : 0, format: 'pctRaw' },
-    { label: 'Enquiry Value', curr: curr.valueEnq, prev: prev ? prev.valueEnq : 0, format: 'currency' }
-  ];
-
-  let gridHtml = '';
-  metrics.forEach(m => {
-    const valStr = m.format === 'currency' ? fmt(m.curr) : m.format === 'pct' ? fmtPct(m.curr) : m.format === 'pctRaw' ? fmtPctRaw(m.curr) : m.curr.toLocaleString();
-    const comp = compareArrow(m.curr, m.prev);
-    gridHtml += `<div class="mtd-card" style="border-top: 3px solid ${colour.solid}">
-      <div class="mtd-label">${m.label}</div>
-      <div class="mtd-value">${valStr}</div>
-      ${comp.html}
-    </div>`;
-  });
-  document.getElementById('lastMonthGrid').innerHTML = gridHtml;
-
-  const rejectRate = curr.enq > 0 ? (curr.rejected / curr.enq * 100).toFixed(1) : '0';
-  const followRate = curr.enq > 0 ? (curr.follow / curr.enq * 100).toFixed(1) : '0';
-  const revenuePerEnq = curr.enq > 0 ? fmt(curr.valueOrd / curr.enq) : fmt(0);
-  const costRatio = curr.valueOrd > 0 ? ((curr.ordCost / curr.valueOrd) * 100).toFixed(1) : '0';
-
-  document.getElementById('lastMonthInsights').innerHTML = `
-    <div class="insight-card">
-      <h4>Pipeline Health</h4>
-      <div class="insight-item"><span class="insight-label">Quotes Rejected</span><span class="insight-value">${curr.rejected} (${rejectRate}%)</span></div>
-      <div class="insight-item"><span class="insight-label">Quotes to Follow Up</span><span class="insight-value">${curr.follow} (${followRate}%)</span></div>
-    </div>
-    <div class="insight-card">
-      <h4>Efficiency</h4>
-      <div class="insight-item"><span class="insight-label">Revenue per Enquiry</span><span class="insight-value">${revenuePerEnq}</span></div>
-      <div class="insight-item"><span class="insight-label">Cost Ratio</span><span class="insight-value">${costRatio}%</span></div>
-    </div>
-  `;
+  const lm = new Date(now.getFullYear(),now.getMonth()-1,1); const lYM = lm.getFullYear()+'-'+String(lm.getMonth()+1).padStart(2,'0');
+  const pm = new Date(now.getFullYear(),now.getMonth()-2,1); const pYM = pm.getFullYear()+'-'+String(pm.getMonth()+1).padStart(2,'0');
+  document.getElementById('lastMonthLabel').textContent = monthLabelFull(lYM);
+  const curr = (getDataForMonths(emp,[lYM]))[0]||null;
+  const prev = (getDataForMonths(emp,[pYM]))[0]||null;
+  buildIndividualMetrics('lastMonthContent', curr, prev, colour);
 }
 
-// ==================== HISTORICAL SECTION ====================
 function updateHistorical() {
   const emp = document.getElementById('employeeSelect').value;
-  if (!emp || !DATA[emp]) return;
+  if (!emp||!DATA[emp]) return;
   const colour = getEmployeeColour(emp);
-
-  const months = getFilteredMonths('periodSelect', 'dateFrom', 'dateTo');
+  const months = getFilteredMonths('periodSelect','dateFrom','dateTo');
   const data = getDataForMonths(emp, months);
-
-  if (data.length === 0) {
-    document.getElementById('kpiRow').innerHTML = '<div class="data-note">No data for this period.</div>';
-    document.getElementById('histInsights').innerHTML = '';
+  if (data.length===0) {
+    document.getElementById('kpiRow').innerHTML='<div class="data-note">No data for this period.</div>';
+    document.getElementById('histInsights').innerHTML='';
     ['chartEnqOrders','chartConvRate','chartSales','chartAOV','chartMargin','chartPipeline'].forEach(destroyChart);
     return;
   }
-
-  const totalEnq = data.reduce((s,d) => s + d.enq, 0);
-  const totalOrders = data.reduce((s,d) => s + d.orders, 0);
-  const avgConv = totalEnq > 0 ? totalOrders / totalEnq : 0;
-  const totalSales = data.reduce((s,d) => s + d.valueOrd, 0);
-  const totalGP = data.reduce((s,d) => s + d.gp, 0);
-  const avgAOV = totalOrders > 0 ? totalSales / totalOrders : 0;
-  const avgMargin = totalSales > 0 ? (totalGP / totalSales * 100) : 0;
-  const totalRejected = data.reduce((s,d) => s + d.rejected, 0);
-  const totalFollow = data.reduce((s,d) => s + d.follow, 0);
-
-  let convTrendHtml = '', salesTrendHtml = '';
-  if (data.length >= 4) {
-    const half = Math.floor(data.length / 2);
-    const prev = data.slice(0, half), curr = data.slice(half);
-    const prevConv = prev.reduce((s,d)=>s+d.orders,0) / Math.max(prev.reduce((s,d)=>s+d.enq,0),1);
-    const currConv = curr.reduce((s,d)=>s+d.orders,0) / Math.max(curr.reduce((s,d)=>s+d.enq,0),1);
-    const convDelta = currConv - prevConv;
-    convTrendHtml = `<div class="trend ${convDelta>=0?'up':'down'}">${convDelta>=0?'\u2191':'\u2193'} ${fmtPct(Math.abs(convDelta))} vs first half</div>`;
-    const prevAvgSales = prev.reduce((s,d)=>s+d.valueOrd,0)/prev.length;
-    const currAvgSales = curr.reduce((s,d)=>s+d.valueOrd,0)/curr.length;
-    const salesDelta = prevAvgSales > 0 ? ((currAvgSales-prevAvgSales)/prevAvgSales)*100 : 0;
-    salesTrendHtml = `<div class="trend ${salesDelta>=0?'up':'down'}">${salesDelta>=0?'\u2191':'\u2193'} ${Math.abs(salesDelta).toFixed(1)}% avg monthly</div>`;
-  }
+  const tEnq=data.reduce((s,d)=>s+d.enq,0), tOrd=data.reduce((s,d)=>s+d.orders,0);
+  const avgConv=tEnq>0?tOrd/tEnq:0, tSales=data.reduce((s,d)=>s+d.valueOrd,0);
+  const tGP=data.reduce((s,d)=>s+d.gp,0), avgAOV=tOrd>0?tSales/tOrd:0;
+  const avgMargin=tSales>0?(tGP/tSales*100):0;
+  const tRej=data.reduce((s,d)=>s+d.rejected,0), tFol=data.reduce((s,d)=>s+d.follow,0);
 
   document.getElementById('kpiRow').innerHTML = `
-    <div class="kpi-card" style="border-top: 3px solid ${colour.solid}"><div class="label">Total Enquiries</div><div class="value">${totalEnq.toLocaleString()}</div><div class="trend">${data.length} month${data.length>1?'s':''}</div></div>
-    <div class="kpi-card" style="border-top: 3px solid ${colour.solid}"><div class="label">Total Orders</div><div class="value">${totalOrders.toLocaleString()}</div><div class="trend">from ${totalEnq} enquiries</div></div>
-    <div class="kpi-card" style="border-top: 3px solid ${colour.solid}"><div class="label">Avg Conversion</div><div class="value">${fmtPct(avgConv)}</div>${convTrendHtml}</div>
-    <div class="kpi-card" style="border-top: 3px solid ${colour.solid}"><div class="label">Total Sales</div><div class="value">${fmt(totalSales)}</div>${salesTrendHtml}</div>
-    <div class="kpi-card" style="border-top: 3px solid ${colour.solid}"><div class="label">Total GP</div><div class="value">${fmt(totalGP)}</div><div class="trend">Margin: ${avgMargin.toFixed(1)}%</div></div>
+    <div class="kpi-card" style="border-top:3px solid ${colour.solid}"><div class="label">Total Enquiries</div><div class="value">${tEnq.toLocaleString()}</div><div class="trend">${data.length} month${data.length>1?'s':''}</div></div>
+    <div class="kpi-card" style="border-top:3px solid ${colour.solid}"><div class="label">Total Orders</div><div class="value">${tOrd.toLocaleString()}</div><div class="trend">from ${tEnq} enquiries</div></div>
+    <div class="kpi-card" style="border-top:3px solid ${colour.solid}"><div class="label">Avg Conversion</div><div class="value">${fmtPct(avgConv)}</div></div>
+    <div class="kpi-card" style="border-top:3px solid ${colour.solid}"><div class="label">Total Sales</div><div class="value">${fmt(tSales)}</div></div>
+    <div class="kpi-card" style="border-top:3px solid ${colour.solid}"><div class="label">Total GP</div><div class="value">${fmt(tGP)}</div><div class="trend">Margin: ${avgMargin.toFixed(1)}%</div></div>
   `;
 
-  const bestMonth = [...data].sort((a,b) => b.valueOrd - a.valueOrd)[0];
-  const worstMonth = [...data].sort((a,b) => a.valueOrd - b.valueOrd)[0];
-  const bestConvMonth = [...data].sort((a,b) => b.convRate - a.convRate)[0];
-  const avgRevenuePerEnq = totalEnq > 0 ? totalSales / totalEnq : 0;
-  const rejectRate = totalEnq > 0 ? (totalRejected / totalEnq * 100).toFixed(1) : '0';
-
+  const best=[...data].sort((a,b)=>b.valueOrd-a.valueOrd)[0], worst=[...data].sort((a,b)=>a.valueOrd-b.valueOrd)[0];
+  const bestConv=[...data].sort((a,b)=>b.convRate-a.convRate)[0];
   document.getElementById('histInsights').innerHTML = `
-    <div class="insight-card">
-      <h4>Highlights</h4>
-      <div class="insight-item"><span class="insight-label">Best Sales Month</span><span class="insight-value">${monthLabel(bestMonth.date)} (${fmt(bestMonth.valueOrd)})</span></div>
-      <div class="insight-item"><span class="insight-label">Lowest Sales Month</span><span class="insight-value">${monthLabel(worstMonth.date)} (${fmt(worstMonth.valueOrd)})</span></div>
-      <div class="insight-item"><span class="insight-label">Best Conversion Month</span><span class="insight-value">${monthLabel(bestConvMonth.date)} (${fmtPct(bestConvMonth.convRate)})</span></div>
-      <div class="insight-item"><span class="insight-label">Avg Revenue per Enquiry</span><span class="insight-value">${fmt(avgRevenuePerEnq)}</span></div>
+    <div class="insight-card"><h4>Highlights</h4>
+      <div class="insight-item"><span class="insight-label">Best Sales Month</span><span class="insight-value">${monthLabel(best.date)} (${fmt(best.valueOrd)})</span></div>
+      <div class="insight-item"><span class="insight-label">Lowest Sales Month</span><span class="insight-value">${monthLabel(worst.date)} (${fmt(worst.valueOrd)})</span></div>
+      <div class="insight-item"><span class="insight-label">Best Conversion</span><span class="insight-value">${monthLabel(bestConv.date)} (${fmtPct(bestConv.convRate)})</span></div>
+      <div class="insight-item"><span class="insight-label">Avg Revenue/Enquiry</span><span class="insight-value">${fmt(tEnq>0?tSales/tEnq:0)}</span></div>
     </div>
-    <div class="insight-card">
-      <h4>Pipeline Summary</h4>
-      <div class="insight-item"><span class="insight-label">Total Quotes Rejected</span><span class="insight-value">${totalRejected.toLocaleString()} (${rejectRate}%)</span></div>
-      <div class="insight-item"><span class="insight-label">Total Quotes to Follow</span><span class="insight-value">${totalFollow.toLocaleString()}</span></div>
+    <div class="insight-card"><h4>Pipeline Summary</h4>
+      <div class="insight-item"><span class="insight-label">Quotes Rejected</span><span class="insight-value">${tRej.toLocaleString()} (${tEnq>0?(tRej/tEnq*100).toFixed(1):'0'}%)</span></div>
+      <div class="insight-item"><span class="insight-label">Quotes to Follow</span><span class="insight-value">${tFol.toLocaleString()}</span></div>
       <div class="insight-item"><span class="insight-label">Avg Order Value</span><span class="insight-value">${fmt(avgAOV)}</span></div>
       <div class="insight-item"><span class="insight-label">Avg Profit Margin</span><span class="insight-value">${avgMargin.toFixed(1)}%</span></div>
     </div>
   `;
 
-  const labels = data.map(d => monthLabel(d.date));
-
-  createLineChart('chartEnqOrders', labels, [
-    { label: 'Enquiries', data: data.map(d=>d.enq), borderColor: colour.solid, backgroundColor: colour.light, fill: true, tension: 0.3, borderWidth: 2.5, pointRadius: 3 },
-    { label: 'Orders', data: data.map(d=>d.orders), borderColor: colour.solid, backgroundColor: 'transparent', fill: false, tension: 0.3, borderWidth: 2, borderDash: [6,3], pointRadius: 3 }
+  const labels = data.map(d=>monthLabel(d.date));
+  createLineChart('chartEnqOrders',labels,[
+    {label:'Enquiries',data:data.map(d=>d.enq),borderColor:colour.solid,backgroundColor:colour.light,fill:true,tension:0.3,borderWidth:2.5,pointRadius:3},
+    {label:'Orders',data:data.map(d=>d.orders),borderColor:colour.solid,backgroundColor:'transparent',fill:false,tension:0.3,borderWidth:2,borderDash:[6,3],pointRadius:3}
   ]);
-
-  createLineChart('chartConvRate', labels, [
-    { label: 'Conversion Rate', data: data.map(d=>d.convRate), borderColor: colour.solid, backgroundColor: colour.light, fill: true, tension: 0.3, pointRadius: 4, borderWidth: 2.5 }
-  ], 'pct', [{ label: 'Target (30%)', value: 0.30, color: '#ef4444' }]);
-
-  createLineChart('chartSales', labels, [
-    { label: 'Sales', data: data.map(d=>d.valueOrd), borderColor: colour.solid, backgroundColor: colour.light, fill: true, tension: 0.3, borderWidth: 2.5 },
-    { label: 'Gross Profit', data: data.map(d=>d.gp), borderColor: '#22c55e', backgroundColor: 'rgba(34,197,94,0.08)', fill: true, tension: 0.3, borderWidth: 2, borderDash: [6,3] }
-  ], 'currency');
-
-  createLineChart('chartAOV', labels, [
-    { label: 'Avg Order Value', data: data.map(d=>d.aov), borderColor: colour.solid, backgroundColor: colour.light, fill: true, tension: 0.3, pointRadius: 4, borderWidth: 2.5 }
-  ], 'currency', [{ label: 'Target (\u00a31,500)', value: 1500, color: '#ef4444' }]);
-
-  createLineChart('chartMargin', labels, [
-    { label: 'Profit Margin %', data: data.map(d => Number(d.margin) * 100), borderColor: '#22c55e', backgroundColor: 'rgba(34,197,94,0.08)', fill: true, tension: 0.3, pointRadius: 4, borderWidth: 2.5 }
-  ], 'pctRaw');
-
-  createBarChart('chartPipeline', labels, [
-    { label: 'Rejected', data: data.map(d=>d.rejected), backgroundColor: '#ef4444', borderRadius: 4 },
-    { label: 'To Follow Up', data: data.map(d=>d.follow), backgroundColor: '#f97316', borderRadius: 4 }
-  ]);
+  createLineChart('chartConvRate',labels,[{label:'Conversion Rate',data:data.map(d=>d.convRate),borderColor:colour.solid,backgroundColor:colour.light,fill:true,tension:0.3,pointRadius:4,borderWidth:2.5}],'pct',[{label:'Target (30%)',value:0.30,color:'#ef4444'}]);
+  createLineChart('chartSales',labels,[
+    {label:'Sales',data:data.map(d=>d.valueOrd),borderColor:colour.solid,backgroundColor:colour.light,fill:true,tension:0.3,borderWidth:2.5},
+    {label:'Gross Profit',data:data.map(d=>d.gp),borderColor:'#22c55e',backgroundColor:'rgba(34,197,94,0.08)',fill:true,tension:0.3,borderWidth:2,borderDash:[6,3]}
+  ],'currency');
+  createLineChart('chartAOV',labels,[{label:'Avg Order Value',data:data.map(d=>d.aov),borderColor:colour.solid,backgroundColor:colour.light,fill:true,tension:0.3,pointRadius:4,borderWidth:2.5}],'currency',[{label:'Target (\u00a31,500)',value:1500,color:'#ef4444'}]);
+  createLineChart('chartMargin',labels,[{label:'Profit Margin %',data:data.map(d=>Number(d.margin)*100),borderColor:'#22c55e',backgroundColor:'rgba(34,197,94,0.08)',fill:true,tension:0.3,pointRadius:4,borderWidth:2.5}],'pctRaw');
+  createBarChart('chartPipeline',labels,[{label:'Rejected',data:data.map(d=>d.rejected),backgroundColor:'#ef4444',borderRadius:4},{label:'To Follow Up',data:data.map(d=>d.follow),backgroundColor:'#f97316',borderRadius:4}]);
 }
 
 // ==================== TEAM SUMMARY TABLE ====================
 function buildTeamSummary(months) {
-  const periodLabel = document.getElementById('teamPeriod');
-  const selectedText = periodLabel.options[periodLabel.selectedIndex].text;
-  document.getElementById('teamSummaryPeriodLabel').textContent = selectedText;
-
+  const sel = document.getElementById('teamPeriod');
+  document.getElementById('teamSummaryPeriodLabel').textContent = sel.options[sel.selectedIndex].text;
   const stats = EMPLOYEES.map(emp => {
-    const empData = getDataForMonths(emp, months);
-    const totalEnq = empData.reduce((s,d) => s + d.enq, 0);
-    const totalOrd = empData.reduce((s,d) => s + d.orders, 0);
-    const totalSales = empData.reduce((s,d) => s + d.valueOrd, 0);
-    const totalGP = empData.reduce((s,d) => s + d.gp, 0);
-    return {
-      name: emp,
-      enq: totalEnq,
-      orders: totalOrd,
-      convRate: totalEnq > 0 ? (totalOrd / totalEnq) : 0,
-      sales: totalSales,
-      aov: totalOrd > 0 ? totalSales / totalOrd : 0,
-      gp: totalGP,
-      margin: totalSales > 0 ? (totalGP / totalSales) : 0
-    };
+    const d = getDataForMonths(emp,months);
+    const tEnq=d.reduce((s,r)=>s+r.enq,0), tOrd=d.reduce((s,r)=>s+r.orders,0);
+    const tSales=d.reduce((s,r)=>s+r.valueOrd,0), tGP=d.reduce((s,r)=>s+r.gp,0);
+    return { name:emp, enq:tEnq, orders:tOrd, convRate:tEnq>0?tOrd/tEnq:0, sales:tSales, aov:tOrd>0?tSales/tOrd:0, gp:tGP, margin:tSales>0?tGP/tSales:0 };
   });
-
   const rows = [
-    { label: 'Enquiries', key: 'enq', fmt: v => v.toLocaleString(), target: null },
-    { label: 'Orders', key: 'orders', fmt: v => v.toLocaleString(), target: null },
-    { label: 'Conversion', key: 'convRate', fmt: v => (v * 100).toFixed(1) + '%', target: TARGETS.convRate },
-    { label: 'Total Sales', key: 'sales', fmt: v => fmt(v), target: null },
-    { label: 'Avg Order Value', key: 'aov', fmt: v => fmt(v), target: TARGETS.aov },
-    { label: 'Gross Profit', key: 'gp', fmt: v => fmt(v), target: null },
-    { label: 'Profit Margin', key: 'margin', fmt: v => (v * 100).toFixed(1) + '%', target: null }
+    {label:'Enquiries',key:'enq',fmt:v=>v.toLocaleString(),target:null},
+    {label:'Orders',key:'orders',fmt:v=>v.toLocaleString(),target:null},
+    {label:'Conversion',key:'convRate',fmt:v=>(v*100).toFixed(1)+'%',target:TARGETS.convRate},
+    {label:'Total Sales',key:'sales',fmt:v=>fmt(v),target:null},
+    {label:'Avg Order Value',key:'aov',fmt:v=>fmt(v),target:TARGETS.aov},
+    {label:'Gross Profit',key:'gp',fmt:v=>fmt(v),target:null},
+    {label:'Profit Margin',key:'margin',fmt:v=>(v*100).toFixed(1)+'%',target:null}
   ];
-
   let html = '<table class="team-summary-table"><thead><tr><th>Metric</th>';
-  EMPLOYEES.forEach(e => {
-    const colour = getEmployeeColour(e);
-    html += `<th><span class="employee-dot" style="background:${colour.solid}"></span>${e.split(' ')[0]}</th>`;
-  });
+  EMPLOYEES.forEach(e => { const c=getEmployeeColour(e); html+=`<th><span class="employee-dot" style="background:${c.solid}"></span>${e.split(' ')[0]}</th>`; });
   html += '</tr></thead><tbody>';
-
   rows.forEach(row => {
-    const values = stats.map(s => s[row.key]);
-    const bestVal = Math.max(...values);
+    const vals = stats.map(s=>s[row.key]), best = Math.max(...vals);
     html += `<tr><td class="metric-label">${row.label}</td>`;
     stats.forEach(s => {
-      const val = s[row.key];
-      const isBest = val === bestVal && val > 0;
-      let cellClass = '';
-
-      if (isBest) {
-        cellClass = 'cell-best';
-      } else if (row.target !== null) {
-        cellClass = val >= row.target ? 'cell-above-target' : 'cell-below-target';
-      }
-
-      html += `<td class="${cellClass}">${row.fmt(val)}</td>`;
+      const v=s[row.key], isBest=v===best&&v>0;
+      let cls = isBest ? 'cell-best' : row.target!=null ? (v>=row.target?'cell-above-target':'cell-below-target') : '';
+      html += `<td class="${cls}">${row.fmt(v)}</td>`;
     });
     html += '</tr>';
   });
-
   html += '</tbody></table>';
   document.getElementById('teamSummaryTable').innerHTML = html;
 }
 
-// ==================== TEAM PAGE ====================
-function updateTeam() {
-  const metric = document.getElementById('teamMetric').value;
-  const months = getFilteredMonths('teamPeriod', 'teamDateFrom', 'teamDateTo');
+// ==================== TEAM COMPARISON CHARTS ====================
+function buildTeamCharts(months) {
+  const isSingle = months.length <= 1;
   const labels = months.map(monthLabel);
-  const isSingleMonth = months.length <= 1;
+  const empLabels = EMPLOYEES.map(n=>n.split(' ')[0]);
+  const empColours = EMPLOYEES.map(e=>getEmployeeColour(e).solid);
 
-  buildTeamSummary(months);
-
-  const mc = {
-    enquiries: { key: 'enq', label: 'Enquiries', fmt: 'number' },
-    orders: { key: 'orders', label: 'Orders', fmt: 'number' },
-    convRate: { key: 'convRate', label: 'Conversion Rate', fmt: 'pct' },
-    sales: { key: 'valueOrd', label: 'Total Sales', fmt: 'currency' },
-    aov: { key: 'aov', label: 'Average Order Value', fmt: 'currency' },
-    margin: { key: 'margin', label: 'Profit Margin', fmt: 'pctRaw' },
-    gp: { key: 'gp', label: 'Gross Profit', fmt: 'currency' }
-  }[metric];
-
-  document.getElementById('teamChartTitle').textContent = mc.label + ' \u2014 All Employees';
-  document.getElementById('teamBarTitle').textContent = mc.label + ' \u2014 Period Totals';
-
-  const isMargin = mc.key === 'margin';
-
-  if (isSingleMonth) {
-    // SINGLE MONTH: use grouped bar chart instead of line chart
-    const empValues = EMPLOYEES.map(emp => {
-      const row = (DATA[emp]||[]).find(d => d.date === months[0]);
-      if (!row) return 0;
-      return isMargin ? Number(row[mc.key]) * 100 : row[mc.key];
+  function empDatasets(key, multiply) {
+    return EMPLOYEES.map(emp => {
+      const c = getEmployeeColour(emp);
+      return { label:emp, data:months.map(m=>{const r=(DATA[emp]||[]).find(d=>d.date===m); return r?(multiply?Number(r[key])*100:r[key]):null; }), borderColor:c.solid, backgroundColor:c.light, tension:0.3, spanGaps:true, pointRadius:4, borderWidth:2.5 };
     });
-    const empColours = EMPLOYEES.map(e => getEmployeeColour(e).solid);
-    const empLabels = EMPLOYEES.map(n => n.split(' ')[0]);
-
-    let targetVal = null, targetLbl = '';
-    if (mc.key === 'convRate') { targetVal = 0.30; targetLbl = 'Target (30%)'; }
-    else if (mc.key === 'aov') { targetVal = 1500; targetLbl = 'Target (\u00a31,500)'; }
-
-    createGroupedBarChart('chartTeamLine', empLabels, empValues, empColours, mc.fmt, targetVal, targetLbl);
-  } else {
-    // MULTI MONTH: line chart as before
-    const datasets = EMPLOYEES.map((emp) => {
-      const colour = getEmployeeColour(emp);
-      const values = months.map(m => {
-        const row = (DATA[emp]||[]).find(d => d.date === m);
-        if (!row) return null;
-        return isMargin ? Number(row[mc.key]) * 100 : row[mc.key];
-      });
-      return {
-        label: emp,
-        data: values,
-        borderColor: colour.solid,
-        backgroundColor: colour.light,
-        tension: 0.3,
-        spanGaps: true,
-        pointRadius: 4,
-        borderWidth: 2.5
-      };
-    });
-
-    let targetLines = [];
-    if (mc.key === 'convRate') {
-      targetLines.push({ label: 'Target (30%)', value: 0.30, color: '#ef4444' });
-    } else if (mc.key === 'aov') {
-      targetLines.push({ label: 'Target (\u00a31,500)', value: 1500, color: '#ef4444' });
-    }
-
-    createLineChart('chartTeamLine', labels, datasets, mc.fmt, targetLines);
+  }
+  function singleValues(key, multiply) {
+    return EMPLOYEES.map(emp=>{const r=(DATA[emp]||[]).find(d=>d.date===months[0]); return r?(multiply?Number(r[key])*100:r[key]):0;});
   }
 
-  // Period totals bar chart
-  const totals = EMPLOYEES.map(emp => {
-    const empData = getDataForMonths(emp, months);
-    if (mc.key === 'convRate') {
-      const tOrd = empData.reduce((s,d)=>s+d.orders,0);
-      const tEnq = empData.reduce((s,d)=>s+d.enq,0);
-      return tEnq > 0 ? tOrd / tEnq : 0;
-    }
-    if (mc.key === 'aov') {
-      const tSales = empData.reduce((s,d)=>s+d.valueOrd,0);
-      const tOrd = empData.reduce((s,d)=>s+d.orders,0);
-      return tOrd > 0 ? tSales / tOrd : 0;
-    }
-    if (mc.key === 'margin') {
-      const tSales = empData.reduce((s,d)=>s+d.valueOrd,0);
-      const tGP = empData.reduce((s,d)=>s+d.gp,0);
-      return tSales > 0 ? (tGP / tSales * 100) : 0;
-    }
-    return empData.reduce((s,d) => s + d[mc.key], 0);
-  });
-
-  createBarChart('chartTeamBar', EMPLOYEES.map(n => n.split(' ')[0]), [{
-    data: totals,
-    backgroundColor: EMPLOYEES.map(e => getEmployeeColour(e).solid),
-    borderRadius: 4
-  }], mc.fmt);
-
-  const notes = EMPLOYEES.filter(emp => {
-    const empMonths = getDataForMonths(emp, months).length;
-    return empMonths < months.length && empMonths > 0;
-  }).map(emp => {
-    const empMonths = getDataForMonths(emp, months).length;
-    return `${emp}: ${empMonths} months of data`;
-  });
-  document.getElementById('teamNote').textContent = notes.length > 0 ? 'Note: ' + notes.join('. ') + '.' : '';
-
-  let html = '<table class="ranking-table"><thead><tr><th>Month</th>';
-  EMPLOYEES.forEach(e => {
-    const colour = getEmployeeColour(e);
-    html += `<th><span class="employee-dot" style="background:${colour.solid}"></span>${e.split(' ')[0]}</th>`;
-  });
-  html += '</tr></thead><tbody>';
-  months.forEach(m => {
-    html += `<tr><td style="font-weight:600">${monthLabel(m)}</td>`;
-    EMPLOYEES.forEach(emp => {
-      const row = (DATA[emp]||[]).find(d => d.date === m);
-      let val = '\u2014';
-      if (row) {
-        if (mc.fmt === 'currency') val = fmt(row[mc.key]);
-        else if (mc.fmt === 'pct') val = fmtPct(row[mc.key]);
-        else if (mc.fmt === 'pctRaw') val = fmtPctRaw(Number(row[mc.key]) * 100);
-        else val = row[mc.key].toLocaleString();
-      }
-      html += `<td>${val}</td>`;
+  // Enquiries & Orders (stacked for single, lines for multi)
+  if (isSingle) {
+    const enqVals = singleValues('enq');
+    const ordVals = singleValues('orders');
+    destroyChart('teamChartEnqOrd');
+    charts['teamChartEnqOrd'] = new Chart(document.getElementById('teamChartEnqOrd').getContext('2d'), {
+      type:'bar', data:{ labels:empLabels, datasets:[
+        {label:'Enquiries',data:enqVals,backgroundColor:empColours.map(c=>c+'33'),borderColor:empColours,borderWidth:2,borderRadius:6},
+        {label:'Orders',data:ordVals,backgroundColor:empColours,borderRadius:6}
+      ]}, options:{responsive:true,maintainAspectRatio:true,aspectRatio:2,plugins:{legend:{display:true,position:'top',labels:{usePointStyle:true,padding:16,font:{family:'Inter',size:12}}}},scales:{y:{beginAtZero:true,grid:{color:'#e5e5e5'}},x:{grid:{display:false}}}}
     });
-    html += '</tr>';
-  });
-  html += '</tbody></table>';
-  document.getElementById('teamTableWrap').innerHTML = html;
+  } else {
+    const dsEnq = empDatasets('enq');
+    const dsOrd = EMPLOYEES.map(emp=>{const c=getEmployeeColour(emp); return {label:emp+' Orders',data:months.map(m=>{const r=(DATA[emp]||[]).find(d=>d.date===m);return r?r.orders:null;}),borderColor:c.solid,backgroundColor:'transparent',tension:0.3,spanGaps:true,pointRadius:3,borderWidth:2,borderDash:[6,3]};});
+    createLineChart('teamChartEnqOrd',labels,[...dsEnq,...dsOrd]);
+  }
+
+  // Conversion Rate
+  if (isSingle) { createGroupedBarChart('teamChartConv',empLabels,singleValues('convRate'),empColours,'pct',0.30,'Target (30%)'); }
+  else { createLineChart('teamChartConv',labels,empDatasets('convRate'),'pct',[{label:'Target (30%)',value:0.30,color:'#ef4444'}]); }
+
+  // Total Sales
+  if (isSingle) { createGroupedBarChart('teamChartSales',empLabels,singleValues('valueOrd'),empColours,'currency'); }
+  else { createLineChart('teamChartSales',labels,empDatasets('valueOrd'),'currency'); }
+
+  // AOV
+  if (isSingle) { createGroupedBarChart('teamChartAOV',empLabels,singleValues('aov'),empColours,'currency',1500,'Target (\u00a31,500)'); }
+  else { createLineChart('teamChartAOV',labels,empDatasets('aov'),'currency',[{label:'Target (\u00a31,500)',value:1500,color:'#ef4444'}]); }
+
+  // Gross Profit
+  if (isSingle) { createGroupedBarChart('teamChartGP',empLabels,singleValues('gp'),empColours,'currency'); }
+  else { createLineChart('teamChartGP',labels,empDatasets('gp'),'currency'); }
+
+  // Profit Margin
+  if (isSingle) { createGroupedBarChart('teamChartMargin',empLabels,singleValues('margin',true),empColours,'pctRaw'); }
+  else { createLineChart('teamChartMargin',labels,empDatasets('margin',true),'pctRaw'); }
 }
 
-// ==================== RANKINGS PAGE ====================
-function updateRankings() {
-  const period = document.getElementById('rankPeriod').value;
-  const now = new Date();
-  const currentYM = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
-  const lastYM = new Date(now.getFullYear(), now.getMonth()-1, 1);
-  const lastMonthStr = lastYM.getFullYear() + '-' + String(lastYM.getMonth()+1).padStart(2,'0');
+// ==================== TEAM PAGE MASTER ====================
+function updateTeam() {
+  const months = getFilteredMonths('teamPeriod','teamDateFrom','teamDateTo');
+  buildTeamSummary(months);
+  buildTeamCharts(months);
 
-  let months;
-  if (period === 'mtd') months = [currentYM];
-  else if (period === 'lastMonth') months = [lastMonthStr];
-  else {
-    const n = period === 'last3' ? 3 : period === 'last6' ? 6 : period === 'last12' ? 12 : 9999;
-    months = ALL_MONTHS.slice(-n);
+  const notes = EMPLOYEES.filter(emp=>{const n=getDataForMonths(emp,months).length;return n<months.length&&n>0;}).map(emp=>`${emp}: ${getDataForMonths(emp,months).length} months of data`);
+  document.getElementById('teamNote').textContent = notes.length>0 ? 'Note: '+notes.join('. ')+'.' : '';
+
+  updateTeamDeepDive();
+}
+
+// ==================== TEAM DEEP DIVE ====================
+function updateTeamDeepDive() {
+  const metric = document.getElementById('teamMetric').value;
+  const months = getFilteredMonths('teamPeriod','teamDateFrom','teamDateTo');
+  const labels = months.map(monthLabel);
+  const isSingle = months.length<=1;
+
+  const mc = {enquiries:{key:'enq',label:'Enquiries',fmt:'number'},orders:{key:'orders',label:'Orders',fmt:'number'},convRate:{key:'convRate',label:'Conversion Rate',fmt:'pct'},sales:{key:'valueOrd',label:'Total Sales',fmt:'currency'},aov:{key:'aov',label:'Average Order Value',fmt:'currency'},margin:{key:'margin',label:'Profit Margin',fmt:'pctRaw'},gp:{key:'gp',label:'Gross Profit',fmt:'currency'}}[metric];
+  const isMargin = mc.key==='margin';
+
+  document.getElementById('teamChartTitle').textContent = mc.label+' \u2014 All Employees';
+  document.getElementById('teamBarTitle').textContent = mc.label+' \u2014 Period Totals';
+
+  if (isSingle) {
+    const vals = EMPLOYEES.map(emp=>{const r=(DATA[emp]||[]).find(d=>d.date===months[0]);if(!r)return 0;return isMargin?Number(r[mc.key])*100:r[mc.key];});
+    let tgt=null,tl='';
+    if(mc.key==='convRate'){tgt=0.30;tl='Target (30%)';}else if(mc.key==='aov'){tgt=1500;tl='Target (\u00a31,500)';}
+    createGroupedBarChart('chartTeamLine',EMPLOYEES.map(n=>n.split(' ')[0]),vals,EMPLOYEES.map(e=>getEmployeeColour(e).solid),mc.fmt,tgt,tl);
+  } else {
+    const datasets = EMPLOYEES.map(emp=>{const c=getEmployeeColour(emp);return{label:emp,data:months.map(m=>{const r=(DATA[emp]||[]).find(d=>d.date===m);if(!r)return null;return isMargin?Number(r[mc.key])*100:r[mc.key];}),borderColor:c.solid,backgroundColor:c.light,tension:0.3,spanGaps:true,pointRadius:4,borderWidth:2.5};});
+    let tl=[];
+    if(mc.key==='convRate')tl.push({label:'Target (30%)',value:0.30,color:'#ef4444'});
+    else if(mc.key==='aov')tl.push({label:'Target (\u00a31,500)',value:1500,color:'#ef4444'});
+    createLineChart('chartTeamLine',labels,datasets,mc.fmt,tl);
   }
 
-  const stats = EMPLOYEES.map((emp) => {
-    const empData = getDataForMonths(emp, months);
-    const totalEnq = empData.reduce((s,d) => s+d.enq, 0);
-    const totalOrd = empData.reduce((s,d) => s+d.orders, 0);
-    const totalSales = empData.reduce((s,d) => s+d.valueOrd, 0);
-    const totalGP = empData.reduce((s,d) => s+d.gp, 0);
-    return {
-      name: emp,
-      months: empData.length,
-      enq: totalEnq,
-      convRate: totalEnq > 0 ? totalOrd / totalEnq : 0,
-      sales: totalSales,
-      aov: totalOrd > 0 ? totalSales / totalOrd : 0,
-      gp: totalGP,
-      margin: totalSales > 0 ? (totalGP / totalSales * 100) : 0
-    };
+  const totals = EMPLOYEES.map(emp=>{
+    const d=getDataForMonths(emp,months);
+    if(mc.key==='convRate'){const o=d.reduce((s,r)=>s+r.orders,0),e=d.reduce((s,r)=>s+r.enq,0);return e>0?o/e:0;}
+    if(mc.key==='aov'){const s=d.reduce((s,r)=>s+r.valueOrd,0),o=d.reduce((s,r)=>s+r.orders,0);return o>0?s/o:0;}
+    if(mc.key==='margin'){const s=d.reduce((s,r)=>s+r.valueOrd,0),g=d.reduce((s,r)=>s+r.gp,0);return s>0?(g/s*100):0;}
+    return d.reduce((s,r)=>s+r[mc.key],0);
   });
+  createBarChart('chartTeamBar',EMPLOYEES.map(n=>n.split(' ')[0]),[{data:totals,backgroundColor:EMPLOYEES.map(e=>getEmployeeColour(e).solid),borderRadius:4}],mc.fmt);
 
-  const shortDataEmps = stats.filter(s => s.months < months.length && s.months > 0);
-  document.getElementById('rankNote').textContent = shortDataEmps.length > 0
-    ? 'Note: ' + shortDataEmps.map(s => `${s.name} has ${s.months} month${s.months>1?'s':''} of data`).join('. ') + '.'
-    : '';
-
-  function renderRankTable(tableId, key, format) {
-    const sorted = [...stats].filter(s => s[key] > 0 || s.months > 0).sort((a,b) => b[key] - a[key]);
-    const maxVal = sorted.length > 0 ? sorted[0][key] : 1;
-    let html = '<thead><tr><th>#</th><th>Employee</th><th style="width:55%">Performance</th></tr></thead><tbody>';
-    sorted.forEach((s, i) => {
-      const colour = getEmployeeColour(s.name);
-      const pct = maxVal > 0 ? (s[key] / maxVal * 100) : 0;
-      const valStr = format === 'currency' ? fmt(s[key]) : format === 'pct' ? fmtPct(s[key]) : format === 'pctRaw' ? fmtPctRaw(s[key]) : s[key].toLocaleString();
-      const note = s.months < months.length ? ` <span style="font-size:10px;color:#999">(${s.months}mo)</span>` : '';
-      html += `<tr>
-        <td><span class="rank-badge rank-${i+1}">${i+1}</span></td>
-        <td><span class="employee-dot" style="background:${colour.solid}"></span>${s.name}${note}</td>
-        <td><div class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:${pct}%;background:${colour.solid}"></div></div><div class="bar-value">${valStr}</div></div></td>
-      </tr>`;
+  let html='<table class="ranking-table"><thead><tr><th>Month</th>';
+  EMPLOYEES.forEach(e=>{const c=getEmployeeColour(e);html+=`<th><span class="employee-dot" style="background:${c.solid}"></span>${e.split(' ')[0]}</th>`;});
+  html+='</tr></thead><tbody>';
+  months.forEach(m=>{
+    html+=`<tr><td style="font-weight:600">${monthLabel(m)}</td>`;
+    EMPLOYEES.forEach(emp=>{
+      const r=(DATA[emp]||[]).find(d=>d.date===m);
+      let v='\u2014';
+      if(r){if(mc.fmt==='currency')v=fmt(r[mc.key]);else if(mc.fmt==='pct')v=fmtPct(r[mc.key]);else if(mc.fmt==='pctRaw')v=fmtPctRaw(Number(r[mc.key])*100);else v=r[mc.key].toLocaleString();}
+      html+=`<td>${v}</td>`;
     });
-    html += '</tbody>';
-    document.getElementById(tableId).innerHTML = html;
-  }
+    html+='</tr>';
+  });
+  html+='</tbody></table>';
+  document.getElementById('teamTableWrap').innerHTML=html;
+}
 
-  renderRankTable('rankEnq', 'enq', 'number');
-  renderRankTable('rankConv', 'convRate', 'pct');
-  renderRankTable('rankSales', 'sales', 'currency');
-  renderRankTable('rankAOV', 'aov', 'currency');
-  renderRankTable('rankGP', 'gp', 'currency');
-  renderRankTable('rankMargin', 'margin', 'pctRaw');
+// ==================== RANKINGS ====================
+function updateRankings() {
+  const period=document.getElementById('rankPeriod').value;
+  const now=new Date(), curYM=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+  const lm=new Date(now.getFullYear(),now.getMonth()-1,1), lmStr=lm.getFullYear()+'-'+String(lm.getMonth()+1).padStart(2,'0');
+  let months;
+  if(period==='mtd')months=[curYM];else if(period==='lastMonth')months=[lmStr];
+  else{const n=period==='last3'?3:period==='last6'?6:period==='last12'?12:9999;months=ALL_MONTHS.slice(-n);}
+
+  const stats=EMPLOYEES.map(emp=>{
+    const d=getDataForMonths(emp,months);
+    const tE=d.reduce((s,r)=>s+r.enq,0),tO=d.reduce((s,r)=>s+r.orders,0),tS=d.reduce((s,r)=>s+r.valueOrd,0),tG=d.reduce((s,r)=>s+r.gp,0);
+    return{name:emp,months:d.length,enq:tE,convRate:tE>0?tO/tE:0,sales:tS,aov:tO>0?tS/tO:0,gp:tG,margin:tS>0?(tG/tS*100):0};
+  });
+  const short=stats.filter(s=>s.months<months.length&&s.months>0);
+  document.getElementById('rankNote').textContent=short.length>0?'Note: '+short.map(s=>`${s.name} has ${s.months} month${s.months>1?'s':''} of data`).join('. ')+'.':'';
+
+  function render(tid,key,format) {
+    const sorted=[...stats].filter(s=>s[key]>0||s.months>0).sort((a,b)=>b[key]-a[key]);
+    const mx=sorted.length>0?sorted[0][key]:1;
+    let h='<thead><tr><th>#</th><th>Employee</th><th style="width:55%">Performance</th></tr></thead><tbody>';
+    sorted.forEach((s,i)=>{
+      const c=getEmployeeColour(s.name),pct=mx>0?(s[key]/mx*100):0;
+      const v=format==='currency'?fmt(s[key]):format==='pct'?fmtPct(s[key]):format==='pctRaw'?fmtPctRaw(s[key]):s[key].toLocaleString();
+      const note=s.months<months.length?` <span style="font-size:10px;color:#999">(${s.months}mo)</span>`:'';
+      h+=`<tr><td><span class="rank-badge rank-${i+1}">${i+1}</span></td><td><span class="employee-dot" style="background:${c.solid}"></span>${s.name}${note}</td><td><div class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:${pct}%;background:${c.solid}"></div></div><div class="bar-value">${v}</div></div></td></tr>`;
+    });
+    h+='</tbody>';
+    document.getElementById(tid).innerHTML=h;
+  }
+  render('rankEnq','enq','number');render('rankConv','convRate','pct');render('rankSales','sales','currency');
+  render('rankAOV','aov','currency');render('rankGP','gp','currency');render('rankMargin','margin','pctRaw');
 }
 
 // ==================== NAVIGATION ====================
 function showPage(page, btn) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-  document.getElementById('page-' + page).classList.add('active');
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
   btn.classList.add('active');
-  if (page === 'individual') updateIndividual();
-  if (page === 'team') updateTeam();
-  if (page === 'rankings') updateRankings();
+  if(page==='individual')updateIndividual();if(page==='team')updateTeam();if(page==='rankings')updateRankings();
 }
 
-// ==================== INIT ====================
 loadData();
 </script>
 </body>
