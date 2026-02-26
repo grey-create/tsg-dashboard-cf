@@ -45,6 +45,18 @@
     justify-content: space-between;
   }
 
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .header-logo {
+    width: 36px;
+    height: 36px;
+    opacity: 0.85;
+  }
+
   header h1 { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; }
   header .subtitle { font-size: 12px; color: var(--gray2); margin-top: 2px; font-weight: 400; }
   #lastUpdated { font-size: 11px; color: var(--gray2); }
@@ -306,9 +318,31 @@
     letter-spacing: 0.3px;
   }
 
-  .team-summary-table .best-value {
-    background: rgba(34,197,94,0.08);
+  /* Target-based cell colouring */
+  .cell-below-target {
+    background: rgba(239,68,68,0.10);
+    color: #b91c1c;
+    font-weight: 700;
+  }
+
+  .cell-above-target {
+    background: rgba(34,197,94,0.10);
+    color: #15803d;
+    font-weight: 700;
+  }
+
+  .cell-best {
+    background: rgba(234,179,8,0.15);
+    color: #92400e;
     font-weight: 800;
+    position: relative;
+  }
+
+  .cell-best::after {
+    content: '\u2605';
+    margin-left: 4px;
+    font-size: 10px;
+    color: #ca8a04;
   }
 
   /* ===== INSIGHTS ROW ===== */
@@ -469,9 +503,12 @@
 <body>
 
 <header>
-  <div>
-    <h1>TSG Sales Performance</h1>
-    <div class="subtitle">Individual Conversions &bull; <span id="lastUpdated">Loading...</span></div>
+  <div class="header-left">
+    <img src="https://cdn.shopify.com/s/files/1/1070/8974/files/TSG-Logo-Roundel-Black.png?v=1772037610" alt="TSG" class="header-logo" style="filter: invert(1) brightness(2);">
+    <div>
+      <h1>TSG Sales Performance</h1>
+      <div class="subtitle">Individual Conversions &bull; <span id="lastUpdated">Loading...</span></div>
+    </div>
   </div>
   <div class="nav-tabs">
     <button class="nav-tab" onclick="showPage('individual', this)">Individual Review</button>
@@ -499,7 +536,6 @@
         </div>
       </div>
 
-      <!-- THIS MONTH SECTION -->
       <div class="individual-section-block">
         <div class="section-header" onclick="toggleSection('mtdSection', this)">
           <h2>This Month <span class="section-badge" id="mtdMonthLabel">Feb 2026</span></h2>
@@ -511,7 +547,6 @@
         </div>
       </div>
 
-      <!-- LAST MONTH SNAPSHOT -->
       <div class="individual-section-block">
         <div class="section-header" onclick="toggleSection('lastMonthSection', this)">
           <h2>Last Month <span class="section-badge" id="lastMonthLabel">Jan 2026</span></h2>
@@ -523,7 +558,6 @@
         </div>
       </div>
 
-      <!-- HISTORICAL SECTION -->
       <div class="individual-section-block">
         <div class="section-header" onclick="toggleSection('histSection', this)">
           <h2>Historical Performance</h2>
@@ -565,10 +599,9 @@
     <!-- ==================== TEAM COMPARISON ==================== -->
     <div id="page-team" class="page active">
 
-      <!-- TEAM SUMMARY TABLE AT TOP -->
       <div class="team-summary-wrap">
         <div class="section-header" style="cursor:default;">
-          <h2>Team Overview <span class="section-badge" id="teamSummaryPeriodLabel">This Month</span></h2>
+          <h2>Team Overview <span class="section-badge" id="teamSummaryPeriodLabel">Month to Date</span></h2>
         </div>
         <div id="teamSummaryTable"></div>
       </div>
@@ -591,11 +624,11 @@
         <div class="control-group">
           <label>Period</label>
           <select id="teamPeriod" onchange="handleTeamPeriodChange()">
-            <option value="mtd">Month to Date</option>
+            <option value="mtd" selected>Month to Date</option>
             <option value="lastMonth">Last Month</option>
             <option value="last3">Last 3 Months</option>
             <option value="last6">Last 6 Months</option>
-            <option value="last12" selected>Last 12 Months</option>
+            <option value="last12">Last 12 Months</option>
             <option value="all">All Available</option>
             <option value="custom">Custom Date Range</option>
           </select>
@@ -650,6 +683,12 @@
 let DATA = {};
 let EMPLOYEES = [];
 let ALL_MONTHS = [];
+
+// ==================== MIN TARGETS ====================
+const TARGETS = {
+  convRate: 0.30,
+  aov: 1500
+};
 
 // ==================== COLOUR CONFIG ====================
 const EMPLOYEE_COLOURS = {
@@ -728,7 +767,6 @@ async function loadData() {
     document.getElementById('loadingOverlay').style.display = 'none';
     document.getElementById('mainContent').style.display = 'block';
 
-    // DEFAULT PAGE: Team Comparison
     updateTeam();
   } catch (err) {
     document.getElementById('loadingOverlay').style.display = 'none';
@@ -785,7 +823,6 @@ function compareArrow(current, previous) {
   return { html: `<span class="mtd-compare ${dir}">${arrow} ${Math.abs(pct).toFixed(0)}% vs prev month</span>`, cls: dir };
 }
 
-// ==================== SECTION TOGGLE ====================
 function toggleSection(sectionId, headerEl) {
   const section = document.getElementById(sectionId);
   const icon = headerEl.querySelector('.toggle-icon');
@@ -801,7 +838,6 @@ function createLineChart(canvasId, labels, datasets, yFormat, targetLines) {
   destroyChart(canvasId);
   const ctx = document.getElementById(canvasId).getContext('2d');
 
-  // Add target line datasets if provided
   if (targetLines && targetLines.length > 0) {
     targetLines.forEach(t => {
       datasets.push({
@@ -865,10 +901,63 @@ function createBarChart(canvasId, labels, datasets, yFormat) {
           grid: { color: '#e5e5e5' },
           ticks: {
             font: { family: 'Inter', size: 11 },
-            callback: yFormat === 'currency' ? v => fmt(v) : yFormat === 'pctRaw' ? v => v.toFixed(0)+'%' : v => v
+            callback: yFormat === 'currency' ? v => fmt(v) : yFormat === 'pctRaw' ? v => v.toFixed(0)+'%' : yFormat === 'pct' ? v => (v*100).toFixed(0)+'%' : v => v
           }
         },
         x: { grid: { display: false }, ticks: { font: { family: 'Inter', size: 11 } } }
+      }
+    }
+  });
+}
+
+// Grouped bar chart for single-month team comparison with optional target line
+function createGroupedBarChart(canvasId, empLabels, values, colours, yFormat, targetValue, targetLabel) {
+  destroyChart(canvasId);
+  const ctx = document.getElementById(canvasId).getContext('2d');
+
+  const datasets = [{
+    data: values,
+    backgroundColor: colours,
+    borderRadius: 6,
+    barPercentage: 0.6,
+    categoryPercentage: 0.7
+  }];
+
+  // Add target line as a second dataset (line type on bar chart)
+  if (targetValue !== undefined && targetValue !== null) {
+    datasets.push({
+      label: targetLabel || 'Target',
+      data: empLabels.map(() => targetValue),
+      type: 'line',
+      borderColor: '#ef4444',
+      borderWidth: 2,
+      borderDash: [8, 4],
+      pointRadius: 0,
+      pointHoverRadius: 0,
+      fill: false
+    });
+  }
+
+  charts[canvasId] = new Chart(ctx, {
+    type: 'bar',
+    data: { labels: empLabels, datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      aspectRatio: 2,
+      plugins: {
+        legend: { display: targetValue !== undefined && targetValue !== null, position: 'top', labels: { usePointStyle: true, padding: 16, font: { family: 'Inter', size: 12 }, filter: item => item.text !== undefined } }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          grid: { color: '#e5e5e5' },
+          ticks: {
+            font: { family: 'Inter', size: 11 },
+            callback: yFormat === 'currency' ? v => fmt(v) : yFormat === 'pct' ? v => (v*100).toFixed(0)+'%' : yFormat === 'pctRaw' ? v => v.toFixed(0)+'%' : v => v
+          }
+        },
+        x: { grid: { display: false }, ticks: { font: { family: 'Inter', size: 12, weight: 600 } } }
       }
     }
   });
@@ -1107,7 +1196,6 @@ function updateHistorical() {
     { label: 'Orders', data: data.map(d=>d.orders), borderColor: colour.solid, backgroundColor: 'transparent', fill: false, tension: 0.3, borderWidth: 2, borderDash: [6,3], pointRadius: 3 }
   ]);
 
-  // Conversion chart with 30% target line
   createLineChart('chartConvRate', labels, [
     { label: 'Conversion Rate', data: data.map(d=>d.convRate), borderColor: colour.solid, backgroundColor: colour.light, fill: true, tension: 0.3, pointRadius: 4, borderWidth: 2.5 }
   ], 'pct', [{ label: 'Target (30%)', value: 0.30, color: '#ef4444' }]);
@@ -1117,12 +1205,10 @@ function updateHistorical() {
     { label: 'Gross Profit', data: data.map(d=>d.gp), borderColor: '#22c55e', backgroundColor: 'rgba(34,197,94,0.08)', fill: true, tension: 0.3, borderWidth: 2, borderDash: [6,3] }
   ], 'currency');
 
-  // AOV chart with £1500 target line
   createLineChart('chartAOV', labels, [
     { label: 'Avg Order Value', data: data.map(d=>d.aov), borderColor: colour.solid, backgroundColor: colour.light, fill: true, tension: 0.3, pointRadius: 4, borderWidth: 2.5 }
   ], 'currency', [{ label: 'Target (\u00a31,500)', value: 1500, color: '#ef4444' }]);
 
-  // Margin chart — multiply by 100 so axis reads correctly
   createLineChart('chartMargin', labels, [
     { label: 'Profit Margin %', data: data.map(d => Number(d.margin) * 100), borderColor: '#22c55e', backgroundColor: 'rgba(34,197,94,0.08)', fill: true, tension: 0.3, pointRadius: 4, borderWidth: 2.5 }
   ], 'pctRaw');
@@ -1158,13 +1244,13 @@ function buildTeamSummary(months) {
   });
 
   const rows = [
-    { label: 'Enquiries', key: 'enq', fmt: v => v.toLocaleString() },
-    { label: 'Orders', key: 'orders', fmt: v => v.toLocaleString() },
-    { label: 'Conversion', key: 'convRate', fmt: v => (v * 100).toFixed(1) + '%' },
-    { label: 'Total Sales', key: 'sales', fmt: v => fmt(v) },
-    { label: 'Avg Order Value', key: 'aov', fmt: v => fmt(v) },
-    { label: 'Gross Profit', key: 'gp', fmt: v => fmt(v) },
-    { label: 'Profit Margin', key: 'margin', fmt: v => (v * 100).toFixed(1) + '%' }
+    { label: 'Enquiries', key: 'enq', fmt: v => v.toLocaleString(), target: null },
+    { label: 'Orders', key: 'orders', fmt: v => v.toLocaleString(), target: null },
+    { label: 'Conversion', key: 'convRate', fmt: v => (v * 100).toFixed(1) + '%', target: TARGETS.convRate },
+    { label: 'Total Sales', key: 'sales', fmt: v => fmt(v), target: null },
+    { label: 'Avg Order Value', key: 'aov', fmt: v => fmt(v), target: TARGETS.aov },
+    { label: 'Gross Profit', key: 'gp', fmt: v => fmt(v), target: null },
+    { label: 'Profit Margin', key: 'margin', fmt: v => (v * 100).toFixed(1) + '%', target: null }
   ];
 
   let html = '<table class="team-summary-table"><thead><tr><th>Metric</th>';
@@ -1179,8 +1265,17 @@ function buildTeamSummary(months) {
     const bestVal = Math.max(...values);
     html += `<tr><td class="metric-label">${row.label}</td>`;
     stats.forEach(s => {
-      const isBest = s[row.key] === bestVal && s[row.key] > 0;
-      html += `<td class="${isBest ? 'best-value' : ''}">${row.fmt(s[row.key])}</td>`;
+      const val = s[row.key];
+      const isBest = val === bestVal && val > 0;
+      let cellClass = '';
+
+      if (isBest) {
+        cellClass = 'cell-best';
+      } else if (row.target !== null) {
+        cellClass = val >= row.target ? 'cell-above-target' : 'cell-below-target';
+      }
+
+      html += `<td class="${cellClass}">${row.fmt(val)}</td>`;
     });
     html += '</tr>';
   });
@@ -1194,8 +1289,8 @@ function updateTeam() {
   const metric = document.getElementById('teamMetric').value;
   const months = getFilteredMonths('teamPeriod', 'teamDateFrom', 'teamDateTo');
   const labels = months.map(monthLabel);
+  const isSingleMonth = months.length <= 1;
 
-  // Build summary table using same period
   buildTeamSummary(months);
 
   const mc = {
@@ -1213,35 +1308,53 @@ function updateTeam() {
 
   const isMargin = mc.key === 'margin';
 
-  const datasets = EMPLOYEES.map((emp) => {
-    const colour = getEmployeeColour(emp);
-    const values = months.map(m => {
-      const row = (DATA[emp]||[]).find(d => d.date === m);
-      if (!row) return null;
+  if (isSingleMonth) {
+    // SINGLE MONTH: use grouped bar chart instead of line chart
+    const empValues = EMPLOYEES.map(emp => {
+      const row = (DATA[emp]||[]).find(d => d.date === months[0]);
+      if (!row) return 0;
       return isMargin ? Number(row[mc.key]) * 100 : row[mc.key];
     });
-    return {
-      label: emp,
-      data: values,
-      borderColor: colour.solid,
-      backgroundColor: colour.light,
-      tension: 0.3,
-      spanGaps: true,
-      pointRadius: 4,
-      borderWidth: 2.5
-    };
-  });
+    const empColours = EMPLOYEES.map(e => getEmployeeColour(e).solid);
+    const empLabels = EMPLOYEES.map(n => n.split(' ')[0]);
 
-  // Target lines for specific metrics
-  let targetLines = [];
-  if (mc.key === 'convRate') {
-    targetLines.push({ label: 'Target (30%)', value: 0.30, color: '#ef4444' });
-  } else if (mc.key === 'aov') {
-    targetLines.push({ label: 'Target (\u00a31,500)', value: 1500, color: '#ef4444' });
+    let targetVal = null, targetLbl = '';
+    if (mc.key === 'convRate') { targetVal = 0.30; targetLbl = 'Target (30%)'; }
+    else if (mc.key === 'aov') { targetVal = 1500; targetLbl = 'Target (\u00a31,500)'; }
+
+    createGroupedBarChart('chartTeamLine', empLabels, empValues, empColours, mc.fmt, targetVal, targetLbl);
+  } else {
+    // MULTI MONTH: line chart as before
+    const datasets = EMPLOYEES.map((emp) => {
+      const colour = getEmployeeColour(emp);
+      const values = months.map(m => {
+        const row = (DATA[emp]||[]).find(d => d.date === m);
+        if (!row) return null;
+        return isMargin ? Number(row[mc.key]) * 100 : row[mc.key];
+      });
+      return {
+        label: emp,
+        data: values,
+        borderColor: colour.solid,
+        backgroundColor: colour.light,
+        tension: 0.3,
+        spanGaps: true,
+        pointRadius: 4,
+        borderWidth: 2.5
+      };
+    });
+
+    let targetLines = [];
+    if (mc.key === 'convRate') {
+      targetLines.push({ label: 'Target (30%)', value: 0.30, color: '#ef4444' });
+    } else if (mc.key === 'aov') {
+      targetLines.push({ label: 'Target (\u00a31,500)', value: 1500, color: '#ef4444' });
+    }
+
+    createLineChart('chartTeamLine', labels, datasets, mc.fmt, targetLines);
   }
 
-  createLineChart('chartTeamLine', labels, datasets, mc.fmt, targetLines);
-
+  // Period totals bar chart
   const totals = EMPLOYEES.map(emp => {
     const empData = getDataForMonths(emp, months);
     if (mc.key === 'convRate') {
@@ -1277,7 +1390,6 @@ function updateTeam() {
   });
   document.getElementById('teamNote').textContent = notes.length > 0 ? 'Note: ' + notes.join('. ') + '.' : '';
 
-  // Monthly breakdown table — multiply margin by 100 for display
   let html = '<table class="ranking-table"><thead><tr><th>Month</th>';
   EMPLOYEES.forEach(e => {
     const colour = getEmployeeColour(e);
