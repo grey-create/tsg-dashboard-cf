@@ -176,6 +176,19 @@
     margin: 28px 0 20px 0;
   }
 
+  /* ===== INDIVIDUAL PAGE SECTION BLOCKS ===== */
+  .individual-section-block {
+    background: var(--white);
+    border: 1px solid var(--gray4);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 24px;
+  }
+
+  .individual-section-block .section-header {
+    margin-bottom: 20px;
+  }
+
   /* ===== KPI CARDS ===== */
   .kpi-row {
     display: grid;
@@ -245,6 +258,58 @@
   .mtd-card .mtd-compare.up { color: var(--green); }
   .mtd-card .mtd-compare.down { color: var(--red); }
   .mtd-card .mtd-compare.neutral { color: var(--gray2); }
+
+  /* ===== TEAM SUMMARY TABLE ===== */
+  .team-summary-wrap {
+    margin-bottom: 28px;
+  }
+
+  .team-summary-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    background: var(--white);
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid var(--gray4);
+  }
+
+  .team-summary-table th {
+    text-align: left;
+    padding: 12px 16px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: var(--gray1);
+    border-bottom: 2px solid var(--dark);
+    font-weight: 700;
+    background: var(--gray5);
+  }
+
+  .team-summary-table th:first-child { width: 160px; }
+
+  .team-summary-table td {
+    padding: 11px 16px;
+    border-bottom: 1px solid var(--gray4);
+    font-weight: 600;
+    text-align: left;
+  }
+
+  .team-summary-table tr:last-child td { border-bottom: none; }
+  .team-summary-table tr:hover { background: var(--gray5); }
+
+  .team-summary-table .metric-label {
+    font-weight: 700;
+    color: var(--dark);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+
+  .team-summary-table .best-value {
+    background: rgba(34,197,94,0.08);
+    font-weight: 800;
+  }
 
   /* ===== INSIGHTS ROW ===== */
   .insights-row {
@@ -396,6 +461,8 @@
     .insights-row { grid-template-columns: 1fr; }
     header { flex-direction: column; gap: 12px; align-items: flex-start; }
     .nav-tabs { flex-wrap: wrap; }
+    .team-summary-table { font-size: 12px; }
+    .team-summary-table th, .team-summary-table td { padding: 8px 10px; }
   }
 </style>
 </head>
@@ -407,8 +474,8 @@
     <div class="subtitle">Individual Conversions &bull; <span id="lastUpdated">Loading...</span></div>
   </div>
   <div class="nav-tabs">
-    <button class="nav-tab active" onclick="showPage('individual', this)">Individual Review</button>
-    <button class="nav-tab" onclick="showPage('team', this)">Team Comparison</button>
+    <button class="nav-tab" onclick="showPage('individual', this)">Individual Review</button>
+    <button class="nav-tab active" onclick="showPage('team', this)">Team Comparison</button>
     <button class="nav-tab" onclick="showPage('rankings', this)">Rankings</button>
   </div>
 </header>
@@ -424,7 +491,7 @@
   <div id="mainContent" style="display:none;">
 
     <!-- ==================== INDIVIDUAL REVIEW ==================== -->
-    <div id="page-individual" class="page active">
+    <div id="page-individual" class="page">
       <div class="controls">
         <div class="control-group">
           <label>Employee</label>
@@ -433,66 +500,81 @@
       </div>
 
       <!-- THIS MONTH SECTION -->
-      <div class="section-header" onclick="toggleSection('mtdSection', this)">
-        <h2>This Month <span class="section-badge" id="mtdMonthLabel">Feb 2026</span></h2>
-        <span class="toggle-icon">▼</span>
-      </div>
-      <div class="section-content" id="mtdSection">
-        <div class="mtd-grid" id="mtdGrid"></div>
-        <div class="insights-row" id="mtdInsights"></div>
+      <div class="individual-section-block">
+        <div class="section-header" onclick="toggleSection('mtdSection', this)">
+          <h2>This Month <span class="section-badge" id="mtdMonthLabel">Feb 2026</span></h2>
+          <span class="toggle-icon">&#9660;</span>
+        </div>
+        <div class="section-content" id="mtdSection">
+          <div class="mtd-grid" id="mtdGrid"></div>
+          <div class="insights-row" id="mtdInsights"></div>
+        </div>
       </div>
 
       <!-- LAST MONTH SNAPSHOT -->
-      <hr class="section-divider">
-      <div class="section-header" onclick="toggleSection('lastMonthSection', this)">
-        <h2>Last Month <span class="section-badge" id="lastMonthLabel">Jan 2026</span></h2>
-        <span class="toggle-icon">▼</span>
-      </div>
-      <div class="section-content" id="lastMonthSection">
-        <div class="mtd-grid" id="lastMonthGrid"></div>
-        <div class="insights-row" id="lastMonthInsights"></div>
+      <div class="individual-section-block">
+        <div class="section-header" onclick="toggleSection('lastMonthSection', this)">
+          <h2>Last Month <span class="section-badge" id="lastMonthLabel">Jan 2026</span></h2>
+          <span class="toggle-icon">&#9660;</span>
+        </div>
+        <div class="section-content" id="lastMonthSection">
+          <div class="mtd-grid" id="lastMonthGrid"></div>
+          <div class="insights-row" id="lastMonthInsights"></div>
+        </div>
       </div>
 
       <!-- HISTORICAL SECTION -->
-      <hr class="section-divider">
-      <div class="section-header" onclick="toggleSection('histSection', this)">
-        <h2>Historical Performance</h2>
-        <span class="toggle-icon">▼</span>
-      </div>
-      <div class="section-content" id="histSection">
-        <div class="controls" style="margin-top:4px;">
-          <div class="control-group">
-            <label>Period</label>
-            <select id="periodSelect" onchange="handlePeriodChange()">
-              <option value="last3">Last 3 Months</option>
-              <option value="last6">Last 6 Months</option>
-              <option value="last12" selected>Last 12 Months</option>
-              <option value="all">All Available</option>
-              <option value="custom">Custom Date Range</option>
-            </select>
-          </div>
-          <div class="date-range" id="dateRange">
-            <span>From</span>
-            <input type="month" id="dateFrom" onchange="updateHistorical()">
-            <span>To</span>
-            <input type="month" id="dateTo" onchange="updateHistorical()">
-          </div>
+      <div class="individual-section-block">
+        <div class="section-header" onclick="toggleSection('histSection', this)">
+          <h2>Historical Performance</h2>
+          <span class="toggle-icon">&#9660;</span>
         </div>
-        <div class="kpi-row" id="kpiRow"></div>
-        <div class="insights-row" id="histInsights"></div>
-        <div class="chart-grid">
-          <div class="chart-card"><h3>Enquiries &amp; Orders</h3><canvas id="chartEnqOrders"></canvas></div>
-          <div class="chart-card"><h3>Conversion Rate (%)</h3><canvas id="chartConvRate"></canvas></div>
-          <div class="chart-card"><h3>Sales &amp; Gross Profit</h3><canvas id="chartSales"></canvas></div>
-          <div class="chart-card"><h3>Average Order Value</h3><canvas id="chartAOV"></canvas></div>
-          <div class="chart-card"><h3>Profit Margin (%)</h3><canvas id="chartMargin"></canvas></div>
-          <div class="chart-card"><h3>Pipeline: Rejected &amp; To Follow</h3><canvas id="chartPipeline"></canvas></div>
+        <div class="section-content" id="histSection">
+          <div class="controls" style="margin-top:4px;">
+            <div class="control-group">
+              <label>Period</label>
+              <select id="periodSelect" onchange="handlePeriodChange()">
+                <option value="last3">Last 3 Months</option>
+                <option value="last6">Last 6 Months</option>
+                <option value="last12" selected>Last 12 Months</option>
+                <option value="all">All Available</option>
+                <option value="custom">Custom Date Range</option>
+              </select>
+            </div>
+            <div class="date-range" id="dateRange">
+              <span>From</span>
+              <input type="month" id="dateFrom" onchange="updateHistorical()">
+              <span>To</span>
+              <input type="month" id="dateTo" onchange="updateHistorical()">
+            </div>
+          </div>
+          <div class="kpi-row" id="kpiRow"></div>
+          <div class="insights-row" id="histInsights"></div>
+          <div class="chart-grid">
+            <div class="chart-card"><h3>Enquiries &amp; Orders</h3><canvas id="chartEnqOrders"></canvas></div>
+            <div class="chart-card"><h3>Conversion Rate (%)</h3><canvas id="chartConvRate"></canvas></div>
+            <div class="chart-card"><h3>Sales &amp; Gross Profit</h3><canvas id="chartSales"></canvas></div>
+            <div class="chart-card"><h3>Average Order Value</h3><canvas id="chartAOV"></canvas></div>
+            <div class="chart-card"><h3>Profit Margin (%)</h3><canvas id="chartMargin"></canvas></div>
+            <div class="chart-card"><h3>Pipeline: Rejected &amp; To Follow</h3><canvas id="chartPipeline"></canvas></div>
+          </div>
         </div>
       </div>
     </div>
 
     <!-- ==================== TEAM COMPARISON ==================== -->
-    <div id="page-team" class="page">
+    <div id="page-team" class="page active">
+
+      <!-- TEAM SUMMARY TABLE AT TOP -->
+      <div class="team-summary-wrap">
+        <div class="section-header" style="cursor:default;">
+          <h2>Team Overview <span class="section-badge" id="teamSummaryPeriodLabel">This Month</span></h2>
+        </div>
+        <div id="teamSummaryTable"></div>
+      </div>
+
+      <hr class="section-divider">
+
       <div class="controls">
         <div class="control-group">
           <label>Metric</label>
@@ -607,17 +689,17 @@ async function loadData() {
       grouped[r.employee].push({
         date: ym,
         month: r.monthYear || ym,
-        enq: r.enq,
-        orders: r.orders,
-        convRate: r.convRate,
-        rejected: r.rejected,
-        follow: r.follow,
-        valueEnq: r.valueEnq,
-        valueOrd: r.valueOrd,
-        ordCost: r.ordCost,
-        gp: r.gp,
-        margin: r.margin,
-        aov: r.aov
+        enq: Number(r.enq) || 0,
+        orders: Number(r.orders) || 0,
+        convRate: Number(r.convRate) || 0,
+        rejected: Number(r.rejected) || 0,
+        follow: Number(r.follow) || 0,
+        valueEnq: Number(r.valueEnq) || 0,
+        valueOrd: Number(r.valueOrd) || 0,
+        ordCost: Number(r.ordCost) || 0,
+        gp: Number(r.gp) || 0,
+        margin: Number(r.margin) || 0,
+        aov: Number(r.aov) || 0
       });
     });
 
@@ -646,7 +728,8 @@ async function loadData() {
     document.getElementById('loadingOverlay').style.display = 'none';
     document.getElementById('mainContent').style.display = 'block';
 
-    updateIndividual();
+    // DEFAULT PAGE: Team Comparison
+    updateTeam();
   } catch (err) {
     document.getElementById('loadingOverlay').style.display = 'none';
     document.getElementById('errorContainer').innerHTML = `<div class="error-msg"><strong>Failed to load data:</strong> ${err.message}<br><br>Check that AIRTABLE_TOKEN is set in your Cloudflare Pages environment variables.</div>`;
@@ -714,9 +797,27 @@ function toggleSection(sectionId, headerEl) {
 let charts = {};
 function destroyChart(id) { if (charts[id]) { charts[id].destroy(); delete charts[id]; } }
 
-function createLineChart(canvasId, labels, datasets, yFormat) {
+function createLineChart(canvasId, labels, datasets, yFormat, targetLines) {
   destroyChart(canvasId);
   const ctx = document.getElementById(canvasId).getContext('2d');
+
+  // Add target line datasets if provided
+  if (targetLines && targetLines.length > 0) {
+    targetLines.forEach(t => {
+      datasets.push({
+        label: t.label,
+        data: labels.map(() => t.value),
+        borderColor: t.color || '#ef4444',
+        borderWidth: 2,
+        borderDash: [8, 4],
+        pointRadius: 0,
+        pointHoverRadius: 0,
+        fill: false,
+        tension: 0
+      });
+    });
+  }
+
   charts[canvasId] = new Chart(ctx, {
     type: 'line',
     data: { labels, datasets },
@@ -764,7 +865,7 @@ function createBarChart(canvasId, labels, datasets, yFormat) {
           grid: { color: '#e5e5e5' },
           ticks: {
             font: { family: 'Inter', size: 11 },
-            callback: yFormat === 'currency' ? v => fmt(v) : v => v
+            callback: yFormat === 'currency' ? v => fmt(v) : yFormat === 'pctRaw' ? v => v.toFixed(0)+'%' : v => v
           }
         },
         x: { grid: { display: false }, ticks: { font: { family: 'Inter', size: 11 } } }
@@ -824,7 +925,7 @@ function updateMTD() {
     { label: 'Sales', curr: curr.valueOrd, prev: prev ? prev.valueOrd : 0, format: 'currency' },
     { label: 'Avg Order Value', curr: curr.aov, prev: prev ? prev.aov : 0, format: 'currency' },
     { label: 'Gross Profit', curr: curr.gp, prev: prev ? prev.gp : 0, format: 'currency' },
-    { label: 'Profit Margin', curr: curr.margin, prev: prev ? prev.margin : 0, format: 'pctRaw' },
+    { label: 'Profit Margin', curr: Number(curr.margin) * 100, prev: prev ? Number(prev.margin) * 100 : 0, format: 'pctRaw' },
     { label: 'Enquiry Value', curr: curr.valueEnq, prev: prev ? prev.valueEnq : 0, format: 'currency' }
   ];
 
@@ -840,7 +941,6 @@ function updateMTD() {
   });
   document.getElementById('mtdGrid').innerHTML = gridHtml;
 
-  // MTD Insights
   const rejectRate = curr.enq > 0 ? (curr.rejected / curr.enq * 100).toFixed(1) : '0';
   const followRate = curr.enq > 0 ? (curr.follow / curr.enq * 100).toFixed(1) : '0';
   const revenuePerEnq = curr.enq > 0 ? fmt(curr.valueOrd / curr.enq) : fmt(0);
@@ -894,7 +994,7 @@ function updateLastMonth() {
     { label: 'Sales', curr: curr.valueOrd, prev: prev ? prev.valueOrd : 0, format: 'currency' },
     { label: 'Avg Order Value', curr: curr.aov, prev: prev ? prev.aov : 0, format: 'currency' },
     { label: 'Gross Profit', curr: curr.gp, prev: prev ? prev.gp : 0, format: 'currency' },
-    { label: 'Profit Margin', curr: curr.margin, prev: prev ? prev.margin : 0, format: 'pctRaw' },
+    { label: 'Profit Margin', curr: Number(curr.margin) * 100, prev: prev ? Number(prev.margin) * 100 : 0, format: 'pctRaw' },
     { label: 'Enquiry Value', curr: curr.valueEnq, prev: prev ? prev.valueEnq : 0, format: 'currency' }
   ];
 
@@ -945,7 +1045,6 @@ function updateHistorical() {
     return;
   }
 
-  // KPIs
   const totalEnq = data.reduce((s,d) => s + d.enq, 0);
   const totalOrders = data.reduce((s,d) => s + d.orders, 0);
   const avgConv = totalEnq > 0 ? totalOrders / totalEnq : 0;
@@ -978,7 +1077,6 @@ function updateHistorical() {
     <div class="kpi-card" style="border-top: 3px solid ${colour.solid}"><div class="label">Total GP</div><div class="value">${fmt(totalGP)}</div><div class="trend">Margin: ${avgMargin.toFixed(1)}%</div></div>
   `;
 
-  // Historical Insights
   const bestMonth = [...data].sort((a,b) => b.valueOrd - a.valueOrd)[0];
   const worstMonth = [...data].sort((a,b) => a.valueOrd - b.valueOrd)[0];
   const bestConvMonth = [...data].sort((a,b) => b.convRate - a.convRate)[0];
@@ -1009,21 +1107,24 @@ function updateHistorical() {
     { label: 'Orders', data: data.map(d=>d.orders), borderColor: colour.solid, backgroundColor: 'transparent', fill: false, tension: 0.3, borderWidth: 2, borderDash: [6,3], pointRadius: 3 }
   ]);
 
+  // Conversion chart with 30% target line
   createLineChart('chartConvRate', labels, [
     { label: 'Conversion Rate', data: data.map(d=>d.convRate), borderColor: colour.solid, backgroundColor: colour.light, fill: true, tension: 0.3, pointRadius: 4, borderWidth: 2.5 }
-  ], 'pct');
+  ], 'pct', [{ label: 'Target (30%)', value: 0.30, color: '#ef4444' }]);
 
   createLineChart('chartSales', labels, [
     { label: 'Sales', data: data.map(d=>d.valueOrd), borderColor: colour.solid, backgroundColor: colour.light, fill: true, tension: 0.3, borderWidth: 2.5 },
     { label: 'Gross Profit', data: data.map(d=>d.gp), borderColor: '#22c55e', backgroundColor: 'rgba(34,197,94,0.08)', fill: true, tension: 0.3, borderWidth: 2, borderDash: [6,3] }
   ], 'currency');
 
+  // AOV chart with £1500 target line
   createLineChart('chartAOV', labels, [
     { label: 'Avg Order Value', data: data.map(d=>d.aov), borderColor: colour.solid, backgroundColor: colour.light, fill: true, tension: 0.3, pointRadius: 4, borderWidth: 2.5 }
-  ], 'currency');
+  ], 'currency', [{ label: 'Target (\u00a31,500)', value: 1500, color: '#ef4444' }]);
 
+  // Margin chart — multiply by 100 so axis reads correctly
   createLineChart('chartMargin', labels, [
-    { label: 'Profit Margin %', data: data.map(d=>d.margin), borderColor: '#22c55e', backgroundColor: 'rgba(34,197,94,0.08)', fill: true, tension: 0.3, pointRadius: 4, borderWidth: 2.5 }
+    { label: 'Profit Margin %', data: data.map(d => Number(d.margin) * 100), borderColor: '#22c55e', backgroundColor: 'rgba(34,197,94,0.08)', fill: true, tension: 0.3, pointRadius: 4, borderWidth: 2.5 }
   ], 'pctRaw');
 
   createBarChart('chartPipeline', labels, [
@@ -1032,11 +1133,70 @@ function updateHistorical() {
   ]);
 }
 
+// ==================== TEAM SUMMARY TABLE ====================
+function buildTeamSummary(months) {
+  const periodLabel = document.getElementById('teamPeriod');
+  const selectedText = periodLabel.options[periodLabel.selectedIndex].text;
+  document.getElementById('teamSummaryPeriodLabel').textContent = selectedText;
+
+  const stats = EMPLOYEES.map(emp => {
+    const empData = getDataForMonths(emp, months);
+    const totalEnq = empData.reduce((s,d) => s + d.enq, 0);
+    const totalOrd = empData.reduce((s,d) => s + d.orders, 0);
+    const totalSales = empData.reduce((s,d) => s + d.valueOrd, 0);
+    const totalGP = empData.reduce((s,d) => s + d.gp, 0);
+    return {
+      name: emp,
+      enq: totalEnq,
+      orders: totalOrd,
+      convRate: totalEnq > 0 ? (totalOrd / totalEnq) : 0,
+      sales: totalSales,
+      aov: totalOrd > 0 ? totalSales / totalOrd : 0,
+      gp: totalGP,
+      margin: totalSales > 0 ? (totalGP / totalSales) : 0
+    };
+  });
+
+  const rows = [
+    { label: 'Enquiries', key: 'enq', fmt: v => v.toLocaleString() },
+    { label: 'Orders', key: 'orders', fmt: v => v.toLocaleString() },
+    { label: 'Conversion', key: 'convRate', fmt: v => (v * 100).toFixed(1) + '%' },
+    { label: 'Total Sales', key: 'sales', fmt: v => fmt(v) },
+    { label: 'Avg Order Value', key: 'aov', fmt: v => fmt(v) },
+    { label: 'Gross Profit', key: 'gp', fmt: v => fmt(v) },
+    { label: 'Profit Margin', key: 'margin', fmt: v => (v * 100).toFixed(1) + '%' }
+  ];
+
+  let html = '<table class="team-summary-table"><thead><tr><th>Metric</th>';
+  EMPLOYEES.forEach(e => {
+    const colour = getEmployeeColour(e);
+    html += `<th><span class="employee-dot" style="background:${colour.solid}"></span>${e.split(' ')[0]}</th>`;
+  });
+  html += '</tr></thead><tbody>';
+
+  rows.forEach(row => {
+    const values = stats.map(s => s[row.key]);
+    const bestVal = Math.max(...values);
+    html += `<tr><td class="metric-label">${row.label}</td>`;
+    stats.forEach(s => {
+      const isBest = s[row.key] === bestVal && s[row.key] > 0;
+      html += `<td class="${isBest ? 'best-value' : ''}">${row.fmt(s[row.key])}</td>`;
+    });
+    html += '</tr>';
+  });
+
+  html += '</tbody></table>';
+  document.getElementById('teamSummaryTable').innerHTML = html;
+}
+
 // ==================== TEAM PAGE ====================
 function updateTeam() {
   const metric = document.getElementById('teamMetric').value;
   const months = getFilteredMonths('teamPeriod', 'teamDateFrom', 'teamDateTo');
   const labels = months.map(monthLabel);
+
+  // Build summary table using same period
+  buildTeamSummary(months);
 
   const mc = {
     enquiries: { key: 'enq', label: 'Enquiries', fmt: 'number' },
@@ -1051,11 +1211,14 @@ function updateTeam() {
   document.getElementById('teamChartTitle').textContent = mc.label + ' \u2014 All Employees';
   document.getElementById('teamBarTitle').textContent = mc.label + ' \u2014 Period Totals';
 
+  const isMargin = mc.key === 'margin';
+
   const datasets = EMPLOYEES.map((emp) => {
     const colour = getEmployeeColour(emp);
     const values = months.map(m => {
       const row = (DATA[emp]||[]).find(d => d.date === m);
-      return row ? row[mc.key] : null;
+      if (!row) return null;
+      return isMargin ? Number(row[mc.key]) * 100 : row[mc.key];
     });
     return {
       label: emp,
@@ -1069,7 +1232,15 @@ function updateTeam() {
     };
   });
 
-  createLineChart('chartTeamLine', labels, datasets, mc.fmt);
+  // Target lines for specific metrics
+  let targetLines = [];
+  if (mc.key === 'convRate') {
+    targetLines.push({ label: 'Target (30%)', value: 0.30, color: '#ef4444' });
+  } else if (mc.key === 'aov') {
+    targetLines.push({ label: 'Target (\u00a31,500)', value: 1500, color: '#ef4444' });
+  }
+
+  createLineChart('chartTeamLine', labels, datasets, mc.fmt, targetLines);
 
   const totals = EMPLOYEES.map(emp => {
     const empData = getDataForMonths(emp, months);
@@ -1106,6 +1277,7 @@ function updateTeam() {
   });
   document.getElementById('teamNote').textContent = notes.length > 0 ? 'Note: ' + notes.join('. ') + '.' : '';
 
+  // Monthly breakdown table — multiply margin by 100 for display
   let html = '<table class="ranking-table"><thead><tr><th>Month</th>';
   EMPLOYEES.forEach(e => {
     const colour = getEmployeeColour(e);
@@ -1120,7 +1292,7 @@ function updateTeam() {
       if (row) {
         if (mc.fmt === 'currency') val = fmt(row[mc.key]);
         else if (mc.fmt === 'pct') val = fmtPct(row[mc.key]);
-        else if (mc.fmt === 'pctRaw') val = fmtPctRaw(row[mc.key]);
+        else if (mc.fmt === 'pctRaw') val = fmtPctRaw(Number(row[mc.key]) * 100);
         else val = row[mc.key].toLocaleString();
       }
       html += `<td>${val}</td>`;
