@@ -1,11 +1,9 @@
 // Cloudflare Pages Function — fetches 3 Airtable tables for the Sales Dashboard
 // Deploy to: functions/sales-data.js (serves at /sales-data)
-// Requires AIRTABLE_TOKEN environment variable in Cloudflare Pages settings
 
 export async function onRequest(context) {
   const TOKEN = context.env.AIRTABLE_TOKEN;
   const BASE = "appbx9KaWpz9q1qpE";
-
   const TABLES = {
     overview:    "tblf2Svz59N1TrLoI",
     invoiced:    "tblVJzj3b8InNfXGw",
@@ -36,7 +34,6 @@ export async function onRequest(context) {
     return all;
   }
 
-  // Resilient field getter — tries exact names then partial case-insensitive match
   function gf(fields, ...names) {
     for (const name of names) {
       if (fields[name] !== undefined && fields[name] !== null) return fields[name];
@@ -57,21 +54,17 @@ export async function onRequest(context) {
       fetchTable(TABLES.conversions, "Date Entered"),
     ]);
 
-    // Debug: collect field names from first record of each table
     const debugFields = {
       overview: overviewRaw.length > 0 ? Object.keys(overviewRaw[0].fields).sort() : [],
       invoiced: invoicedRaw.length > 0 ? Object.keys(invoicedRaw[0].fields).sort() : [],
       conversions: conversionsRaw.length > 0 ? Object.keys(conversionsRaw[0].fields).sort() : [],
     };
 
-    // --- Monthly Overview ---
     const overview = overviewRaw.filter(r => r.fields["Month/Year"]).map(r => {
       const f = r.fields;
       return {
-        monthYear: f["Month/Year"] || "",
-        month: gf(f, "Month") || "",
-        dateEntered: f["Date Entered"] || "",
-        phase: gf(f, "Phase") || "",
+        monthYear: f["Month/Year"] || "", month: gf(f, "Month") || "",
+        dateEntered: f["Date Entered"] || "", phase: gf(f, "Phase") || "",
         workingDaysTotal: gf(f, "Working Days Total") || 0,
         workingDaysCompleted: gf(f, "Working Days Completed") || 0,
         tsgTarget: gf(f, "TSG - Target", "TSG Target") || 0,
@@ -92,12 +85,10 @@ export async function onRequest(context) {
       };
     });
 
-    // --- Invoiced Sales by Month ---
     const invoiced = invoicedRaw.filter(r => r.fields["Date Entered"]).map(r => {
       const f = r.fields;
       return {
-        dateEntered: f["Date Entered"] || "",
-        monthYear: gf(f, "Month/Year") || "",
+        dateEntered: f["Date Entered"] || "", monthYear: gf(f, "Month/Year") || "",
         month: gf(f, "Month") || "",
         overall: gf(f, "Overall Sales + VAT copy", "Overall Sales + VAT", "Overall Sales") || 0,
         tsg: gf(f, "TSG Sales + VAT", "TSG Sales") || 0,
@@ -112,12 +103,10 @@ export async function onRequest(context) {
       };
     });
 
-    // --- Conversions by Month ---
     const conversions = conversionsRaw.filter(r => r.fields["Date Entered"]).map(r => {
       const f = r.fields;
       return {
-        dateEntered: f["Date Entered"] || "",
-        monthYear: gf(f, "Month/Year") || "",
+        dateEntered: f["Date Entered"] || "", monthYear: gf(f, "Month/Year") || "",
         month: gf(f, "Month") || "",
         enquiries: gf(f, "Enq's", "Enquiries", "Enqs") || 0,
         orders: gf(f, "Orders") || 0,
