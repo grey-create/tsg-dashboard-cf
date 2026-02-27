@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TSG Sales Dashboard</title>
+<title>TSG Revenue &amp; Invoicing</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -97,13 +97,8 @@
 </head>
 <body>
 
-<nav class="top-nav">
-  <img src="https://cdn.shopify.com/s/files/1/1070/8974/files/TSG-Logo-Roundel-Black.png?v=1772037610" class="tn-logo" alt="TSG">
-  <a href="/sales" class="active">Sales Dashboard</a>
-  <a href="/">TSG Conversions</a>
-  <div class="tn-spacer"></div>
-  <span class="tn-updated" id="navUpdated"></span>
-</nav>
+<nav class="top-nav" id="legacyNav" style="display:none"></nav>
+<script src="/nav.js"></script>
 
 <div class="wrap">
   <div id="loading" class="loading"><div class="spinner"></div>Loading from Airtable&hellip;</div>
@@ -111,6 +106,7 @@
   <div id="app"></div>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script>
 var C={tsg:{color:"#2d6e0e",accent:"#CDE453",bg:"#f5fbe8",bd:"#dff1a8"},wll:{color:"#0891b2",accent:"#6BD4EC",bg:"#ecfbff",bd:"#b3e8f7"},nv:{color:"#FF0077",accent:"#ff3399",bg:"#fff0f6",bd:"#ffb3d9"}};
 var LOGOS={tsg:"https://cdn.shopify.com/s/files/1/1070/8974/files/TSG-Logo-Roundel-Black.png?v=1772037610",wll:"https://cdn.shopify.com/s/files/1/1070/8974/files/WeLoveLEDs-640px--MASTER.png?v=1772124903",nv:"https://cdn.shopify.com/s/files/1/1070/8974/files/NV-Logo-640px--Grey_s-Stuff.png?v=1772124894"};
@@ -247,7 +243,7 @@ function processData(raw){
     if(parseInt(parts[1])===curMonth){
       var r=invByKey[k],yr=parseInt(parts[0]),isCur=k===curKey;
       var t=isCur?D.combProj:(r.tsg||0)+(r.wll||0)+(r.nv||0);
-      D.histMonth.push({l:isCur?D.month+"-"+String(yr).slice(2)+"*":D.month+"-"+String(yr).slice(2),t:t,tsg:isCur?D.tsgProj:(r.tsg||0),wll:isCur?D.wllProj:(r.wll||0),nv:isCur?D.nvProj:(r.nv||0),p:isCur});
+      D.histMonth.push({l:isCur?D.month+"-"+String(yr).slice(2)+"*":D.month+"-"+String(yr).slice(2),v:t,t:t,tsg:isCur?D.tsgProj:(r.tsg||0),wll:isCur?D.wllProj:(r.wll||0),nv:isCur?D.nvProj:(r.nv||0),h:isCur,p:isCur});
     }
   });
 
@@ -343,13 +339,18 @@ function render(D){
 
   // Header
   h+='<div class="fx-b mb-20" style="flex-wrap:wrap;gap:16px">';
-  h+='<div class="fx-c"><img src="'+LOGOS.tsg+'" class="logo logo-lg"><div><h1 style="font-size:22px;font-weight:800;letter-spacing:-.03em">Sales Dashboard</h1>';
+  h+='<div class="fx-c"><img src="'+LOGOS.tsg+'" class="logo logo-lg"><div><h1 style="font-size:22px;font-weight:800;letter-spacing:-.03em">Revenue &amp; Invoicing</h1>';
   h+='<p style="font-size:12px;color:#6b7280;margin-top:2px">'+D.monthName+" "+D.year+" \u00B7 "+D.phase;
   if(D.monthComplete)h+=' \u00B7 <span class="pill pill-b">Month Complete</span>';
   else h+=" \u00B7 Day "+D.wdDone+" of "+D.wdTotal;
   h+="</p></div></div><div class=\"wd\">";
   for(var i=0;i<D.wdTotal;i++)h+='<div class="wd-d" style="background:'+(i<D.wdDone?"#2d6e0e":"#e5e7eb")+'"></div>';
   h+='<span class="wd-lbl">'+(D.monthComplete?"All days complete":D.wdLeft+" days left")+"</span></div></div>";
+
+  // ==============================
+  // ZONE: THE FACTS
+  // ==============================
+  h+='<div style="margin-bottom:16px"><div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;color:#9ca3af">Current Month</div><div style="font-size:16px;font-weight:700;color:#1a1a2e;margin-top:2px">The Facts \u2014 '+D.monthName+' '+D.year+'</div></div>';
 
   // KPIs
   h+='<div class="g4 mb-20">';
@@ -358,6 +359,11 @@ function render(D){
   h+='<div class="kpi" style="border-top:3px solid #6BD4EC"><div class="kpi-label">FY Running Total</div><div class="kpi-val">'+f(D.run.tot[2])+"</div><div class=\"kpi-sub\">"+dl(po(D.run.tot[2],D.run.tot[1]))+" vs prev FY ("+D.run.monthsIn+"mo)</div></div>";
   h+='<div class="kpi" style="border-top:3px solid #FF0077"><div class="kpi-label">Avg Monthly Revenue</div><div class="kpi-val">'+f(D.run.avg[2])+"</div><div class=\"kpi-sub\">Prev FY avg: "+f(D.run.avg[1])+"</div></div>";
   h+="</div>";
+
+  // ==============================
+  // ZONE: COMPARED TO TARGETS
+  // ==============================
+  h+='<div style="margin:32px 0 16px;padding:8px 0;border-top:2px solid #e5e7eb"><div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;color:#9ca3af">Performance</div><div style="font-size:16px;font-weight:700;color:#1a1a2e;margin-top:2px">Compared to Targets</div><div style="font-size:12px;color:#6b7280;margin-top:2px">How each brand is tracking against this month\u2019s targets</div></div>';
 
   // === INVOICING ===
   h+='<div class="card mb-20">';
@@ -416,43 +422,16 @@ function render(D){
   h+="</div>";if(D.combTgt)h+='<div style="font-size:12px;color:#374151">Target: '+f(D.combTgt)+' \u00B7 <span class="'+(D.combProj>=D.combTgt?"up":"dn")+'">'+f(D.combProj-D.combTgt)+"</span></div>";
   h+="</div></div>";
 
-  // === NEW SALES ===
-  if(D.nsVal>0||D.nsEnq>0||D.nsOrd>0||D.nsHistory.length>0){
-    h+='<div class="ns mb-20"><div style="margin-bottom:6px"><span class="sec-pill" style="background:#CDE453;color:#0f172a">Separate from Invoicing</span></div>';
-    h+='<div class="sec-title" style="color:#fff;font-size:18px">New Sales Orders \u2014 TSG</div>';
-    h+='<div class="sec-sub" style="color:#94a3b8;margin-bottom:20px">Order intake confirmed this month. This is NOT invoiced revenue \u2014 orders placed \u2260 revenue recognised.</div>';
-    h+='<div class="g-ns">';
+  // ==============================
+  // ZONE: COMPARED TO PREVIOUS YEARS
+  // ==============================
+  h+='<div style="margin:32px 0 16px;padding:8px 0;border-top:2px solid #e5e7eb"><div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;color:#9ca3af">For Reference</div><div style="font-size:16px;font-weight:700;color:#1a1a2e;margin-top:2px">Compared to Previous Years</div></div>';
 
-    h+="<div>";
-    if(D.nsVal>0){
-      h+='<div style="margin-bottom:16px"><div style="font-size:42px;font-weight:800;color:#CDE453;letter-spacing:-.03em;line-height:1">'+f(D.nsVal)+"</div>";
-      if(D.nsTgt)h+='<div style="font-size:13px;color:#94a3b8;margin-top:6px">Target: '+f(D.nsTgt)+"</div>";
-      if(D.nsTgt&&D.nsVal>=D.nsTgt)h+='<div style="font-size:14px;font-weight:700;color:#4ade80;margin-top:3px">+'+f(D.nsVal-D.nsTgt)+" above target (+"+po(D.nsVal,D.nsTgt)+"%)</div>";
-      h+="</div>";
-    }
-    var histWithVal=D.nsHistory.filter(function(x){return x.v>0});
-    if(histWithVal.length>0){
-      var nsMx=Math.max.apply(null,histWithVal.map(function(x){return x.v}));
-      h+='<div style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">Sales Value Year-on-Year</div>';
-      h+=hbar(histWithVal,nsMx,"#CDE453",true);
-    }
-    h+="</div>";
+  // Historical Chart
+  h+='<div class="card mb-20"><div style="margin-bottom:16px"><span class="sec-pill" style="background:#6BD4EC;color:#1a1a2e">Historical</span><div class="sec-title">Monthly Revenue \u2014 Last 12 Months</div><div class="sec-sub">Combined invoiced revenue by month with target line</div></div>';
+  h+='<canvas id="histChart" style="width:100%;max-height:300px"></canvas></div>';
 
-    h+='<div class="ns-glass"><div style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Enquiries</div>';
-    h+='<div style="font-size:36px;font-weight:800;color:#fff">'+D.nsEnq+"</div>";
-    if(D.nsOrd>0)h+='<div style="font-size:12px;color:#94a3b8;margin-top:4px">'+D.nsOrd+" orders placed</div>";
-    if(D.nsHistory.length>1){h+='<div style="font-size:12px;color:#94a3b8;margin-top:10px;line-height:1.6">';D.nsHistory.forEach(function(x){if(!x.h)h+=x.l+": "+x.e+" enq / "+x.o+" ord<br>";});h+="</div>";}
-    h+="</div>";
-
-    h+='<div class="ns-glass"><div style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Conversion Rate</div>';
-    h+='<div style="font-size:36px;font-weight:800;color:#6BD4EC">'+D.nsConv+"%</div>";
-    if(D.nsMargin>0)h+='<div style="font-size:13px;color:#94a3b8;margin-top:6px">Margin: '+D.nsMargin+"%</div>";
-    if(D.nsAov>0)h+='<div style="font-size:13px;color:#94a3b8;margin-top:3px">AOV: '+f(D.nsAov)+"</div>";
-    if(D.nsHistory.length>1){h+='<div style="font-size:12px;color:#94a3b8;margin-top:10px;line-height:1.6">';D.nsHistory.forEach(function(x){if(!x.h)h+=x.l+": "+x.c+"% conv / "+x.m+"% margin<br>";});h+="</div>";}
-    h+="</div></div></div>";
-  }
-
-  // === Rankings & FY Running ===
+  // Rankings & FY Running
   h+='<div class="g2 mb-20">';
   h+='<div class="card">';
   h+=secHdr("Rankings","#FADD3E","#1a1a2e",D.month+" Rankings & History","How this "+D.monthName+" compares historically");
@@ -461,11 +440,11 @@ function render(D){
     h+='<div class="rk"><div class="rk-l">'+r.l+'</div><div class="rk-v" style="color:'+(r.r<=3?"#92400e":"#6b7280")+'">'+(r.r<=3?med[r.r-1]:"")+" #"+r.r+'</div><div class="rk-s">'+r.s+"</div></div>";
   });h+="</div>";
   if(D.histMonth.length>0){
-    var mx=Math.max.apply(null,D.histMonth.map(function(x){return x.t}));
+    var mx=Math.max.apply(null,D.histMonth.map(function(x){return x.v||x.t}));
     h+='<div style="font-size:11px;color:#6b7280;font-weight:600;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">'+D.monthName+" Turnover</div>";
     h+=hbar(D.histMonth,mx*1.05,"#92400e",false);
     h+='<details class="detail-panel mt-12"><summary>Brand Split by Year</summary><div style="margin-top:8px"><table class="tbl"><thead><tr><th>Year</th><th style="color:'+C.tsg.color+'">TSG</th><th style="color:'+C.wll.color+'">WLL</th><th style="color:'+C.nv.color+'">NV</th><th style="color:#374151">Total</th></tr></thead><tbody>';
-    D.histMonth.forEach(function(x){h+='<tr class="'+(x.p?"hl":"")+'"><td>'+x.l+"</td><td>"+f(x.tsg)+"</td><td>"+f(x.wll)+"</td><td>"+f(x.nv)+'</td><td style="font-weight:600">'+f(x.t)+"</td></tr>";});
+    D.histMonth.forEach(function(x){h+='<tr class="'+(x.h||x.p?"hl":"")+'"><td>'+x.l+"</td><td>"+f(x.tsg)+"</td><td>"+f(x.wll)+"</td><td>"+f(x.nv)+'</td><td style="font-weight:600">'+f(x.v||x.t)+"</td></tr>";});
     h+="</tbody></table></div></details>";
   }
   h+="</div>";
@@ -492,6 +471,30 @@ function render(D){
     h+='<tr class="'+(i>=3?"bold":"")+'"><td>'+row[0]+"</td>";row[1].forEach(function(v){h+="<td>"+f(v)+"</td>";});h+="</tr>";
   });
   h+="</tbody></table></div></details></div></div>";
+
+  // ==============================
+  // ZONE: NEW SALES ORDERS (Simplified)
+  // ==============================
+  if(D.nsVal>0||D.nsEnq>0||D.nsOrd>0||D.nsHistory.length>0){
+    h+='<div style="margin:32px 0 16px;padding:8px 0;border-top:2px solid #e5e7eb"><div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;color:#9ca3af">Order Intake</div><div style="font-size:16px;font-weight:700;color:#1a1a2e;margin-top:2px">New Sales Orders \u2014 TSG</div><div style="font-size:12px;color:#6b7280;margin-top:2px">Summary only \u2014 full detail on the <a href="/" style="color:#2563eb;font-weight:600">Sales Performance</a> page</div></div>';
+
+    h+='<div class="ns mb-20"><div style="display:flex;flex-wrap:wrap;gap:20px;align-items:center">';
+    // Value
+    if(D.nsVal>0){
+      h+='<div><div style="font-size:36px;font-weight:800;color:#CDE453;letter-spacing:-.03em;line-height:1">'+f(D.nsVal)+"</div>";
+      if(D.nsTgt)h+='<div style="font-size:12px;color:#94a3b8;margin-top:4px">Target: '+f(D.nsTgt);
+      if(D.nsTgt&&D.nsVal>=D.nsTgt)h+=' \u00B7 <span style="color:#4ade80;font-weight:700">+'+f(D.nsVal-D.nsTgt)+" above</span>";
+      if(D.nsTgt)h+="</div>";
+      h+="</div>";
+    }
+    // Key stats
+    h+='<div style="display:flex;gap:24px">';
+    h+='<div class="ns-glass" style="padding:12px 18px"><div style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Enquiries</div><div style="font-size:24px;font-weight:800;color:#fff">'+D.nsEnq+"</div></div>";
+    h+='<div class="ns-glass" style="padding:12px 18px"><div style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Orders</div><div style="font-size:24px;font-weight:800;color:#fff">'+D.nsOrd+"</div></div>";
+    h+='<div class="ns-glass" style="padding:12px 18px"><div style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Conversion</div><div style="font-size:24px;font-weight:800;color:#6BD4EC">'+D.nsConv+"%</div></div>";
+    if(D.nsAov>0)h+='<div class="ns-glass" style="padding:12px 18px"><div style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">AOV</div><div style="font-size:24px;font-weight:800;color:#fff">'+f(D.nsAov)+"</div></div>";
+    h+="</div></div></div>";
+  }
 
   // === Projections & Focus ===
   h+='<div class="g2 mb-20">';
@@ -533,6 +536,42 @@ function render(D){
   h+="<br>The Sign Group\u2122 \u00B7 WeLoveLEDs\u2122 \u00B7 Neon Vibes\u00AE</div>";
 
   document.getElementById("app").innerHTML=h;
+
+  // === Build Historical Chart ===
+  buildHistChart(D);
+}
+
+function buildHistChart(D){
+  var el=document.getElementById("histChart");
+  if(!el)return;
+  // Use histMonth data to build a bar chart of monthly totals
+  var labels=D.histMonth.map(function(x){return x.l});
+  var totals=D.histMonth.map(function(x){return x.v||x.t});
+  var tsgVals=D.histMonth.map(function(x){return x.tsg});
+  var wllVals=D.histMonth.map(function(x){return x.wll});
+  var nvVals=D.histMonth.map(function(x){return x.nv});
+  var bgColors=D.histMonth.map(function(x){return x.h?"#1a1a2e":"#d1d5db"});
+  var borderColors=D.histMonth.map(function(x){return x.h?"#1a1a2e":"#9ca3af"});
+
+  new Chart(el.getContext("2d"),{
+    type:"bar",
+    data:{
+      labels:labels,
+      datasets:[
+        {label:"TSG",data:tsgVals,backgroundColor:D.histMonth.map(function(x){return x.h?C.tsg.color:"rgba(45,110,14,0.3)"}),borderRadius:2,stack:"revenue"},
+        {label:"WLL",data:wllVals,backgroundColor:D.histMonth.map(function(x){return x.h?C.wll.color:"rgba(8,145,178,0.3)"}),borderRadius:2,stack:"revenue"},
+        {label:"NV",data:nvVals,backgroundColor:D.histMonth.map(function(x){return x.h?C.nv.color:"rgba(255,0,119,0.3)"}),borderRadius:2,stack:"revenue"},
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:true,aspectRatio:2.5,
+      plugins:{legend:{display:true,position:"top",labels:{usePointStyle:true,padding:16,font:{family:"Inter",size:12}}}},
+      scales:{
+        y:{beginAtZero:true,stacked:true,grid:{color:"#e5e7eb"},ticks:{font:{family:"Inter",size:11},callback:function(v){return"\u00A3"+Math.round(v/1000)+"k"}}},
+        x:{stacked:true,grid:{display:false},ticks:{font:{family:"Inter",size:11}}}
+      }
+    }
+  });
 }
 
 // ============================================================
