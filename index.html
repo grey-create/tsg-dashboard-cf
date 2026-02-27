@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TSG Sales Performance Dashboard</title>
+<title>TSG Sales Performance</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -30,20 +30,13 @@
 
   body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-    background: var(--gray5);
+    background: #f4f5f7;
     color: var(--dark);
     min-height: 100vh;
     -webkit-font-smoothing: antialiased;
   }
 
-  header {
-    background: var(--black);
-    color: var(--white);
-    padding: 20px 32px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
+  /* header replaced by shared nav.js */
 
   .header-left {
     display: flex;
@@ -51,23 +44,15 @@
     gap: 16px;
   }
 
-  .header-logo {
-    width: 36px;
-    height: 36px;
-    opacity: 0.85;
-  }
-
-  header h1 { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; }
-  header .subtitle { font-size: 12px; color: var(--gray2); margin-top: 2px; font-weight: 400; }
   #lastUpdated { font-size: 11px; color: var(--gray2); }
 
-  .nav-tabs { display: flex; gap: 2px; background: var(--dark2); border-radius: 8px; padding: 3px; }
+  .nav-tabs { display: flex; gap: 2px; background: #f2f2f2; border-radius: 8px; padding: 3px; }
   .nav-tab {
     padding: 8px 20px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500;
-    color: var(--gray2); transition: all 0.2s; border: none; background: none; font-family: 'Inter', sans-serif;
+    color: #555555; transition: all 0.2s; border: none; background: none; font-family: 'Inter', sans-serif;
   }
-  .nav-tab:hover { color: var(--white); }
-  .nav-tab.active { color: var(--black); background: var(--white); }
+  .nav-tab:hover { color: #111111; background: rgba(0,0,0,0.04); }
+  .nav-tab.active { color: #ffffff; background: #111111; }
 
   .container { max-width: 1400px; margin: 0 auto; padding: 24px; }
 
@@ -216,7 +201,6 @@
   @media (max-width: 768px) {
     .chart-grid { grid-template-columns: 1fr; }
     .insights-row { grid-template-columns: 1fr; }
-    header { flex-direction: column; gap: 12px; align-items: flex-start; }
     .nav-tabs { flex-wrap: wrap; }
     .team-summary-table { font-size: 12px; }
     .team-summary-table th, .team-summary-table td { padding: 8px 10px; }
@@ -225,12 +209,13 @@
 </head>
 <body>
 
-<header>
-  <div class="header-left">
-    <img src="https://cdn.shopify.com/s/files/1/1070/8974/files/TSG-Logo-Roundel-Black.png?v=1772037610" alt="TSG" class="header-logo" style="filter: invert(1) brightness(2);">
+<script src="/nav.js"></script>
+
+<div style="background:#fff;border-bottom:1px solid #e0e0e0;padding:12px 32px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+  <div style="display:flex;align-items:center;gap:12px">
     <div>
-      <h1>TSG Sales Performance</h1>
-      <div class="subtitle">Individual Conversions &bull; <span id="lastUpdated">Loading...</span></div>
+      <div style="font-size:18px;font-weight:700;color:#1a1a2e;letter-spacing:-0.3px">Sales Performance</div>
+      <div style="font-size:11px;color:#6b7280">Individual Conversions &bull; <span id="lastUpdated">Loading...</span></div>
     </div>
   </div>
   <div class="nav-tabs">
@@ -238,7 +223,7 @@
     <button class="nav-tab" onclick="showPage('individual', this)">Individual Review</button>
     <button class="nav-tab" onclick="showPage('rankings', this)">Rankings</button>
   </div>
-</header>
+</div>
 
 <div class="container">
   <div id="loadingOverlay" class="loading-overlay">
@@ -481,6 +466,7 @@ async function loadData() {
     ['dateTo','teamDateTo'].forEach(id => document.getElementById(id).value = last);
     const ft = new Date(json.lastFetched);
     document.getElementById('lastUpdated').textContent = 'Live from Airtable \u2022 ' + ft.toLocaleString('en-GB',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+    var navUp = document.getElementById('navUpdated'); if(navUp) navUp.textContent = 'Live \u2022 ' + ft.toLocaleString('en-GB',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
     document.getElementById('loadingOverlay').style.display = 'none';
     document.getElementById('mainContent').style.display = 'block';
     updateTeam();
