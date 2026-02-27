@@ -9,7 +9,7 @@
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
   body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f4f5f7;color:#1a1a2e;min-height:100vh}
 
-  /* ===== SHARED TOP NAV ===== */
+  /* Shared nav */
   .top-nav{background:#000;display:flex;align-items:center;padding:0 32px;height:52px;gap:6px;border-bottom:1px solid #222}
   .top-nav .tn-logo{width:28px;height:28px;filter:invert(1) brightness(2);margin-right:12px}
   .top-nav a{font-size:13px;font-weight:600;color:#888;text-decoration:none;padding:6px 16px;border-radius:6px;transition:all .15s}
@@ -18,7 +18,6 @@
   .top-nav .tn-spacer{flex:1}
   .top-nav .tn-updated{font-size:11px;color:#555}
 
-  /* ===== PAGE ===== */
   .wrap{max-width:1200px;margin:0 auto;padding:24px 20px 40px}
   .card{background:#fff;border:1px solid #e0e0e0;border-radius:12px;padding:22px 24px}
   .sec-pill{display:inline-block;padding:3px 12px;border-radius:99px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
@@ -98,7 +97,6 @@
 </head>
 <body>
 
-<!-- ===== SHARED NAVIGATION ===== -->
 <nav class="top-nav">
   <img src="https://cdn.shopify.com/s/files/1/1070/8974/files/TSG-Logo-Roundel-Black.png?v=1772037610" class="tn-logo" alt="TSG">
   <a href="/sales" class="active">Sales Dashboard</a>
@@ -114,44 +112,28 @@
 </div>
 
 <script>
-// ============================================================
-// CONFIG
-// ============================================================
-var C = {
-  tsg:{color:"#2d6e0e",accent:"#CDE453",bg:"#f5fbe8",bd:"#dff1a8"},
-  wll:{color:"#0891b2",accent:"#6BD4EC",bg:"#ecfbff",bd:"#b3e8f7"},
-  nv:{color:"#FF0077",accent:"#ff3399",bg:"#fff0f6",bd:"#ffb3d9"},
-};
-var LOGOS = {
-  tsg:"https://cdn.shopify.com/s/files/1/1070/8974/files/TSG-Logo-Roundel-Black.png?v=1772037610",
-  wll:"https://cdn.shopify.com/s/files/1/1070/8974/files/WeLoveLEDs-640px--MASTER.png?v=1772124903",
-  nv:"https://cdn.shopify.com/s/files/1/1070/8974/files/NV-Logo-640px--Grey_s-Stuff.png?v=1772124894",
-};
-var FY_START_MONTH = 12; // December
+var C={tsg:{color:"#2d6e0e",accent:"#CDE453",bg:"#f5fbe8",bd:"#dff1a8"},wll:{color:"#0891b2",accent:"#6BD4EC",bg:"#ecfbff",bd:"#b3e8f7"},nv:{color:"#FF0077",accent:"#ff3399",bg:"#fff0f6",bd:"#ffb3d9"}};
+var LOGOS={tsg:"https://cdn.shopify.com/s/files/1/1070/8974/files/TSG-Logo-Roundel-Black.png?v=1772037610",wll:"https://cdn.shopify.com/s/files/1/1070/8974/files/WeLoveLEDs-640px--MASTER.png?v=1772124903",nv:"https://cdn.shopify.com/s/files/1/1070/8974/files/NV-Logo-640px--Grey_s-Stuff.png?v=1772124894"};
+var FY_START_MONTH=12;
 
-// ============================================================
-// HELPERS
-// ============================================================
 function f(n){return"\u00A3"+Math.round(Number(n)||0).toLocaleString("en-GB")}
 function ps(n){return(n>0?"+":"")+n+"%"}
 function po(a,b){if(!b)return 0;return Math.round(((a-b)/b)*100)}
 function dl(v){var p=v>0;return'<span class="'+(p?"up":"dn")+'">'+(p?"\u25B2":"\u25BC")+" "+(p?"+":"")+v+"%</span>"}
 function pl(s){var c=s==="Ahead"||s==="High"?"pill-g":s==="Behind"||s==="Low"?"pill-r":"pill-y";return'<span class="pill '+c+'">'+s+"</span>"}
 function plb(s,bg,fg){return'<span class="pill" style="background:'+bg+";color:"+fg+";border:1px solid "+bg+'">'+s+"</span>"}
-function secHdr(pill_text,pill_bg,pill_fg,title,sub){
-  return'<div style="margin-bottom:16px"><span class="sec-pill" style="background:'+pill_bg+";color:"+pill_fg+'">'+pill_text+"</span>"
-    +'<div class="sec-title">'+title+"</div>"+(sub?'<div class="sec-sub">'+sub+"</div>":"")+"</div>";
-}
+function secHdr(pt,pb,pf,t,s){return'<div style="margin-bottom:16px"><span class="sec-pill" style="background:'+pb+";color:"+pf+'">'+pt+"</span><div class=\"sec-title\">"+t+"</div>"+(s?'<div class="sec-sub">'+s+"</div>":"")+"</div>";}
 function mkbar(val,max,color,proj){
-  var pI=Math.min(val/max*100,100), pP=proj?Math.min(proj/max*100,100):pI;
-  return'<div class="bar-w"><div class="bar-p" style="width:'+pP+"%;background:"+color+'"></div>'
-    +'<div class="bar-f" style="width:'+pI+"%;background:"+color+'"></div></div>'
-    +'<div class="bar-lbl"><span>Invoiced: '+Math.round(pI)+"% of target</span>"
-    +(pP!==pI?"<span>Projected: "+Math.round(pP)+"%</span>":"<span>\u2713 Complete</span>")+"</div>";
+  var pI=Math.min(val/max*100,100),pP=proj?Math.min(proj/max*100,100):pI;
+  return'<div class="bar-w"><div class="bar-p" style="width:'+pP+"%;background:"+color+'"></div><div class="bar-f" style="width:'+pI+"%;background:"+color+'"></div></div><div class="bar-lbl"><span>Invoiced: '+Math.round(pI)+"% of target</span>"+(pP!==pI?"<span>Projected: "+Math.round(pP)+"%</span>":"<span>\u2713 Complete</span>")+"</div>";
 }
+// Horizontal bar chart — expects items with {l: label, v: value, h: highlight}
 function hbar(items,mx,color,dark){
   var o="";items.forEach(function(it){
-    var w=(it.v/mx)*100,fc=it.h?color:(dark?"#475569":"#d1d5db"),tc=it.h?(dark?"#0f172a":"#fff"):(dark?"#cbd5e1":"#fff"),lc=it.h?(dark?"#CDE453":"#1a1a2e"):(dark?"#94a3b8":"#6b7280");
+    var w=mx>0?(it.v/mx)*100:0;
+    var fc=it.h?color:(dark?"#475569":"#d1d5db");
+    var tc=it.h?(dark?"#0f172a":"#fff"):(dark?"#cbd5e1":"#fff");
+    var lc=it.h?(dark?"#CDE453":"#1a1a2e"):(dark?"#94a3b8":"#6b7280");
     o+='<div class="hb"><span class="hb-l" style="color:'+lc+";font-weight:"+(it.h?700:400)+'">'+it.l+"</span>";
     o+='<div class="hb-t" style="background:'+(dark?"rgba(255,255,255,0.06)":"#e5e7eb")+'">';
     o+='<div class="hb-f" style="width:'+w+"%;background:"+fc+'">';
@@ -172,81 +154,54 @@ function parseMY(my){
   return{month:mi+1,year:yr,key:yr+"-"+String(mi+1).padStart(2,"0")};
 }
 function monthShort(m){return["","Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][m]}
-// Convert conv rate — handles both decimal (0.26) and percentage (26) formats
 function normConv(v){if(v===null||v===undefined)return 0;v=Number(v);if(v>0&&v<1)return Math.round(v*100);return Math.round(v);}
 
-// ============================================================
-// FY HELPERS — Fixed to compare same point across FYs
-// ============================================================
-// FY position: Dec=0, Jan=1, Feb=2, ..., Nov=11
+// FY helpers
 function fyPos(month){return month>=12?month-12:month}
-
-// Get the FY start year for a given calendar month/year
 function fyStart(month,year){return month>=12?year:year-1}
-
-// Generate sort keys for a FY from its start up to a given position
 function fyKeys(startYear,maxPos){
   var keys=[];
-  for(var p=0;p<=maxPos;p++){
-    var m=p===0?12:p, y=p===0?startYear:startYear+1;
-    keys.push(y+"-"+String(m).padStart(2,"0"));
-  }
+  for(var p=0;p<=maxPos;p++){var m=p===0?12:p,y=p===0?startYear:startYear+1;keys.push(y+"-"+String(m).padStart(2,"0"));}
   return keys;
 }
+function fyLabel(sy){return"FY"+sy%100+"/"+(sy+1)%100}
 
-// FY label from startYear: e.g. 2025 => "FY25/26"
-function fyLabel(startYear){return"FY"+startYear%100+"/"+(startYear+1)%100}
-
-// ============================================================
-// DATA PROCESSING
 // ============================================================
 function processData(raw){
   var D={};
-  var now=new Date(), curMonth=now.getMonth()+1, curYear=now.getFullYear();
+  var now=new Date(),curMonth=now.getMonth()+1,curYear=now.getFullYear();
   var curKey=curYear+"-"+String(curMonth).padStart(2,"0");
 
-  D.month=monthShort(curMonth);
-  D.year=curYear;
+  D.month=monthShort(curMonth);D.year=curYear;
   D.monthName=["","January","February","March","April","May","June","July","August","September","October","November","December"][curMonth];
 
-  // --- Monthly Overview (current month, latest record) ---
+  // Monthly Overview (latest record for current month)
   var ov=null;
   raw.overview.forEach(function(r){var p=parseMY(r.monthYear);if(p&&p.key===curKey)ov=r;});
   if(!ov&&raw.overview.length>0)ov=raw.overview[raw.overview.length-1];
 
   D.phase=ov?ov.phase:"Week ?";
-  D.wdTotal=ov?ov.workingDaysTotal:20;
-  D.wdDone=ov?ov.workingDaysCompleted:0;
-  D.wdLeft=D.wdTotal-D.wdDone;
+  D.wdTotal=ov?ov.workingDaysTotal:20;D.wdDone=ov?ov.workingDaysCompleted:0;D.wdLeft=D.wdTotal-D.wdDone;
   D.monthComplete=D.wdDone>=D.wdTotal;
-  D.tsgConf=ov?ov.tsgConfidence:"";
-  D.tsgConfNote=ov?ov.tsgConfidenceNote:"";
-  D.wllNote=ov?ov.wllPaceNote:"";
-  D.nvNote=ov?ov.nvPaceNote:"";
-  D.focus=ov?ov.weekFocus:"";
-  D.optFocus=ov?ov.optionalFocus:"";
-
-  D.tsgWipDue=ov?ov.tsgWipDue:null;
-  D.tsgWipUndated=ov?ov.tsgWipUndated:null;
-  D.tsgWipNextMonth=ov?ov.tsgWipNextMonth:null;
+  D.tsgConf=ov?ov.tsgConfidence:"";D.tsgConfNote=ov?ov.tsgConfidenceNote:"";
+  D.wllNote=ov?ov.wllPaceNote:"";D.nvNote=ov?ov.nvPaceNote:"";
+  D.focus=ov?ov.weekFocus:"";D.optFocus=ov?ov.optionalFocus:"";
+  D.tsgWipDue=ov?ov.tsgWipDue:null;D.tsgWipUndated=ov?ov.tsgWipUndated:null;D.tsgWipNextMonth=ov?ov.tsgWipNextMonth:null;
   D.hasWip=D.tsgWipDue!==null;
 
-  // --- Index tables by sort key ---
+  // Index tables
   var invByKey={},convByKey={};
   raw.invoiced.forEach(function(r){var p=parseMY(r.monthYear);if(p)invByKey[p.key]=r;});
   raw.conversions.forEach(function(r){var p=parseMY(r.monthYear);if(p)convByKey[p.key]=r;});
+  var allKeys=Object.keys(invByKey).sort();
 
-  // --- Current month ---
-  var curInv=invByKey[curKey]||{};
-  var curConv=convByKey[curKey]||{};
-
-  // Targets
+  // Current month
+  var curInv=invByKey[curKey]||{},curConv=convByKey[curKey]||{};
   D.tsgTgt=(ov?ov.tsgTarget:0)||curInv.tsgTarget||0;
   D.wllTgt=(ov?ov.wllTarget:0)||curInv.wllTarget||0;
   D.nvTgt=(ov?ov.nvTarget:0)||curInv.nvTarget||0;
   D.combTgt=D.tsgTgt+D.wllTgt+D.nvTgt;
 
-  // Invoiced figures
   D.tsgInv=(ov&&ov.tsgInvoicedToDate)||curInv.tsg||0;
   D.wllInv=(ov&&ov.wllInvoicedToDate)||curInv.wll||0;
   D.nvInv=(ov&&ov.nvInvoicedToDate)||curInv.nv||0;
@@ -254,120 +209,128 @@ function processData(raw){
 
   // Projections
   if(D.monthComplete){
-    // Month is done — projected = actual
     D.tsgProj=D.tsgInv;D.wllProj=D.wllInv;D.nvProj=D.nvInv;
-    D.wllDaily=D.wdTotal>0?D.wllInv/D.wdTotal:0;
-    D.nvDaily=D.wdTotal>0?D.nvInv/D.wdTotal:0;
-    D.wllNeed=0;
-  } else if(D.wdDone>0){
+    D.wllDaily=D.wdTotal>0?D.wllInv/D.wdTotal:0;D.nvDaily=D.wdTotal>0?D.nvInv/D.wdTotal:0;D.wllNeed=0;
+  }else if(D.wdDone>0){
     D.wllDaily=D.wllInv/D.wdDone;D.nvDaily=D.nvInv/D.wdDone;
     D.wllProj=Math.round(D.wllDaily*D.wdTotal);D.nvProj=Math.round(D.nvDaily*D.wdTotal);
     D.wllNeed=D.wllTgt>D.wllInv&&D.wdLeft>0?(D.wllTgt-D.wllInv)/D.wdLeft:0;
     D.tsgProj=D.hasWip?D.tsgInv+(D.tsgWipDue||0):Math.round((D.tsgInv/D.wdDone)*D.wdTotal);
-  } else{D.wllDaily=0;D.nvDaily=0;D.wllProj=0;D.nvProj=0;D.tsgProj=0;D.wllNeed=0;}
+  }else{D.wllDaily=0;D.nvDaily=0;D.wllProj=0;D.nvProj=0;D.tsgProj=0;D.wllNeed=0;}
   D.combProj=D.tsgProj+D.wllProj+D.nvProj;
-
   D.wllPace=D.wllProj>=D.wllTgt?"Ahead":"Behind";
   D.nvPace=D.nvProj>=D.nvTgt?"Ahead":"Behind";
 
-  // --- New Sales ---
-  D.nsVal=curConv.salesConfirmed||0;
-  D.nsTgt=curConv.newSalesTarget||curInv.tsgNewSalesTarget||0;
-  D.nsEnq=curConv.enquiries||0;
-  D.nsOrd=curConv.orders||0;
-  D.nsConv=normConv(curConv.convRate);
-  D.nsMargin=normConv(curConv.margin);
-  D.nsAov=curConv.aov||0;
+  // New Sales
+  D.nsVal=curConv.salesConfirmed||0;D.nsTgt=curConv.newSalesTarget||curInv.tsgNewSalesTarget||0;
+  D.nsEnq=curConv.enquiries||0;D.nsOrd=curConv.orders||0;
+  D.nsConv=normConv(curConv.convRate);D.nsMargin=normConv(curConv.margin);D.nsAov=curConv.aov||0;
 
-  // New Sales history (same calendar month, recent years)
+  // New Sales history (same month, recent years) — FIX: use 'l' property for hbar
   D.nsHistory=[];
   for(var yb=curYear-4;yb<=curYear;yb++){
-    var k=yb+"-"+String(curMonth).padStart(2,"0");
-    var c=convByKey[k];
+    var k=yb+"-"+String(curMonth).padStart(2,"0");var c=convByKey[k];
     if(c&&(c.salesConfirmed||c.enquiries||c.orders)){
-      D.nsHistory.push({yr:D.month+"-"+String(yb).slice(2),v:c.salesConfirmed||0,e:c.enquiries||0,o:c.orders||0,c:normConv(c.convRate),m:normConv(c.margin),aov:c.aov||0,h:yb===curYear});
+      D.nsHistory.push({
+        l:D.month+"-"+String(yb).slice(2),  // FIX: 'l' not 'yr'
+        v:c.salesConfirmed||0,e:c.enquiries||0,o:c.orders||0,
+        c:normConv(c.convRate),m:normConv(c.margin),aov:c.aov||0,
+        h:yb===curYear
+      });
     }
   }
 
-  // --- February (same month) history for invoiced ---
+  // Same-month invoiced history
   D.histMonth=[];
-  var allKeys=Object.keys(invByKey).sort();
   allKeys.forEach(function(k){
     var parts=k.split("-");
     if(parseInt(parts[1])===curMonth){
-      var r=invByKey[k],yr=parseInt(parts[0]),isCurrent=k===curKey;
-      var t=isCurrent?D.combProj:(r.tsg||0)+(r.wll||0)+(r.nv||0);
-      D.histMonth.push({yr:isCurrent?D.month+"-"+String(yr).slice(2)+"*":D.month+"-"+String(yr).slice(2),t:t,tsg:isCurrent?D.tsgProj:(r.tsg||0),wll:isCurrent?D.wllProj:(r.wll||0),nv:isCurrent?D.nvProj:(r.nv||0),p:isCurrent});
+      var r=invByKey[k],yr=parseInt(parts[0]),isCur=k===curKey;
+      var t=isCur?D.combProj:(r.tsg||0)+(r.wll||0)+(r.nv||0);
+      D.histMonth.push({l:isCur?D.month+"-"+String(yr).slice(2)+"*":D.month+"-"+String(yr).slice(2),t:t,tsg:isCur?D.tsgProj:(r.tsg||0),wll:isCur?D.wllProj:(r.wll||0),nv:isCur?D.nvProj:(r.nv||0),p:isCur});
     }
   });
 
-  // --- Rankings ---
+  // Rankings
   var allTotals=[];
-  allKeys.forEach(function(k){
-    var r=invByKey[k],t=(r.tsg||0)+(r.wll||0)+(r.nv||0);
-    if(k===curKey)t=D.combProj;
-    allTotals.push({key:k,t:t});
-  });
+  allKeys.forEach(function(k){var r=invByKey[k],t=(r.tsg||0)+(r.wll||0)+(r.nv||0);if(k===curKey)t=D.combProj;allTotals.push({key:k,t:t});});
   allTotals.sort(function(a,b){return b.t-a.t});
   var allTimeRank=allTotals.findIndex(function(x){return x.key===curKey})+1;
   var sameMonthTotals=allTotals.filter(function(x){return parseInt(x.key.split("-")[1])===curMonth});
   var monthRank=sameMonthTotals.findIndex(function(x){return x.key===curKey})+1;
 
-  // FY rankings
-  var curFYStart=fyStart(curMonth,curYear);
-  var curFYPos=fyPos(curMonth);
-  var curFYKeys=fyKeys(curFYStart,curFYPos);
-  var fyTotals=curFYKeys.map(function(k){
+  var curFYStart=fyStart(curMonth,curYear),curFYPos=fyPos(curMonth);
+  var curFYKeyList=fyKeys(curFYStart,curFYPos);
+  var fyTotals=curFYKeyList.map(function(k){
     var r=invByKey[k];if(!r)return{key:k,t:0};
-    var t=(r.tsg||0)+(r.wll||0)+(r.nv||0);if(k===curKey)t=D.combProj;
-    return{key:k,t:t};
+    var t=(r.tsg||0)+(r.wll||0)+(r.nv||0);if(k===curKey)t=D.combProj;return{key:k,t:t};
   }).sort(function(a,b){return b.t-a.t});
   var fyRank=fyTotals.findIndex(function(x){return x.key===curKey})+1;
 
   D.rankings={fy:{r:fyRank||1,n:fyTotals.length||1},feb:{r:monthRank||1,n:sameMonthTotals.length||1},all:{r:allTimeRank||1,n:allTotals.length||1}};
 
-  // --- FY Running Totals (FIXED: same point comparison) ---
+  // FY Running Totals (same-point comparison)
   function fyRunningAtPoint(startYear,maxPos){
-    var keys=fyKeys(startYear,maxPos);
-    var sum={tsg:0,wll:0,nv:0};
+    var keys=fyKeys(startYear,maxPos),sum={tsg:0,wll:0,nv:0};
     keys.forEach(function(k){
       var r=invByKey[k];if(!r)return;
       if(k===curKey){sum.tsg+=D.tsgProj;sum.wll+=D.wllProj;sum.nv+=D.nvProj;}
       else{sum.tsg+=(r.tsg||0);sum.wll+=(r.wll||0);sum.nv+=(r.nv||0);}
-    });
-    sum.tot=sum.tsg+sum.wll+sum.nv;
+    });sum.tot=sum.tsg+sum.wll+sum.nv;return sum;
+  }
+  function fyFullYear(startYear){
+    var keys=fyKeys(startYear,11),sum=0;
+    keys.forEach(function(k){var r=invByKey[k];if(r)sum+=(r.tsg||0)+(r.wll||0)+(r.nv||0);});
     return sum;
   }
 
-  var fyMonthsIn=curFYPos+1; // 1-based count (Dec=1, Jan=2, Feb=3...)
-  var fy0=fyRunningAtPoint(curFYStart, curFYPos);
-  var fy1=fyRunningAtPoint(curFYStart-1, curFYPos);
-  var fy2=fyRunningAtPoint(curFYStart-2, curFYPos);
+  var fyMonthsIn=curFYPos+1;
+  var fy0=fyRunningAtPoint(curFYStart,curFYPos);
+  var fy1=fyRunningAtPoint(curFYStart-1,curFYPos);
+  var fy2=fyRunningAtPoint(curFYStart-2,curFYPos);
 
-  D.run={
-    tsg:[fy2.tsg,fy1.tsg,fy0.tsg],
-    wll:[fy2.wll,fy1.wll,fy0.wll],
-    nv:[fy2.nv,fy1.nv,fy0.nv],
-    tot:[fy2.tot,fy1.tot,fy0.tot],
-    labels:[fyLabel(curFYStart-2),fyLabel(curFYStart-1),fyLabel(curFYStart)],
-    monthsIn:fyMonthsIn,
-  };
+  D.run={tsg:[fy2.tsg,fy1.tsg,fy0.tsg],wll:[fy2.wll,fy1.wll,fy0.wll],nv:[fy2.nv,fy1.nv,fy0.nv],
+    tot:[fy2.tot,fy1.tot,fy0.tot],labels:[fyLabel(curFYStart-2),fyLabel(curFYStart-1),fyLabel(curFYStart)],monthsIn:fyMonthsIn};
   D.run.avg=D.run.tot.map(function(t){return fyMonthsIn>0?Math.round(t/fyMonthsIn):0;});
 
-  // --- Projected annual ---
-  if(fyMonthsIn>0){
-    D.projTsg=Math.round(fy0.tsg/fyMonthsIn*12);
-    D.projWll=Math.round(fy0.wll/fyMonthsIn*12);
-    D.projNv=Math.round(fy0.nv/fyMonthsIn*12);
-    D.projTot=D.projTsg+D.projWll+D.projNv;
-    // Prev FY full year
-    var prevFull={tsg:0,wll:0,nv:0};
-    fyKeys(curFYStart-1,11).forEach(function(k){
-      var r=invByKey[k];if(r){prevFull.tsg+=(r.tsg||0);prevFull.wll+=(r.wll||0);prevFull.nv+=(r.nv||0);}
-    });
-    D.prevFYTotal=prevFull.tsg+prevFull.wll+prevFull.nv;
-    D.projGrowth=D.prevFYTotal>0?po(D.projTot,D.prevFYTotal):0;
-  }else{D.projTsg=0;D.projWll=0;D.projNv=0;D.projTot=0;D.prevFYTotal=0;D.projGrowth=0;}
+  // === SEASONAL PROJECTION (FIX: uses prev FY shape, not simple run-rate) ===
+  // What % of prev FY total did the first N months represent?
+  // Then: projected = current_running / that_percentage
+  var prevFYFull=fyFullYear(curFYStart-1);
+  var prevFYSamePt=fy1.tot; // prev FY at same point (Dec-Feb)
+  var prev2FYFull=fyFullYear(curFYStart-2);
+  var prev2FYSamePt=fy2.tot;
+
+  // Use average of last 2 FYs' seasonal shape for robustness
+  var seasonalPct=0,seasonalCount=0;
+  if(prevFYFull>0&&prevFYSamePt>0){seasonalPct+=prevFYSamePt/prevFYFull;seasonalCount++;}
+  if(prev2FYFull>0&&prev2FYSamePt>0){seasonalPct+=prev2FYSamePt/prev2FYFull;seasonalCount++;}
+  if(seasonalCount>0)seasonalPct=seasonalPct/seasonalCount;
+
+  D.prevFYTotal=prevFYFull;
+
+  if(seasonalPct>0&&seasonalPct<1){
+    // Seasonal projection: if first 3 months typically = X% of year, then full year = current / X%
+    D.projTot=Math.round(fy0.tot/seasonalPct);
+    // Split proportionally by current brand mix
+    var tsgPct=fy0.tot>0?fy0.tsg/fy0.tot:0.7;
+    var wllPct=fy0.tot>0?fy0.wll/fy0.tot:0.15;
+    var nvPct=fy0.tot>0?fy0.nv/fy0.tot:0.05;
+    D.projTsg=Math.round(D.projTot*tsgPct);
+    D.projWll=Math.round(D.projTot*wllPct);
+    D.projNv=Math.round(D.projTot*nvPct);
+    D.projMethod="seasonal";
+    D.projSeasonalPct=Math.round(seasonalPct*100);
+  }else{
+    // Fallback: simple run-rate (only if no historical data)
+    D.projTot=fyMonthsIn>0?Math.round(fy0.tot/fyMonthsIn*12):0;
+    D.projTsg=fyMonthsIn>0?Math.round(fy0.tsg/fyMonthsIn*12):0;
+    D.projWll=fyMonthsIn>0?Math.round(fy0.wll/fyMonthsIn*12):0;
+    D.projNv=fyMonthsIn>0?Math.round(fy0.nv/fyMonthsIn*12):0;
+    D.projMethod="run-rate";
+    D.projSeasonalPct=0;
+  }
+  D.projGrowth=D.prevFYTotal>0?po(D.projTot,D.prevFYTotal):0;
 
   return D;
 }
@@ -376,25 +339,22 @@ function processData(raw){
 // RENDER
 // ============================================================
 function render(D){
-  var h="";
-  var med=["\uD83E\uDD47","\uD83E\uDD48","\uD83E\uDD49"];
+  var h="",med=["\uD83E\uDD47","\uD83E\uDD48","\uD83E\uDD49"];
 
-  // === HEADER ===
+  // Header
   h+='<div class="fx-b mb-20" style="flex-wrap:wrap;gap:16px">';
-  h+='<div class="fx-c"><img src="'+LOGOS.tsg+'" class="logo logo-lg">';
-  h+='<div><h1 style="font-size:22px;font-weight:800;letter-spacing:-.03em">Sales Dashboard</h1>';
+  h+='<div class="fx-c"><img src="'+LOGOS.tsg+'" class="logo logo-lg"><div><h1 style="font-size:22px;font-weight:800;letter-spacing:-.03em">Sales Dashboard</h1>';
   h+='<p style="font-size:12px;color:#6b7280;margin-top:2px">'+D.monthName+" "+D.year+" \u00B7 "+D.phase;
   if(D.monthComplete)h+=' \u00B7 <span class="pill pill-b">Month Complete</span>';
   else h+=" \u00B7 Day "+D.wdDone+" of "+D.wdTotal;
-  h+="</p></div></div>";
-  h+='<div class="wd">';
+  h+="</p></div></div><div class=\"wd\">";
   for(var i=0;i<D.wdTotal;i++)h+='<div class="wd-d" style="background:'+(i<D.wdDone?"#2d6e0e":"#e5e7eb")+'"></div>';
   h+='<span class="wd-lbl">'+(D.monthComplete?"All days complete":D.wdLeft+" days left")+"</span></div></div>";
 
-  // === TOP KPIs ===
+  // KPIs
   h+='<div class="g4 mb-20">';
   h+='<div class="kpi" style="border-top:3px solid #CDE453"><div class="kpi-label">Combined Invoiced</div><div class="kpi-val">'+f(D.combInv)+"</div><div class=\"kpi-sub\">"+(D.combTgt?'<span class="'+(D.combInv>=D.combTgt?"up":"dn")+'">'+(D.combInv>=D.combTgt?"\u25B2":"\u25BC")+" "+ps(po(D.combInv,D.combTgt))+" vs target</span>":"")+"</div></div>";
-  h+='<div class="kpi" style="border-top:3px solid #2d6e0e"><div class="kpi-label">'+(D.monthComplete?"Final Month-End":"Projected Month-End")+"</div><div class=\"kpi-val\">"+f(D.combProj)+"</div><div class=\"kpi-sub\">"+(D.combTgt?f(D.combProj-D.combTgt)+" vs target":"")+"</div></div>";
+  h+='<div class="kpi" style="border-top:3px solid #2d6e0e"><div class="kpi-label">'+(D.monthComplete?"Final Month-End":"Projected Month-End")+'</div><div class="kpi-val">'+f(D.combProj)+"</div><div class=\"kpi-sub\">"+(D.combTgt?f(D.combProj-D.combTgt)+" vs target":"")+"</div></div>";
   h+='<div class="kpi" style="border-top:3px solid #6BD4EC"><div class="kpi-label">FY Running Total</div><div class="kpi-val">'+f(D.run.tot[2])+"</div><div class=\"kpi-sub\">"+dl(po(D.run.tot[2],D.run.tot[1]))+" vs prev FY ("+D.run.monthsIn+"mo)</div></div>";
   h+='<div class="kpi" style="border-top:3px solid #FF0077"><div class="kpi-label">Avg Monthly Revenue</div><div class="kpi-val">'+f(D.run.avg[2])+"</div><div class=\"kpi-sub\">Prev FY avg: "+f(D.run.avg[1])+"</div></div>";
   h+="</div>";
@@ -416,14 +376,8 @@ function render(D){
   if(D.hasWip&&!D.monthComplete)h+='<div><div class="st-label">WIP Due This Month</div><div class="st-val" style="color:#92400e">'+f(D.tsgWipDue)+"</div></div>";
   if(!D.monthComplete)h+='<div><div class="st-label">Projected Total</div><div class="st-val" style="color:'+C.tsg.color+'">'+f(D.tsgProj)+"</div></div>";
   if(D.tsgTgt)h+='<div><div class="st-label">vs Target</div><div class="st-val" style="color:'+(D.tsgProj>=D.tsgTgt?"#16a34a":"#dc2626")+'">'+ps(po(D.tsgProj,D.tsgTgt))+"</div></div>";
-  h+="</div>";
-  if(D.tsgTgt)h+=mkbar(D.tsgInv,D.tsgTgt,C.tsg.color,D.monthComplete?null:D.tsgProj);
-  if(D.hasWip||D.tsgConfNote){
-    h+='<details class="detail-panel"><summary>Details \u2014 WIP, Notes</summary><div class="detail-content">';
-    if(D.hasWip)h+='<div style="display:flex;gap:24px;margin-bottom:6px"><span>Undated WIP: <strong style="color:#1a1a2e">'+f(D.tsgWipUndated)+"</strong></span><span>Next Month: <strong style=\"color:#1a1a2e\">"+f(D.tsgWipNextMonth)+"</strong></span></div>";
-    if(D.tsgConfNote)h+='<div style="font-style:italic">\uD83D\uDCA1 '+D.tsgConfNote+"</div>";
-    h+="</div></details>";
-  }
+  h+="</div>";if(D.tsgTgt)h+=mkbar(D.tsgInv,D.tsgTgt,C.tsg.color,D.monthComplete?null:D.tsgProj);
+  if(D.hasWip||D.tsgConfNote){h+='<details class="detail-panel"><summary>Details \u2014 WIP, Notes</summary><div class="detail-content">';if(D.hasWip)h+='<div style="display:flex;gap:24px;margin-bottom:6px"><span>Undated WIP: <strong style="color:#1a1a2e">'+f(D.tsgWipUndated)+"</strong></span><span>Next Month: <strong style=\"color:#1a1a2e\">"+f(D.tsgWipNextMonth)+"</strong></span></div>";if(D.tsgConfNote)h+='<div style="font-style:italic">\uD83D\uDCA1 '+D.tsgConfNote+"</div>";h+="</div></details>";}
   h+="</div>";
 
   // WLL
@@ -436,11 +390,8 @@ function render(D){
     h+='<div><div class="st-label">Daily Rate</div><div class="st-val" style="color:'+C.wll.color+'">'+f(D.wllDaily)+'<span class="st-unit">/day</span></div></div>';
     if(D.wllNeed>0)h+='<div><div class="st-label">Needed to Hit Target</div><div class="st-val" style="color:#dc2626">'+f(D.wllNeed)+'<span class="st-unit">/day</span></div></div>';
     h+='<div><div class="st-label">Projected</div><div class="st-val" style="color:'+C.wll.color+'">'+f(D.wllProj)+"</div></div>";
-  } else {
-    if(D.wllTgt)h+='<div><div class="st-label">vs Target</div><div class="st-val" style="color:'+(D.wllInv>=D.wllTgt?"#16a34a":"#dc2626")+'">'+ps(po(D.wllInv,D.wllTgt))+"</div></div>";
-  }
-  h+="</div>";
-  if(D.wllTgt)h+=mkbar(D.wllInv,D.wllTgt,C.wll.color,D.monthComplete?null:D.wllProj);
+  }else{if(D.wllTgt)h+='<div><div class="st-label">vs Target</div><div class="st-val" style="color:'+(D.wllInv>=D.wllTgt?"#16a34a":"#dc2626")+'">'+ps(po(D.wllInv,D.wllTgt))+"</div></div>";}
+  h+="</div>";if(D.wllTgt)h+=mkbar(D.wllInv,D.wllTgt,C.wll.color,D.monthComplete?null:D.wllProj);
   if(D.wllNote){h+='<details class="detail-panel"><summary>Notes</summary><div class="detail-content">\u26A1 '+D.wllNote+"</div></details>";}
   h+="</div>";
 
@@ -455,29 +406,23 @@ function render(D){
     h+='<div><div class="st-label">Projected</div><div class="st-val" style="color:'+C.nv.color+'">'+f(D.nvProj)+"</div></div>";
   }
   if(D.nvTgt)h+='<div><div class="st-label">vs Target</div><div class="st-val" style="color:'+(D.nvProj>=D.nvTgt?"#16a34a":"#dc2626")+'">'+ps(po(D.nvProj,D.nvTgt))+"</div></div>";
-  h+="</div>";
-  if(D.nvTgt)h+=mkbar(D.nvInv,D.nvTgt,C.nv.color,D.monthComplete?null:D.nvProj);
+  h+="</div>";if(D.nvTgt)h+=mkbar(D.nvInv,D.nvTgt,C.nv.color,D.monthComplete?null:D.nvProj);
   if(D.nvNote){h+='<details class="detail-panel"><summary>Notes</summary><div class="detail-content">'+D.nvNote+"</div></details>";}
   h+="</div>";
 
-  // Combined bar
-  h+='<div class="comb fx-b" style="flex-wrap:wrap;gap:8px">';
-  h+='<div class="fx-c"><span style="font-weight:700;font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:.5px">Combined</span>';
-  h+='<span style="font-size:20px;font-weight:800">'+f(D.combInv)+"</span>";
-  if(!D.monthComplete){h+='<span style="color:#9ca3af;font-size:14px">\u2192</span><span style="font-size:16px;font-weight:700;color:#92400e">'+f(D.combProj)+'</span><span style="font-size:12px;color:#6b7280">projected</span>';}
-  h+="</div>";
-  if(D.combTgt)h+='<div style="font-size:12px;color:#374151">Target: '+f(D.combTgt)+' \u00B7 <span class="'+(D.combProj>=D.combTgt?"up":"dn")+'">'+f(D.combProj-D.combTgt)+"</span></div>";
+  // Combined
+  h+='<div class="comb fx-b" style="flex-wrap:wrap;gap:8px"><div class="fx-c"><span style="font-weight:700;font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:.5px">Combined</span><span style="font-size:20px;font-weight:800">'+f(D.combInv)+"</span>";
+  if(!D.monthComplete)h+='<span style="color:#9ca3af;font-size:14px">\u2192</span><span style="font-size:16px;font-weight:700;color:#92400e">'+f(D.combProj)+'</span><span style="font-size:12px;color:#6b7280">projected</span>';
+  h+="</div>";if(D.combTgt)h+='<div style="font-size:12px;color:#374151">Target: '+f(D.combTgt)+' \u00B7 <span class="'+(D.combProj>=D.combTgt?"up":"dn")+'">'+f(D.combProj-D.combTgt)+"</span></div>";
   h+="</div></div>";
 
   // === NEW SALES ===
   if(D.nsVal>0||D.nsEnq>0||D.nsOrd>0||D.nsHistory.length>0){
-    h+='<div class="ns mb-20">';
-    h+='<div style="margin-bottom:6px"><span class="sec-pill" style="background:#CDE453;color:#0f172a">Separate from Invoicing</span></div>';
+    h+='<div class="ns mb-20"><div style="margin-bottom:6px"><span class="sec-pill" style="background:#CDE453;color:#0f172a">Separate from Invoicing</span></div>';
     h+='<div class="sec-title" style="color:#fff;font-size:18px">New Sales Orders \u2014 TSG</div>';
     h+='<div class="sec-sub" style="color:#94a3b8;margin-bottom:20px">Order intake confirmed this month. This is NOT invoiced revenue \u2014 orders placed \u2260 revenue recognised.</div>';
     h+='<div class="g-ns">';
 
-    // Main figure + history bars
     h+="<div>";
     if(D.nsVal>0){
       h+='<div style="margin-bottom:16px"><div style="font-size:42px;font-weight:800;color:#CDE453;letter-spacing:-.03em;line-height:1">'+f(D.nsVal)+"</div>";
@@ -493,54 +438,39 @@ function render(D){
     }
     h+="</div>";
 
-    // Enquiries
     h+='<div class="ns-glass"><div style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Enquiries</div>';
     h+='<div style="font-size:36px;font-weight:800;color:#fff">'+D.nsEnq+"</div>";
     if(D.nsOrd>0)h+='<div style="font-size:12px;color:#94a3b8;margin-top:4px">'+D.nsOrd+" orders placed</div>";
-    if(D.nsHistory.length>1){
-      h+='<div style="font-size:12px;color:#94a3b8;margin-top:10px;line-height:1.6">';
-      D.nsHistory.forEach(function(x){if(!x.h)h+=x.yr+": "+x.e+" enq / "+x.o+" ord<br>";});
-      h+="</div>";
-    }
+    if(D.nsHistory.length>1){h+='<div style="font-size:12px;color:#94a3b8;margin-top:10px;line-height:1.6">';D.nsHistory.forEach(function(x){if(!x.h)h+=x.l+": "+x.e+" enq / "+x.o+" ord<br>";});h+="</div>";}
     h+="</div>";
 
-    // Conversion + Margin + AOV
     h+='<div class="ns-glass"><div style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Conversion Rate</div>';
     h+='<div style="font-size:36px;font-weight:800;color:#6BD4EC">'+D.nsConv+"%</div>";
     if(D.nsMargin>0)h+='<div style="font-size:13px;color:#94a3b8;margin-top:6px">Margin: '+D.nsMargin+"%</div>";
     if(D.nsAov>0)h+='<div style="font-size:13px;color:#94a3b8;margin-top:3px">AOV: '+f(D.nsAov)+"</div>";
-    if(D.nsHistory.length>1){
-      h+='<div style="font-size:12px;color:#94a3b8;margin-top:10px;line-height:1.6">';
-      D.nsHistory.forEach(function(x){if(!x.h)h+=x.yr+": "+x.c+"% conv / "+x.m+"% margin<br>";});
-      h+="</div>";
-    }
-    h+="</div>";
-    h+="</div></div>";
+    if(D.nsHistory.length>1){h+='<div style="font-size:12px;color:#94a3b8;margin-top:10px;line-height:1.6">';D.nsHistory.forEach(function(x){if(!x.h)h+=x.l+": "+x.c+"% conv / "+x.m+"% margin<br>";});h+="</div>";}
+    h+="</div></div></div>";
   }
 
-  // === TWO COLUMN: Rankings & FY Running ===
+  // === Rankings & FY Running ===
   h+='<div class="g2 mb-20">';
-
-  // Rankings
   h+='<div class="card">';
   h+=secHdr("Rankings","#FADD3E","#1a1a2e",D.month+" Rankings & History","How this "+D.monthName+" compares historically");
   h+='<div class="g3 mb-16">';
   [{l:"This FY",r:D.rankings.fy.r,s:"of "+D.rankings.fy.n+" months"},{l:"All "+D.month+"s",r:D.rankings.feb.r,s:"of "+D.rankings.feb.n+" "+D.monthName+"s"},{l:"All Time",r:D.rankings.all.r,s:"of "+D.rankings.all.n+" months"}].forEach(function(r){
     h+='<div class="rk"><div class="rk-l">'+r.l+'</div><div class="rk-v" style="color:'+(r.r<=3?"#92400e":"#6b7280")+'">'+(r.r<=3?med[r.r-1]:"")+" #"+r.r+'</div><div class="rk-s">'+r.s+"</div></div>";
-  });
-  h+="</div>";
+  });h+="</div>";
   if(D.histMonth.length>0){
     var mx=Math.max.apply(null,D.histMonth.map(function(x){return x.t}));
     h+='<div style="font-size:11px;color:#6b7280;font-weight:600;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">'+D.monthName+" Turnover</div>";
-    h+=hbar(D.histMonth.map(function(x){return{l:x.yr,v:x.t,h:x.p}}),mx*1.05,"#92400e",false);
-    h+='<details class="detail-panel mt-12"><summary>Brand Split by Year</summary><div style="margin-top:8px">';
-    h+='<table class="tbl"><thead><tr><th>Year</th><th style="color:'+C.tsg.color+'">TSG</th><th style="color:'+C.wll.color+'">WLL</th><th style="color:'+C.nv.color+'">NV</th><th style="color:#374151">Total</th></tr></thead><tbody>';
-    D.histMonth.forEach(function(x){h+='<tr class="'+(x.p?"hl":"")+'"><td>'+x.yr+"</td><td>"+f(x.tsg)+"</td><td>"+f(x.wll)+"</td><td>"+f(x.nv)+'</td><td style="font-weight:600">'+f(x.t)+"</td></tr>";});
+    h+=hbar(D.histMonth,mx*1.05,"#92400e",false);
+    h+='<details class="detail-panel mt-12"><summary>Brand Split by Year</summary><div style="margin-top:8px"><table class="tbl"><thead><tr><th>Year</th><th style="color:'+C.tsg.color+'">TSG</th><th style="color:'+C.wll.color+'">WLL</th><th style="color:'+C.nv.color+'">NV</th><th style="color:#374151">Total</th></tr></thead><tbody>';
+    D.histMonth.forEach(function(x){h+='<tr class="'+(x.p?"hl":"")+'"><td>'+x.l+"</td><td>"+f(x.tsg)+"</td><td>"+f(x.wll)+"</td><td>"+f(x.nv)+'</td><td style="font-weight:600">'+f(x.t)+"</td></tr>";});
     h+="</tbody></table></div></details>";
   }
   h+="</div>";
 
-  // FY Running Totals
+  // FY Running
   h+='<div class="card">';
   h+=secHdr("Financial Year","#6BD4EC","#1a1a2e","Running Totals","vs previous FYs at the same point ("+D.run.monthsIn+" months: Dec\u2013"+D.month+")");
   [{n:"The Sign Group\u2122",lg:LOGOS.tsg,c:C.tsg.color,d:D.run.tsg},{n:"WeLoveLEDs\u2122",lg:LOGOS.wll,c:C.wll.color,d:D.run.wll},{n:"Neon Vibes\u00AE",lg:LOGOS.nv,c:C.nv.color,d:D.run.nv},{n:"Combined",lg:null,c:"#1a1a2e",d:D.run.tot}].forEach(function(r){
@@ -549,30 +479,33 @@ function render(D){
     h+='<div class="rt"><div class="fx-b" style="margin-bottom:6px"><div class="fx-c">';
     if(r.lg)h+='<img src="'+r.lg+'" style="width:20px;height:20px;object-fit:contain;border-radius:4px">';
     else h+='<div style="width:8px;height:8px;border-radius:50%;background:'+r.c+'"></div>';
-    h+='<span style="font-weight:600;font-size:13px;color:#1a1a2e">'+r.n+"</span></div>";
-    h+='<span style="font-size:18px;font-weight:700;color:#1a1a2e">'+f(r.d[2])+"</span></div>";
+    h+='<span style="font-weight:600;font-size:13px;color:#1a1a2e">'+r.n+"</span></div><span style=\"font-size:18px;font-weight:700;color:#1a1a2e\">"+f(r.d[2])+"</span></div>";
     var barMax=Math.max(r.d[0]||1,r.d[1]||1,r.d[2]||1)*1.1;
     h+='<div class="bar-w" style="height:5px"><div class="bar-f" style="width:'+Math.min(r.d[2]/barMax*100,100)+"%;background:"+r.c+'"></div></div>';
     if(r.d[1])h+='<div style="margin-top:5px;font-size:12px;color:#6b7280">vs prev FY: '+f(r.d[1])+" "+dl(vp)+"</div>";
     h+="</div>";
   });
-  h+='<details class="detail-panel mt-8"><summary>Full Comparison ('+D.run.monthsIn+' months into each FY)</summary><div style="margin-top:8px">';
-  h+='<table class="tbl"><thead><tr><th></th>';D.run.labels.forEach(function(x){h+="<th>"+x+"</th>";});
+  h+='<details class="detail-panel mt-8"><summary>Full Comparison ('+D.run.monthsIn+' months into each FY)</summary><div style="margin-top:8px"><table class="tbl"><thead><tr><th></th>';
+  D.run.labels.forEach(function(x){h+="<th>"+x+"</th>";});
   h+="</tr></thead><tbody>";
   [["TSG",D.run.tsg],["WLL",D.run.wll],["NV",D.run.nv],["Total",D.run.tot],["Avg/Mo",D.run.avg]].forEach(function(row,i){
     h+='<tr class="'+(i>=3?"bold":"")+'"><td>'+row[0]+"</td>";row[1].forEach(function(v){h+="<td>"+f(v)+"</td>";});h+="</tr>";
   });
   h+="</tbody></table></div></details></div></div>";
 
-  // === BOTTOM ROW ===
+  // === Projections & Focus ===
   h+='<div class="g2 mb-20">';
 
-  // Projected Annual
+  // Projected Annual — with seasonal explanation
   h+='<div class="card">';
-  h+=secHdr("Projections","#FF0077","#fff","Projected Annual Sales","Full year run-rate projection for "+D.run.labels[2]);
+  h+=secHdr("Projections","#FF0077","#fff","Projected Annual Sales","Full year projection for "+D.run.labels[2]);
   h+='<div style="text-align:center;padding:8px 0;margin-bottom:20px">';
   h+='<div style="font-size:36px;font-weight:800;color:#1a1a2e;letter-spacing:-.03em">'+f(D.projTot)+"</div>";
-  h+='<div style="font-size:12px;color:#6b7280;margin-top:3px">Based on '+D.run.monthsIn+" months of data</div>";
+  if(D.projMethod==="seasonal"){
+    h+='<div style="font-size:12px;color:#6b7280;margin-top:3px">Seasonally weighted \u2014 Dec\u2013'+D.month+" historically represents ~"+D.projSeasonalPct+"% of a full year</div>";
+  }else{
+    h+='<div style="font-size:12px;color:#6b7280;margin-top:3px">Based on '+D.run.monthsIn+" months (run-rate, no seasonal data)</div>";
+  }
   if(D.prevFYTotal)h+='<div style="font-size:12px;color:#6b7280;margin-top:2px">Prev FY total: '+f(D.prevFYTotal)+"</div>";
   if(D.projGrowth)h+='<div style="font-size:14px;font-weight:700;color:'+(D.projGrowth>=0?"#16a34a":"#dc2626")+';margin-top:4px">'+ps(D.projGrowth)+" vs last year</div>";
   h+="</div>";
@@ -581,72 +514,47 @@ function render(D){
   });
   h+="</div>";
 
-  // Sales Focus
+  // Focus
   h+='<div class="card" style="display:flex;flex-direction:column">';
   h+=secHdr("This Week","#CDE453","#1a1a2e","Sales Focus \u2014 "+D.phase,"Priority action for the sales team");
-  if(D.focus){
-    h+='<div style="background:'+C.tsg.bg+";border:1px solid "+C.tsg.bd+';border-radius:8px;padding:16px;margin-bottom:16px">';
-    h+='<p style="font-size:14px;color:#1a1a2e;line-height:1.6;font-weight:500">'+D.focus+"</p></div>";
-  }
-  if(D.optFocus){
-    h+='<div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:12px 14px;margin-bottom:16px">';
-    h+='<div style="font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;font-weight:600">Also Worth Noting</div>';
-    h+='<p style="font-size:13px;color:#374151;line-height:1.5">'+D.optFocus+"</p></div>";
-  }
-  // Month at a Glance
-  h+='<div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:12px 14px;margin-top:auto">';
-  h+='<div style="font-size:11px;color:#6b7280;font-weight:600;text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Month at a Glance</div>';
-  h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">';
+  if(D.focus)h+='<div style="background:'+C.tsg.bg+";border:1px solid "+C.tsg.bd+';border-radius:8px;padding:16px;margin-bottom:16px"><p style="font-size:14px;color:#1a1a2e;line-height:1.6;font-weight:500">'+D.focus+"</p></div>";
+  if(D.optFocus)h+='<div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:12px 14px;margin-bottom:16px"><div style="font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;font-weight:600">Also Worth Noting</div><p style="font-size:13px;color:#374151;line-height:1.5">'+D.optFocus+"</p></div>";
+  h+='<div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:12px 14px;margin-top:auto"><div style="font-size:11px;color:#6b7280;font-weight:600;text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Month at a Glance</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">';
   if(D.combTgt)h+='<div class="gl-r"><span>Invoicing vs Target</span><span class="'+(D.combProj>=D.combTgt?"up":"dn")+'">'+ps(po(D.combProj,D.combTgt))+"</span></div>";
   if(D.nsTgt&&D.nsVal)h+='<div class="gl-r"><span>New Orders vs Target</span><span class="'+(D.nsVal>=D.nsTgt?"up":"dn")+'">'+ps(po(D.nsVal,D.nsTgt))+"</span></div>";
   h+='<div class="gl-r"><span>'+D.month+' Rank (All '+D.month+'s)</span><span style="font-weight:600;color:#92400e">'+(D.rankings.feb.r<=3?med[D.rankings.feb.r-1]:"")+" #"+D.rankings.feb.r+"</span></div>";
   if(D.nsConv)h+='<div class="gl-r"><span>Conversion Rate</span><span class="up">'+D.nsConv+"%</span></div>";
   h+="</div></div></div></div>";
 
-  // FOOTER
+  // Footer
   h+='<div class="footer">';
   if(D.monthComplete)h+=D.monthName+" "+D.year+" \u2014 month-end figures";
-  else h+=D.monthName+" "+D.year+" figures are projections until month-end close";
-  if(!D.monthComplete)h+=" \u00B7 "+(D.hasWip?"TSG assessed on WIP & confidence, ":"")+"WLL & NV assessed on daily pace";
+  else h+=D.monthName+" "+D.year+" figures are projections until month-end close \u00B7 "+(D.hasWip?"TSG assessed on WIP & confidence, ":"")+"WLL & NV assessed on daily pace";
   h+="<br>The Sign Group\u2122 \u00B7 WeLoveLEDs\u2122 \u00B7 Neon Vibes\u00AE</div>";
 
   document.getElementById("app").innerHTML=h;
 }
 
 // ============================================================
-// FETCH & BOOT
-// ============================================================
 async function init(){
   try{
     var res=await fetch("/sales-data");
     if(!res.ok)throw new Error("API returned "+res.status);
-    var raw=await res.json();
-    if(raw.error)throw new Error(raw.error);
-
-    // Debug: log field names to console so you can verify mappings
+    var raw=await res.json();if(raw.error)throw new Error(raw.error);
     if(raw.debugFields){
-      console.group("Airtable Field Names (for debugging)");
-      console.log("Overview fields:", raw.debugFields.overview);
-      console.log("Invoiced fields:", raw.debugFields.invoiced);
-      console.log("Conversions fields:", raw.debugFields.conversions);
+      console.group("Airtable Field Names");
+      console.log("Overview:",raw.debugFields.overview);
+      console.log("Invoiced:",raw.debugFields.invoiced);
+      console.log("Conversions:",raw.debugFields.conversions);
       console.groupEnd();
-
-      // Log first record of conversions to see actual values
-      if(raw.conversions.length>0)console.log("Latest conversions record:", raw.conversions[raw.conversions.length-1]);
+      if(raw.conversions.length>0)console.log("Latest conversions:",raw.conversions[raw.conversions.length-1]);
     }
-
     document.getElementById("loading").style.display="none";
-    var D=processData(raw);
-    render(D);
-
-    if(raw.lastFetched){
-      var ft=new Date(raw.lastFetched);
-      var ts="Live \u2022 "+ft.toLocaleString("en-GB",{day:"numeric",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"});
-      document.getElementById("navUpdated").textContent=ts;
-    }
+    var D=processData(raw);render(D);
+    if(raw.lastFetched){var ft=new Date(raw.lastFetched);document.getElementById("navUpdated").textContent="Live \u2022 "+ft.toLocaleString("en-GB",{day:"numeric",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"});}
   }catch(err){
     document.getElementById("loading").style.display="none";
-    document.getElementById("error").innerHTML='<div class="error-box"><strong>Failed to load data</strong><br><br>'+err.message+'<br><br>Check that AIRTABLE_TOKEN is set in Cloudflare Pages environment variables and that <code>/sales-data</code> returns valid JSON.</div>';
+    document.getElementById("error").innerHTML='<div class="error-box"><strong>Failed to load data</strong><br><br>'+err.message+"</div>";
   }
 }
 init();
