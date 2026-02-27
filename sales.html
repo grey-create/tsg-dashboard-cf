@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TSG Sales Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f4f5f7;color:#1a1a2e;min-height:100vh}
+  .wrap{max-width:1200px;margin:0 auto;padding:24px 20px}
+  .card{background:#fff;border:1px solid #e0e0e0;border-radius:12px;padding:22px 24px}
+  .sec-pill{display:inline-block;padding:3px 12px;border-radius:99px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
+  .sec-title{font-size:16px;font-weight:700;color:#1a1a2e;line-height:1.3;margin-bottom:2px}
+  .sec-sub{font-size:12px;color:#6b7280;line-height:1.4}
+  .g4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+  .g3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  .g2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .g-ns{display:grid;grid-template-columns:2fr 1fr 1fr;gap:16px}
+  .kpi{background:#fff;border:1px solid #e0e0e0;border-radius:10px;padding:14px 16px}
+  .kpi-label{font-size:11px;color:#6b7280;font-weight:600;text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px}
+  .kpi-val{font-size:24px;font-weight:700;color:#1a1a2e;letter-spacing:-.02em;line-height:1.2}
+  .kpi-sub{font-size:12px;color:#6b7280;margin-top:4px;line-height:1.3}
+  .st-label{font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px;font-weight:600}
+  .st-val{font-size:22px;font-weight:700;line-height:1.2}
+  .st-unit{font-size:12px;font-weight:400}
+  .b-row{border-radius:8px;padding:16px;margin-bottom:10px;border:1px solid}
+  .b-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px}
+  .b-name{display:flex;align-items:center;gap:8px}
+  .b-name strong{font-weight:700;font-size:14px;color:#1a1a2e}
+  .pill{display:inline-block;padding:2px 10px;border-radius:99px;font-size:11px;font-weight:600;line-height:18px}
+  .pill-g{background:#dcfce7;color:#166534;border:1px solid #bbf7d0}
+  .pill-r{background:#fef2f2;color:#991b1b;border:1px solid #fecaca}
+  .pill-y{background:#fefce8;color:#854d0e;border:1px solid #fef08a}
+  .bar-w{height:6px;background:#e5e7eb;border-radius:6px;position:relative;overflow:hidden}
+  .bar-p{position:absolute;height:100%;border-radius:6px;opacity:.2}
+  .bar-f{position:absolute;height:100%;border-radius:6px;transition:width .6s ease}
+  .bar-lbl{display:flex;justify-content:space-between;margin-top:5px;font-size:11px;color:#6b7280}
+  .logo{width:24px;height:24px;object-fit:contain;border-radius:6px;flex-shrink:0}
+  .logo-lg{width:36px;height:36px}
+  .tbl{width:100%;border-collapse:collapse;font-size:12px}
+  .tbl th{text-align:right;padding:6px 8px;font-size:11px;color:#6b7280;font-weight:600;border-bottom:2px solid #e5e7eb;text-transform:uppercase;letter-spacing:.3px}
+  .tbl th:first-child{text-align:left}
+  .tbl td{padding:6px 8px;text-align:right;color:#374151;border-bottom:1px solid #f3f4f6}
+  .tbl td:first-child{text-align:left;font-weight:500;color:#1a1a2e}
+  .tbl tr:nth-child(even){background:#fafbfc}
+  .tbl .hl{background:#fffbeb!important}
+  .tbl .hl td{color:#92400e;font-weight:600}
+  .tbl .bold td{font-weight:600;color:#1a1a2e}
+  .detail-panel{background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:12px 14px;margin-top:8px}
+  .detail-panel summary{font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;cursor:pointer;user-select:none}
+  .detail-panel summary:hover{color:#374151}
+  .detail-content{margin-top:8px;font-size:12px;color:#6b7280;line-height:1.5}
+  .up{color:#16a34a;font-weight:600}
+  .dn{color:#dc2626;font-weight:600}
+  .ns{background:linear-gradient(135deg,#0f172a 0%,#1e293b 100%);border-radius:12px;padding:24px;color:#fff}
+  .ns-glass{background:rgba(255,255,255,.06);border-radius:8px;padding:16px;text-align:center}
+  .hb{display:flex;align-items:center;gap:8px;margin-bottom:5px}
+  .hb-l{width:52px;font-size:12px;flex-shrink:0}
+  .hb-t{flex:1;height:20px;border-radius:4px;overflow:hidden;position:relative}
+  .hb-f{height:100%;border-radius:4px;display:flex;align-items:center;padding-left:8px;transition:width .5s ease}
+  .hb-f span{font-size:10px;font-weight:600}
+  .comb{background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:14px 16px}
+  .rk{background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:12px;text-align:center}
+  .rk-l{font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;font-weight:600}
+  .rk-v{font-size:22px;font-weight:800}
+  .rk-s{font-size:11px;color:#9ca3af;margin-top:2px}
+  .gl-r{display:flex;justify-content:space-between;font-size:12px;padding:3px 0}
+  .gl-r span:first-child{color:#6b7280}
+  .rt{margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #f3f4f6}
+  .rt:last-of-type{border-bottom:none}
+  .wk-grid{display:flex;gap:8px}
+  .wk{flex:1;border-radius:8px;padding:10px 8px;text-align:center;border:1px solid}
+  .wk-h{font-size:10px;font-weight:700;margin-bottom:3px}
+  .wk-t{font-size:10px;line-height:1.3}
+  .fx-b{display:flex;justify-content:space-between;align-items:center}
+  .fx-c{display:flex;align-items:center;gap:8px}
+  .wd{display:flex;align-items:center;gap:4px}
+  .wd-d{width:5px;height:18px;border-radius:2.5px}
+  .wd-lbl{font-size:11px;color:#9ca3af;margin-left:6px}
+  .footer{text-align:center;padding:16px 0;font-size:11px;color:#9ca3af;line-height:1.6}
+  .mb-8{margin-bottom:8px}.mb-10{margin-bottom:10px}.mb-16{margin-bottom:16px}.mb-20{margin-bottom:20px}
+  .mt-8{margin-top:8px}.mt-12{margin-top:12px}.mt-16{margin-top:16px}
+  .loading{display:flex;align-items:center;justify-content:center;min-height:60vh;font-size:14px;color:#6b7280}
+  .spinner{width:24px;height:24px;border:3px solid #e5e7eb;border-top-color:#1a1a2e;border-radius:50%;animation:spin .8s linear infinite;margin-right:12px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .error-box{background:#fef2f2;border:1px solid #fecaca;color:#991b1b;padding:20px;border-radius:10px;font-size:13px;margin:40px auto;max-width:600px;text-align:center}
+  @media(max-width:900px){.g4,.g-ns{grid-template-columns:repeat(2,1fr)}.g2{grid-template-columns:1fr}.wk-grid{flex-wrap:wrap}.wk{min-width:calc(50% - 4px)}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div id="loading" class="loading"><div class="spinner"></div>Loading from Airtable&hellip;</div>
+  <div id="error"></div>
+  <div id="app"></div>
+</div>
+<script>
+// ============================================================
+// CONFIG
+// ============================================================
+var C = {
+  tsg:{color:"#2d6e0e",accent:"#CDE453",bg:"#f5fbe8",bd:"#dff1a8"},
+  wll:{color:"#0891b2",accent:"#6BD4EC",bg:"#ecfbff",bd:"#b3e8f7"},
+  nv:{color:"#FF0077",accent:"#ff3399",bg:"#fff0f6",bd:"#ffb3d9"},
+};
+var LOGOS = {
+  tsg:"https://cdn.shopify.com/s/files/1/1070/8974/files/TSG-Logo-Roundel-Black.png?v=1772037610",
+  wll:"https://cdn.shopify.com/s/files/1/1070/8974/files/WeLoveLEDs-640px--MASTER.png?v=1772124903",
+  nv:"https://cdn.shopify.com/s/files/1/1070/8974/files/NV-Logo-640px--Grey_s-Stuff.png?v=1772124894",
+};
+// FY starts December (FY25/26 = Dec 2025 - Nov 2026)
+var FY_START_MONTH = 12;
+
+// ============================================================
+// HELPERS
+// ============================================================
+function f(n){return"\u00A3"+Math.round(Number(n)||0).toLocaleString("en-GB")}
+function ps(n){return(n>0?"+":"")+n+"%"}
+function po(a,b){if(!b)return 0;return Math.round(((a-b)/b)*100)}
+function dl(v){var p=v>0;return'<span class="'+(p?"up":"dn")+'">'+(p?"\u25B2":"\u25BC")+" "+(p?"+":"")+v+"%</span>"}
+function pl(s){var c=s==="Ahead"||s==="High"?"pill-g":s==="Behind"||s==="Low"?"pill-r":"pill-y";return'<span class="pill '+c+'">'+s+"</span>"}
+function secHdr(pill_text,pill_bg,pill_fg,title,sub){
+  var o='<div style="margin-bottom:16px">';
+  o+='<span class="sec-pill" style="background:'+pill_bg+";color:"+pill_fg+'">'+pill_text+"</span>";
+  o+='<div class="sec-title">'+title+"</div>";
+  if(sub)o+='<div class="sec-sub">'+sub+"</div>";
+  return o+"</div>";
+}
+function mkbar(val,max,color,proj){
+  var p=Math.min(val/max*100,100);var pp=proj?Math.min(proj/max*100,100):0;
+  var o='<div class="bar-w">';
+  if(proj)o+='<div class="bar-p" style="width:'+pp+"%;background:"+color+'"></div>';
+  o+='<div class="bar-f" style="width:'+p+"%;background:"+color+'"></div></div>';
+  o+='<div class="bar-lbl"><span>Invoiced: '+Math.round(p)+"% of target</span><span>Projected: "+Math.round(proj?pp:p)+"%</span></div>";
+  return o;
+}
+function hbar(items,mx,color,dark){
+  var o="";
+  items.forEach(function(it){
+    var w=(it.v/mx)*100;
+    var fc=it.h?color:(dark?"#475569":"#d1d5db");
+    var tc=it.h?(dark?"#0f172a":"#fff"):(dark?"#cbd5e1":"#fff");
+    var lc=it.h?(dark?"#CDE453":"#1a1a2e"):(dark?"#94a3b8":"#6b7280");
+    o+='<div class="hb"><span class="hb-l" style="color:'+lc+";font-weight:"+(it.h?700:400)+'">'+it.l+"</span>";
+    o+='<div class="hb-t" style="background:'+(dark?"rgba(255,255,255,0.06)":"#e5e7eb")+'">';
+    o+='<div class="hb-f" style="width:'+w+"%;background:"+fc+'">';
+    if(w>30)o+='<span style="color:'+tc+'">'+f(it.v)+"</span>";
+    o+="</div></div>";
+    if(w<=30)o+='<span style="font-size:11px;color:'+(dark?"#94a3b8":"#6b7280")+'">'+f(it.v)+"</span>";
+    o+="</div>";
+  });
+  return o;
+}
+
+// Parse Month/Year like "Feb-2026" or "Feb 2026" into {month:2, year:2026, key:"2026-02"}
+function parseMY(my){
+  if(!my)return null;
+  var ms=["jan","feb","mar","apr","may","jun","jul","aug","sep","oct","nov","dec"];
+  var parts=my.replace(/[-\s]+/g," ").trim().split(" ");
+  if(parts.length<2)return null;
+  var mi=ms.indexOf(parts[0].toLowerCase().substring(0,3));
+  if(mi<0)return null;
+  var yr=parseInt(parts[1]||parts[0]);
+  if(yr<100)yr+=2000;
+  if(isNaN(yr))return null;
+  return{month:mi+1, year:yr, key:yr+"-"+String(mi+1).padStart(2,"0")};
+}
+
+function monthShort(m){return["","Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][m]}
+
+// Get FY label for a given month/year. FY starts in December.
+// Dec 2025 => FY25/26, Jan 2026 => FY25/26, Nov 2026 => FY25/26
+function getFY(month,year){
+  if(month>=FY_START_MONTH) return{label:(year%100)+"/"+(year%100+1),startYear:year};
+  return{label:((year-1)%100)+"/"+(year%100),startYear:year-1};
+}
+
+// ============================================================
+// DATA PROCESSING
+// ============================================================
+function processData(raw){
+  var D = {};
+  var now = new Date();
+  var curMonth = now.getMonth()+1; // 1-12
+  var curYear = now.getFullYear();
+  var curKey = curYear+"-"+String(curMonth).padStart(2,"0");
+  var curMY = monthShort(curMonth)+"-"+curYear;
+
+  D.month = monthShort(curMonth);
+  D.year = curYear;
+  D.monthName = ["","January","February","March","April","May","June","July","August","September","October","November","December"][curMonth];
+
+  // --- Monthly Overview (current month) ---
+  var ov = null;
+  raw.overview.forEach(function(r){
+    var p = parseMY(r.monthYear);
+    if(p && p.key === curKey) ov = r;
+  });
+  if(!ov && raw.overview.length > 0) ov = raw.overview[raw.overview.length-1]; // fallback to latest
+
+  D.phase = ov ? ov.phase : "Week ?";
+  D.wdTotal = ov ? ov.workingDaysTotal : 20;
+  D.wdDone = ov ? ov.workingDaysCompleted : 0;
+  D.wdLeft = D.wdTotal - D.wdDone;
+  D.tsgConf = ov ? ov.tsgConfidence : "";
+  D.tsgConfNote = ov ? ov.tsgConfidenceNote : "";
+  D.wllNote = ov ? ov.wllPaceNote : "";
+  D.nvNote = ov ? ov.nvPaceNote : "";
+  D.focus = ov ? ov.weekFocus : "";
+  D.optFocus = ov ? ov.optionalFocus : "";
+
+  // Targets from overview (preferred) or invoiced table
+  var ovTsgTgt = ov ? ov.tsgTarget : 0;
+  var ovWllTgt = ov ? ov.wllTarget : 0;
+  var ovNvTgt = ov ? ov.nvTarget : 0;
+
+  // WIP fields from overview (may be null if not yet added to Airtable)
+  D.tsgWipDue = ov ? ov.tsgWipDue : null;
+  D.tsgWipUndated = ov ? ov.tsgWipUndated : null;
+  D.tsgWipNextMonth = ov ? ov.tsgWipNextMonth : null;
+  D.hasWip = D.tsgWipDue !== null;
+
+  // --- Index invoiced sales by sort key ---
+  var invByKey = {};
+  raw.invoiced.forEach(function(r){
+    var p = parseMY(r.monthYear);
+    if(p) invByKey[p.key] = r;
+  });
+
+  // --- Index conversions by sort key ---
+  var convByKey = {};
+  raw.conversions.forEach(function(r){
+    var p = parseMY(r.monthYear);
+    if(p) convByKey[p.key] = r;
+  });
+
+  // --- Current month invoiced ---
+  var curInv = invByKey[curKey] || {};
+  var curConv = convByKey[curKey] || {};
+
+  // Use overview targets if available, else fall back to invoiced table targets
+  D.tsgTgt = ovTsgTgt || curInv.tsgTarget || 0;
+  D.wllTgt = ovWllTgt || curInv.wllTarget || 0;
+  D.nvTgt = ovNvTgt || curInv.nvTarget || 0;
+  D.combTgt = D.tsgTgt + D.wllTgt + D.nvTgt;
+
+  // Current invoiced figures (may be mid-month partials or month-end)
+  D.tsgInv = (ov && ov.tsgInvoicedToDate) || curInv.tsg || 0;
+  D.wllInv = (ov && ov.wllInvoicedToDate) || curInv.wll || 0;
+  D.nvInv = (ov && ov.nvInvoicedToDate) || curInv.nv || 0;
+  D.combInv = D.tsgInv + D.wllInv + D.nvInv;
+
+  // Projections
+  if(D.wdDone > 0){
+    // WLL & NV: pace-based projections
+    D.wllDaily = D.wllInv / D.wdDone;
+    D.nvDaily = D.nvInv / D.wdDone;
+    D.wllProj = Math.round(D.wllDaily * D.wdTotal);
+    D.nvProj = Math.round(D.nvDaily * D.wdTotal);
+    D.wllNeed = D.wllTgt > D.wllInv && D.wdLeft > 0 ? (D.wllTgt - D.wllInv) / D.wdLeft : 0;
+
+    // TSG: WIP-based if available, else pace-based fallback
+    if(D.hasWip){
+      D.tsgProj = D.tsgInv + (D.tsgWipDue || 0);
+    } else {
+      D.tsgProj = Math.round((D.tsgInv / D.wdDone) * D.wdTotal);
+    }
+  } else {
+    D.wllDaily = 0; D.nvDaily = 0;
+    D.wllProj = 0; D.nvProj = 0; D.tsgProj = 0;
+    D.wllNeed = 0;
+  }
+  D.combProj = D.tsgProj + D.wllProj + D.nvProj;
+
+  // WLL/NV pace status
+  D.wllPace = D.wllProj >= D.wllTgt ? "Ahead" : "Behind";
+  D.nvPace = D.nvProj >= D.nvTgt ? "Ahead" : "Behind";
+
+  // --- New Sales (from Conversions table) ---
+  D.nsVal = curConv.salesConfirmed || 0;
+  D.nsTgt = curConv.newSalesTarget || curInv.tsgNewSalesTarget || 0;
+  D.nsEnq = curConv.enquiries || 0;
+  D.nsOrd = curConv.orders || 0;
+  D.nsConv = curConv.convRate || 0;
+  // Convert conv rate if stored as decimal
+  if(D.nsConv > 0 && D.nsConv < 1) D.nsConv = Math.round(D.nsConv * 100);
+
+  // New Sales history (same month in previous years)
+  D.nsHistory = [];
+  var yrsBack = [curYear-2, curYear-1, curYear];
+  yrsBack.forEach(function(yr){
+    var k = yr+"-"+String(curMonth).padStart(2,"0");
+    var c = convByKey[k];
+    if(c){
+      D.nsHistory.push({
+        yr: monthShort(curMonth)+"-"+String(yr).slice(2),
+        v: c.salesConfirmed || 0,
+        e: c.enquiries || 0,
+        c: c.convRate || 0,
+        h: yr === curYear
+      });
+    }
+  });
+
+  // --- February (same month) history for invoiced ---
+  D.histMonth = [];
+  var allKeys = Object.keys(invByKey).sort();
+  allKeys.forEach(function(k){
+    var parts = k.split("-");
+    if(parseInt(parts[1]) === curMonth){
+      var r = invByKey[k];
+      var yr = parseInt(parts[0]);
+      var label = monthShort(curMonth)+"-"+String(yr).slice(2);
+      var isCurrent = k === curKey;
+      D.histMonth.push({
+        yr: isCurrent ? label+"*" : label,
+        t: isCurrent ? D.combProj : (r.tsg||0)+(r.wll||0)+(r.nv||0),
+        tsg: isCurrent ? D.tsgProj : (r.tsg||0),
+        wll: isCurrent ? D.wllProj : (r.wll||0),
+        nv: isCurrent ? D.nvProj : (r.nv||0),
+        p: isCurrent
+      });
+    }
+  });
+
+  // --- Rankings ---
+  // All months total
+  var allTotals = [];
+  allKeys.forEach(function(k){
+    var r = invByKey[k];
+    var t = (r.tsg||0)+(r.wll||0)+(r.nv||0);
+    if(k === curKey) t = D.combProj; // use projection for current
+    allTotals.push({key:k, t:t});
+  });
+  allTotals.sort(function(a,b){return b.t - a.t});
+  var allTimeRank = allTotals.findIndex(function(x){return x.key===curKey}) + 1;
+  var allTimeOf = allTotals.length;
+
+  // Same-month rankings
+  var sameMonthTotals = allTotals.filter(function(x){return parseInt(x.key.split("-")[1])===curMonth});
+  var monthRank = sameMonthTotals.findIndex(function(x){return x.key===curKey}) + 1;
+  var monthOf = sameMonthTotals.length;
+
+  // FY rankings (months in current FY)
+  var curFY = getFY(curMonth, curYear);
+  var fyKeys = allKeys.filter(function(k){
+    var yr=parseInt(k.split("-")[0]),mo=parseInt(k.split("-")[1]);
+    var fy = getFY(mo,yr);
+    return fy.label === curFY.label;
+  });
+  var fyTotals = fyKeys.map(function(k){
+    var r = invByKey[k];
+    var t = (r.tsg||0)+(r.wll||0)+(r.nv||0);
+    if(k===curKey)t=D.combProj;
+    return{key:k,t:t};
+  }).sort(function(a,b){return b.t-a.t});
+  var fyRank = fyTotals.findIndex(function(x){return x.key===curKey})+1;
+  var fyOf = fyTotals.length;
+
+  D.rankings = {fy:{r:fyRank||1,n:fyOf||1},feb:{r:monthRank||1,n:monthOf||1},all:{r:allTimeRank||1,n:allTimeOf||1}};
+
+  // --- FY Running Totals ---
+  // Current FY and 2 previous FYs
+  function fyRunning(startYear){
+    var sum={tsg:0,wll:0,nv:0};
+    // FY runs Dec(startYear) to Nov(startYear+1)
+    // Only sum up to current month
+    for(var m=FY_START_MONTH;m<=12;m++){
+      var k=startYear+"-"+String(m).padStart(2,"0");
+      if(k>curKey) break;
+      var r=invByKey[k];
+      if(r){sum.tsg+=(r.tsg||0);sum.wll+=(r.wll||0);sum.nv+=(r.nv||0);}
+      if(k===curKey){sum.tsg=D.tsgProj;sum.wll=D.wllProj;sum.nv=D.nvProj;} // current month: use proj
+    }
+    for(var m2=1;m2<FY_START_MONTH;m2++){
+      var k2=(startYear+1)+"-"+String(m2).padStart(2,"0");
+      if(k2>curKey) break;
+      var r2=invByKey[k2];
+      if(r2){sum.tsg+=(r2.tsg||0);sum.wll+=(r2.wll||0);sum.nv+=(r2.nv||0);}
+      if(k2===curKey){sum.tsg=D.tsgProj;sum.wll=D.wllProj;sum.nv=D.nvProj;}
+    }
+    sum.tot=sum.tsg+sum.wll+sum.nv;
+    return sum;
+  }
+  // Count how many months into the FY we are
+  var fyMonthsIn = fyKeys.filter(function(k){return k<=curKey}).length;
+
+  var fy0 = fyRunning(curFY.startYear);
+  var fy1 = fyRunning(curFY.startYear-1);
+  var fy2 = fyRunning(curFY.startYear-2);
+
+  D.run = {
+    tsg:[fy2.tsg, fy1.tsg, fy0.tsg],
+    wll:[fy2.wll, fy1.wll, fy0.wll],
+    nv:[fy2.nv, fy1.nv, fy0.nv],
+    tot:[fy2.tot, fy1.tot, fy0.tot],
+    labels:["FY"+(curFY.startYear-2)%100+"/"+(curFY.startYear-1)%100, "FY"+(curFY.startYear-1)%100+"/"+curFY.startYear%100, "FY"+curFY.startYear%100+"/"+(curFY.startYear+1)%100],
+  };
+  // Average per month
+  D.run.avg = D.run.tot.map(function(t){return fyMonthsIn>0?Math.round(t/fyMonthsIn):0;});
+
+  // --- Projected annual (current FY run rate * 12) ---
+  if(fyMonthsIn > 0){
+    D.projTsg = Math.round(fy0.tsg / fyMonthsIn * 12);
+    D.projWll = Math.round(fy0.wll / fyMonthsIn * 12);
+    D.projNv = Math.round(fy0.nv / fyMonthsIn * 12);
+    D.projTot = D.projTsg + D.projWll + D.projNv;
+    // Previous FY full year
+    var prevFYFull = 0;
+    var prevStartYr = curFY.startYear - 1;
+    for(var pm=FY_START_MONTH;pm<=12;pm++){var pk=prevStartYr+"-"+String(pm).padStart(2,"0");var pr=invByKey[pk];if(pr)prevFYFull+=(pr.tsg||0)+(pr.wll||0)+(pr.nv||0);}
+    for(var pm2=1;pm2<FY_START_MONTH;pm2++){var pk2=(prevStartYr+1)+"-"+String(pm2).padStart(2,"0");var pr2=invByKey[pk2];if(pr2)prevFYFull+=(pr2.tsg||0)+(pr2.wll||0)+(pr2.nv||0);}
+    D.prevFYTotal = prevFYFull;
+    D.projGrowth = prevFYFull > 0 ? po(D.projTot, prevFYFull) : 0;
+  } else {
+    D.projTsg=0;D.projWll=0;D.projNv=0;D.projTot=0;D.prevFYTotal=0;D.projGrowth=0;
+  }
+
+  return D;
+}
+
+// ============================================================
+// RENDER
+// ============================================================
+function render(D){
+  var h = "";
+
+  // === HEADER ===
+  h+='<div class="fx-b mb-20" style="flex-wrap:wrap;gap:16px">';
+  h+='<div class="fx-c"><img src="'+LOGOS.tsg+'" class="logo logo-lg">';
+  h+='<div><h1 style="font-size:22px;font-weight:800;letter-spacing:-.03em">Sales Dashboard</h1>';
+  h+='<p style="font-size:12px;color:#6b7280;margin-top:2px">'+D.monthName+" "+D.year+" &middot; "+D.phase+" &middot; Day "+D.wdDone+" of "+D.wdTotal+"</p></div></div>";
+  h+='<div class="wd">';
+  for(var i=0;i<D.wdTotal;i++)h+='<div class="wd-d" style="background:'+(i<D.wdDone?"#2d6e0e":"#e5e7eb")+'"></div>';
+  h+='<span class="wd-lbl">'+D.wdLeft+" days left</span></div></div>";
+
+  // === TOP KPIs ===
+  h+='<div class="g4 mb-20">';
+  h+='<div class="kpi" style="border-top:3px solid #CDE453"><div class="kpi-label">Combined Invoiced</div><div class="kpi-val">'+f(D.combInv)+'</div><div class="kpi-sub">'+(D.combTgt?'<span class="'+(D.combInv>=D.combTgt?"up":"dn")+'">'+(D.combInv>=D.combTgt?"\u25B2":"\u25BC")+" "+ps(po(D.combInv,D.combTgt))+" vs target</span>":"")+"</div></div>";
+  h+='<div class="kpi" style="border-top:3px solid #2d6e0e"><div class="kpi-label">Projected Month-End</div><div class="kpi-val">'+f(D.combProj)+'</div><div class="kpi-sub">'+(D.combTgt?"+"+f(D.combProj-D.combTgt)+" vs target":"")+"</div></div>";
+  h+='<div class="kpi" style="border-top:3px solid #6BD4EC"><div class="kpi-label">FY Running Total</div><div class="kpi-val">'+f(D.run.tot[2])+'</div><div class="kpi-sub">'+dl(po(D.run.tot[2],D.run.tot[1]))+" vs prev FY</div></div>";
+  h+='<div class="kpi" style="border-top:3px solid #FF0077"><div class="kpi-label">Avg Monthly Revenue</div><div class="kpi-val">'+f(D.run.avg[2])+'</div><div class="kpi-sub">Prev FY avg: '+f(D.run.avg[1])+"</div></div>";
+  h+="</div>";
+
+  // === INVOICING ===
+  h+='<div class="card mb-20">';
+  h+=secHdr("Invoicing","#1a1a2e","#fff","Monthly Invoicing","Revenue from completed &amp; invoiced work"+(D.hasWip?" &mdash; TSG assessed on WIP &amp; confidence, WLL &amp; NV on daily pace":" &mdash; WLL &amp; NV pace-based projections"));
+
+  // TSG
+  h+='<div class="b-row" style="background:'+C.tsg.bg+";border-color:"+C.tsg.bd+'">';
+  h+='<div class="b-hdr"><div class="b-name"><img src="'+LOGOS.tsg+'" class="logo"><strong>The Sign Group\u2122</strong>';
+  if(D.tsgConf)h+=pl(D.tsgConf)+' <span style="font-size:11px;color:#6b7280">Confidence</span>';
+  h+="</div>";
+  if(D.tsgTgt)h+='<div style="font-size:12px;color:#374151">Target '+f(D.tsgTgt)+" &middot; "+(D.tsgProj>=D.tsgTgt?'<span class="up">+'+f(D.tsgProj-D.tsgTgt)+"</span>":'<span class="dn">'+f(D.tsgProj-D.tsgTgt)+"</span>")+"</div>";
+  h+="</div>";
+  h+='<div class="g4 mb-10">';
+  h+='<div><div class="st-label">Invoiced to Date</div><div class="st-val">'+f(D.tsgInv)+"</div></div>";
+  if(D.hasWip){
+    h+='<div><div class="st-label">WIP Due This Month</div><div class="st-val" style="color:#92400e">'+f(D.tsgWipDue)+"</div></div>";
+  }
+  h+='<div><div class="st-label">Projected Total</div><div class="st-val" style="color:'+C.tsg.color+'">'+f(D.tsgProj)+"</div></div>";
+  if(D.tsgTgt)h+='<div><div class="st-label">vs Target</div><div class="st-val" style="color:'+(D.tsgProj>=D.tsgTgt?"#16a34a":"#dc2626")+'">'+ps(po(D.tsgProj,D.tsgTgt))+"</div></div>";
+  h+="</div>";
+  if(D.tsgTgt)h+=mkbar(D.tsgInv,D.tsgTgt,C.tsg.color,D.tsgProj);
+  if(D.hasWip || D.tsgConfNote){
+    h+='<details class="detail-panel"><summary>Details &mdash; WIP, Notes</summary><div class="detail-content">';
+    if(D.hasWip)h+='<div style="display:flex;gap:24px;margin-bottom:6px"><span>Undated WIP: <strong style="color:#1a1a2e">'+f(D.tsgWipUndated)+"</strong></span><span>Next Month: <strong style=\"color:#1a1a2e\">"+f(D.tsgWipNextMonth)+"</strong></span></div>";
+    if(D.tsgConfNote)h+='<div style="font-style:italic">\uD83D\uDCA1 '+D.tsgConfNote+"</div>";
+    h+="</div></details>";
+  }
+  h+="</div>";
+
+  // WLL
+  h+='<div class="b-row" style="background:'+C.wll.bg+";border-color:"+C.wll.bd+'">';
+  h+='<div class="b-hdr"><div class="b-name"><img src="'+LOGOS.wll+'" class="logo"><strong>WeLoveLEDs\u2122</strong>'+pl(D.wllPace)+"</div>";
+  if(D.wllTgt)h+='<div style="font-size:12px;color:#374151">Target '+f(D.wllTgt)+" &middot; "+(D.wllProj>=D.wllTgt?'<span class="up">+'+f(D.wllProj-D.wllTgt)+"</span>":'<span class="dn">'+f(D.wllProj-D.wllTgt)+"</span>")+"</div>";
+  h+="</div>";
+  h+='<div class="g4 mb-10">';
+  h+='<div><div class="st-label">Invoiced to Date</div><div class="st-val">'+f(D.wllInv)+"</div></div>";
+  h+='<div><div class="st-label">Daily Rate</div><div class="st-val" style="color:'+C.wll.color+'">'+f(D.wllDaily)+'<span class="st-unit">/day</span></div></div>';
+  if(D.wllNeed>0)h+='<div><div class="st-label">Needed to Hit Target</div><div class="st-val" style="color:#dc2626">'+f(D.wllNeed)+'<span class="st-unit">/day</span></div></div>';
+  h+='<div><div class="st-label">Projected</div><div class="st-val" style="color:'+C.wll.color+'">'+f(D.wllProj)+"</div></div>";
+  h+="</div>";
+  if(D.wllTgt)h+=mkbar(D.wllInv,D.wllTgt,C.wll.color,D.wllProj);
+  if(D.wllNote){h+='<details class="detail-panel"><summary>Notes</summary><div class="detail-content">\u26A1 '+D.wllNote+"</div></details>";}
+  h+="</div>";
+
+  // NV
+  h+='<div class="b-row" style="background:'+C.nv.bg+";border-color:"+C.nv.bd+'">';
+  h+='<div class="b-hdr"><div class="b-name"><img src="'+LOGOS.nv+'" class="logo"><strong>Neon Vibes\u00AE</strong>'+pl(D.nvPace)+"</div>";
+  if(D.nvTgt)h+='<div style="font-size:12px;color:#374151">Target '+f(D.nvTgt)+" &middot; "+(D.nvProj>=D.nvTgt?'<span class="up">+'+f(D.nvProj-D.nvTgt)+"</span>":'<span class="dn">'+f(D.nvProj-D.nvTgt)+"</span>")+"</div>";
+  h+="</div>";
+  h+='<div class="g4 mb-10">';
+  h+='<div><div class="st-label">Invoiced to Date</div><div class="st-val">'+f(D.nvInv)+"</div></div>";
+  h+='<div><div class="st-label">Daily Rate</div><div class="st-val" style="color:'+C.nv.color+'">'+f(D.nvDaily)+'<span class="st-unit">/day</span></div></div>';
+  h+='<div><div class="st-label">Projected</div><div class="st-val" style="color:'+C.nv.color+'">'+f(D.nvProj)+"</div></div>";
+  if(D.nvTgt)h+='<div><div class="st-label">vs Target</div><div class="st-val" style="color:'+(D.nvProj>=D.nvTgt?"#16a34a":"#dc2626")+'">'+ps(po(D.nvProj,D.nvTgt))+"</div></div>";
+  h+="</div>";
+  if(D.nvTgt)h+=mkbar(D.nvInv,D.nvTgt,C.nv.color,D.nvProj);
+  if(D.nvNote){h+='<details class="detail-panel"><summary>Notes</summary><div class="detail-content">'+D.nvNote+"</div></details>";}
+  h+="</div>";
+
+  // Combined
+  h+='<div class="comb fx-b" style="flex-wrap:wrap;gap:8px">';
+  h+='<div class="fx-c"><span style="font-weight:700;font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:.5px">Combined</span>';
+  h+='<span style="font-size:20px;font-weight:800">'+f(D.combInv)+"</span>";
+  h+='<span style="color:#9ca3af;font-size:14px">\u2192</span>';
+  h+='<span style="font-size:16px;font-weight:700;color:#92400e">'+f(D.combProj)+"</span>";
+  h+='<span style="font-size:12px;color:#6b7280">projected</span></div>';
+  if(D.combTgt)h+='<div style="font-size:12px;color:#374151">Target: '+f(D.combTgt)+' &middot; <span class="'+(D.combProj>=D.combTgt?"up":"dn")+'">'+f(D.combProj-D.combTgt)+"</span></div>";
+  h+="</div></div>";
+
+  // === NEW SALES (only if we have data) ===
+  if(D.nsVal > 0 || D.nsEnq > 0){
+    h+='<div class="ns mb-20">';
+    h+='<div style="margin-bottom:6px"><span class="sec-pill" style="background:#CDE453;color:#0f172a">Separate from Invoicing</span></div>';
+    h+='<div class="sec-title" style="color:#fff;font-size:18px">New Sales Orders &mdash; TSG</div>';
+    h+='<div class="sec-sub" style="color:#94a3b8;margin-bottom:20px">Order intake confirmed this month. This is NOT invoiced revenue &mdash; orders placed \u2260 revenue recognised.</div>';
+    h+='<div class="g-ns">';
+
+    // Main figure
+    h+="<div>";
+    if(D.nsVal>0){
+      h+='<div style="margin-bottom:16px"><div style="font-size:42px;font-weight:800;color:#CDE453;letter-spacing:-.03em;line-height:1">'+f(D.nsVal)+"</div>";
+      if(D.nsTgt)h+='<div style="font-size:13px;color:#94a3b8;margin-top:6px">Target: '+f(D.nsTgt)+"</div>";
+      if(D.nsTgt && D.nsVal>D.nsTgt)h+='<div style="font-size:14px;font-weight:700;color:#4ade80;margin-top:3px">+'+f(D.nsVal-D.nsTgt)+" above target (+"+po(D.nsVal,D.nsTgt)+"%)</div>";
+      h+="</div>";
+    }
+    // YoY bars
+    if(D.nsHistory.length>0){
+      var nsMx=Math.max.apply(null,D.nsHistory.map(function(x){return x.v||1}));
+      h+='<div style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">Year-on-Year</div>';
+      h+=hbar(D.nsHistory.filter(function(x){return x.v>0}),nsMx,"#CDE453",true);
+    }
+    h+="</div>";
+
+    // Enquiries
+    h+='<div class="ns-glass"><div style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Enquiries</div>';
+    h+='<div style="font-size:36px;font-weight:800;color:#fff">'+D.nsEnq+"</div>";
+    if(D.nsHistory.length>1){
+      h+='<div style="font-size:12px;color:#94a3b8;margin-top:10px;line-height:1.6">';
+      D.nsHistory.forEach(function(x){if(!x.h)h+=x.yr+": "+x.e+"<br>";});
+      h+="</div>";
+    }
+    h+="</div>";
+
+    // Conversion
+    h+='<div class="ns-glass"><div style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Conversion Rate</div>';
+    h+='<div style="font-size:36px;font-weight:800;color:#6BD4EC">'+(D.nsConv>1?D.nsConv:Math.round(D.nsConv*100))+"%</div>";
+    if(D.nsHistory.length>1){
+      h+='<div style="font-size:12px;color:#94a3b8;margin-top:10px;line-height:1.6">';
+      D.nsHistory.forEach(function(x){if(!x.h){var cv=x.c>1?x.c:Math.round(x.c*100);h+=x.yr+": "+cv+"%<br>";}});
+      h+="</div>";
+    }
+    h+="</div>";
+    h+="</div></div>";
+  }
+
+  // === TWO COLUMN: Rankings & Running Totals ===
+  h+='<div class="g2 mb-20">';
+
+  // Rankings
+  h+='<div class="card">';
+  h+=secHdr("Rankings","#FADD3E","#1a1a2e",D.month+" Rankings &amp; History","How this "+D.monthName+" compares historically");
+  h+='<div class="g3 mb-16">';
+  var rk=[{l:"This FY",r:D.rankings.fy.r,s:"of "+D.rankings.fy.n+" months"},{l:"All "+D.month+"s",r:D.rankings.feb.r,s:"of "+D.rankings.feb.n+" "+D.monthName+"s"},{l:"All Time",r:D.rankings.all.r,s:"of "+D.rankings.all.n+" months"}];
+  var med=["\uD83E\uDD47","\uD83E\uDD48","\uD83E\uDD49"];
+  rk.forEach(function(r){
+    h+='<div class="rk"><div class="rk-l">'+r.l+'</div><div class="rk-v" style="color:'+(r.r<=3?"#92400e":"#6b7280")+'">'+(r.r<=3?med[r.r-1]:"")+" #"+r.r+'</div><div class="rk-s">'+r.s+"</div></div>";
+  });
+  h+="</div>";
+
+  if(D.histMonth.length>0){
+    var mx=Math.max.apply(null,D.histMonth.map(function(x){return x.t}));
+    h+='<div style="font-size:11px;color:#6b7280;font-weight:600;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">'+D.monthName+" Turnover</div>";
+    h+=hbar(D.histMonth.map(function(x){return{l:x.yr,v:x.t,h:x.p}}),mx*1.05,"#92400e",false);
+
+    h+='<details class="detail-panel mt-12"><summary>Brand Split by Year</summary><div style="margin-top:8px">';
+    h+='<table class="tbl"><thead><tr>';
+    ["Year","TSG","WLL","NV","Total"].forEach(function(hd,i){
+      var c=["#6b7280",C.tsg.color,C.wll.color,C.nv.color,"#374151"][i];
+      h+='<th style="color:'+c+'">'+hd+"</th>";
+    });
+    h+="</tr></thead><tbody>";
+    D.histMonth.forEach(function(x){
+      h+='<tr class="'+(x.p?"hl":"")+'"><td>'+x.yr+"</td><td>"+f(x.tsg)+"</td><td>"+f(x.wll)+"</td><td>"+f(x.nv)+'</td><td style="font-weight:600">'+f(x.t)+"</td></tr>";
+    });
+    h+="</tbody></table></div></details>";
+  }
+  h+="</div>";
+
+  // Running Totals
+  h+='<div class="card">';
+  h+=secHdr("Financial Year","#6BD4EC","#1a1a2e","Running Totals","vs previous FYs at the same point ("+fyMonthLabel()+")");
+
+  var ri=[{n:"The Sign Group\u2122",lg:LOGOS.tsg,c:C.tsg.color,d:D.run.tsg},{n:"WeLoveLEDs\u2122",lg:LOGOS.wll,c:C.wll.color,d:D.run.wll},{n:"Neon Vibes\u00AE",lg:LOGOS.nv,c:C.nv.color,d:D.run.nv},{n:"Combined",lg:null,c:"#1a1a2e",d:D.run.tot}];
+  ri.forEach(function(r){
+    if(!r.d[2])return;
+    var vp=r.d[1]?po(r.d[2],r.d[1]):0;
+    h+='<div class="rt"><div class="fx-b" style="margin-bottom:6px">';
+    h+='<div class="fx-c">';
+    if(r.lg)h+='<img src="'+r.lg+'" style="width:20px;height:20px;object-fit:contain;border-radius:4px">';
+    else h+='<div style="width:8px;height:8px;border-radius:50%;background:'+r.c+'"></div>';
+    h+='<span style="font-weight:600;font-size:13px;color:#1a1a2e">'+r.n+"</span></div>";
+    h+='<span style="font-size:18px;font-weight:700;color:#1a1a2e">'+f(r.d[2])+"</span></div>";
+    var barMax=Math.max(r.d[0]||1,r.d[1]||1,r.d[2]||1)*1.1;
+    h+='<div class="bar-w" style="height:5px"><div class="bar-f" style="width:'+Math.min(r.d[2]/barMax*100,100)+"%;background:"+r.c+'"></div></div>';
+    h+='<div style="display:flex;gap:14px;margin-top:5px;font-size:12px">';
+    if(r.d[1])h+='<span style="color:#6b7280">vs prev FY: '+f(r.d[1])+" "+dl(vp)+"</span>";
+    h+="</div></div>";
+  });
+
+  h+='<details class="detail-panel mt-8"><summary>Full Comparison</summary><div style="margin-top:8px">';
+  h+='<table class="tbl"><thead><tr>';
+  [""].concat(D.run.labels).forEach(function(x){h+='<th>'+x+"</th>";});
+  h+="</tr></thead><tbody>";
+  [["TSG",D.run.tsg],["WLL",D.run.wll],["NV",D.run.nv],["Total",D.run.tot],["Avg/Mo",D.run.avg]].forEach(function(row,i){
+    h+='<tr class="'+(i>=3?"bold":"")+'"><td>'+row[0]+"</td>";
+    row[1].forEach(function(v){h+="<td>"+f(v)+"</td>";});
+    h+="</tr>";
+  });
+  h+="</tbody></table></div></details>";
+  h+="</div>";
+  h+="</div>"; // g2
+
+  // === BOTTOM ROW ===
+  h+='<div class="g2 mb-20">';
+
+  // Projected Annual
+  h+='<div class="card">';
+  h+=secHdr("Projections","#FF0077","#fff","Projected Annual Sales","Full year run-rate projection for FY"+D.run.labels[2]);
+  h+='<div style="text-align:center;padding:8px 0;margin-bottom:20px">';
+  h+='<div style="font-size:36px;font-weight:800;color:#1a1a2e;letter-spacing:-.03em">'+f(D.projTot)+"</div>";
+  if(D.prevFYTotal)h+='<div style="font-size:12px;color:#6b7280;margin-top:3px">Prev FY total: '+f(D.prevFYTotal)+"</div>";
+  if(D.projGrowth)h+='<div style="font-size:14px;font-weight:700;color:'+(D.projGrowth>=0?"#16a34a":"#dc2626")+';margin-top:4px">'+ps(D.projGrowth)+" vs last year</div>";
+  h+="</div>";
+  [{n:"The Sign Group\u2122",lg:LOGOS.tsg,v:D.projTsg},{n:"WeLoveLEDs\u2122",lg:LOGOS.wll,v:D.projWll},{n:"Neon Vibes\u00AE",lg:LOGOS.nv,v:D.projNv}].forEach(function(r){
+    h+='<div class="fx-b" style="padding:10px 0;border-bottom:1px solid #f3f4f6">';
+    h+='<div class="fx-c"><img src="'+r.lg+'" style="width:20px;height:20px;object-fit:contain;border-radius:4px"><span style="font-weight:600;font-size:13px;color:#1a1a2e">'+r.n+"</span></div>";
+    h+='<span style="font-size:16px;font-weight:700;color:#1a1a2e">'+f(r.v)+"</span></div>";
+  });
+  h+="</div>";
+
+  // Sales Focus
+  h+='<div class="card" style="display:flex;flex-direction:column">';
+  h+=secHdr("This Week","#CDE453","#1a1a2e","Sales Focus &mdash; "+D.phase,"Priority action for the sales team");
+  if(D.focus){
+    h+='<div style="background:'+C.tsg.bg+";border:1px solid "+C.tsg.bd+';border-radius:8px;padding:16px;margin-bottom:16px">';
+    h+='<p style="font-size:14px;color:#1a1a2e;line-height:1.6;font-weight:500">'+D.focus+"</p></div>";
+  }
+  if(D.optFocus){
+    h+='<div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:12px 14px;margin-bottom:16px">';
+    h+='<div style="font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;font-weight:600">Also Worth Noting</div>';
+    h+='<p style="font-size:13px;color:#374151;line-height:1.5">'+D.optFocus+"</p></div>";
+  }
+
+  // Month at a Glance
+  h+='<div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:12px 14px;margin-top:auto">';
+  h+='<div style="font-size:11px;color:#6b7280;font-weight:600;text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Month at a Glance</div>';
+  h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">';
+  if(D.combTgt)h+='<div class="gl-r"><span>Invoicing vs Target</span><span class="'+(D.combProj>=D.combTgt?"up":"dn")+'">'+ps(po(D.combProj,D.combTgt))+"</span></div>";
+  if(D.nsTgt && D.nsVal)h+='<div class="gl-r"><span>New Orders vs Target</span><span class="'+(D.nsVal>=D.nsTgt?"up":"dn")+'">'+ps(po(D.nsVal,D.nsTgt))+"</span></div>";
+  h+='<div class="gl-r"><span>'+D.month+' Rank (All '+D.month+'s)</span><span style="font-weight:600;color:#92400e">'+(D.rankings.feb.r<=3?med[D.rankings.feb.r-1]:"")+" #"+D.rankings.feb.r+"</span></div>";
+  if(D.nsConv)h+='<div class="gl-r"><span>Conversion Rate</span><span class="up">'+(D.nsConv>1?D.nsConv:Math.round(D.nsConv*100))+"%</span></div>";
+  h+="</div></div>";
+  h+="</div></div>"; // card + g2
+
+  // FOOTER
+  h+='<div class="footer">'+D.monthName+" "+D.year+" figures are projections until month-end close &middot; "+(D.hasWip?"TSG assessed on WIP &amp; confidence, ":"")+"WLL &amp; NV assessed on daily pace<br>The Sign Group\u2122 &middot; WeLoveLEDs\u2122 &middot; Neon Vibes\u00AE<br><span id=\"lastUpdate\"></span></div>";
+
+  document.getElementById("app").innerHTML = h;
+}
+
+function fyMonthLabel(){
+  var now=new Date();
+  var m=now.getMonth()+1,y=now.getFullYear();
+  if(m>=FY_START_MONTH)return monthShort(FY_START_MONTH)+" "+y+" \u2013 "+monthShort(m)+" "+y;
+  return monthShort(FY_START_MONTH)+" "+(y-1)+" \u2013 "+monthShort(m)+" "+y;
+}
+
+// ============================================================
+// FETCH & BOOT
+// ============================================================
+async function init(){
+  try{
+    var res = await fetch("/sales-data");
+    if(!res.ok) throw new Error("API returned "+res.status);
+    var raw = await res.json();
+    if(raw.error) throw new Error(raw.error);
+    document.getElementById("loading").style.display="none";
+    var D = processData(raw);
+    render(D);
+    if(raw.lastFetched){
+      var el=document.getElementById("lastUpdate");
+      if(el){
+        var ft=new Date(raw.lastFetched);
+        el.textContent="Live from Airtable \u2022 "+ft.toLocaleString("en-GB",{day:"numeric",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"});
+      }
+    }
+  }catch(err){
+    document.getElementById("loading").style.display="none";
+    document.getElementById("error").innerHTML='<div class="error-box"><strong>Failed to load data</strong><br><br>'+err.message+'<br><br>Check that AIRTABLE_TOKEN is set in Cloudflare Pages environment variables.</div>';
+  }
+}
+init();
+</script>
+</body>
+</html>
