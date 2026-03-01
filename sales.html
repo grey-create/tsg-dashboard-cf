@@ -697,7 +697,7 @@ async function init(){
     }
     document.getElementById("loading").style.display="none";
     var D=processData(raw);render(D);
-    if(raw.lastFetched){var ft=new Date(raw.lastFetched);document.getElementById("navUpdated").textContent="Live \u2022 "+ft.toLocaleString("en-GB",{day:"numeric",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"});}
+    if(raw.lastFetched){var ft=new Date(raw.lastFetched);if(window.setNavTimestamp)window.setNavTimestamp(ft);}
   }catch(err){
     document.getElementById("loading").style.display="none";
     document.getElementById("error").innerHTML='<div class="error-box"><strong>Failed to load data</strong><br><br>'+err.message+"</div>";
