@@ -328,6 +328,29 @@ function processData(raw){
   }
   D.projGrowth=D.prevFYTotal>0?po(D.projTot,D.prevFYTotal):0;
 
+  // FY month-by-month for trend charts (current FY + prev 2 FYs)
+  D.fyStart=curFYStart;
+  var fyMonthLabels=["Dec","Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov"];
+  D.fyLabels=fyMonthLabels;
+  D.fyTrend=[];
+  for(var fyo=0;fyo<3;fyo++){
+    var sy=curFYStart-fyo;
+    var series={label:fyLabel(sy),data:[],tsg:[],wll:[],nv:[],cumulative:[]};
+    var fycum=0;
+    for(var fp=0;fp<12;fp++){
+      var fm=fp===0?12:fp,fy_y=fp===0?sy:sy+1;
+      var fk_=fy_y+"-"+String(fm).padStart(2,"0");
+      var fr=invByKey[fk_];
+      var ftsg=0,fwll=0,fnv=0;
+      if(fr){ftsg=fr.tsg||0;fwll=fr.wll||0;fnv=fr.nv||0;}
+      if(fk_===curKey){ftsg=D.tsgProj;fwll=D.wllProj;fnv=D.nvProj;}
+      var ft_=ftsg+fwll+fnv;
+      if(fyo===0&&fp>curFYPos){series.data.push(null);series.tsg.push(null);series.wll.push(null);series.nv.push(null);series.cumulative.push(null);}
+      else{fycum+=ft_;series.data.push(ft_);series.tsg.push(ftsg);series.wll.push(fwll);series.nv.push(fnv);series.cumulative.push(fycum);}
+    }
+    D.fyTrend.push(series);
+  }
+
   return D;
 }
 
@@ -427,8 +450,26 @@ function render(D){
   // ==============================
   h+='<div style="margin:32px 0 16px;padding:8px 0;border-top:2px solid #e5e7eb"><div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;color:#9ca3af">For Reference</div><div style="font-size:16px;font-weight:700;color:#1a1a2e;margin-top:2px">Compared to Previous Years</div></div>';
 
-  // Historical Chart
-  h+='<div class="card mb-20"><div style="margin-bottom:16px"><span class="sec-pill" style="background:#6BD4EC;color:#1a1a2e">Historical</span><div class="sec-title">Monthly Revenue \u2014 Last 12 Months</div><div class="sec-sub">Combined invoiced revenue by month with target line</div></div>';
+  // FY Trend Charts
+  h+='<div style="margin-bottom:16px"><span class="sec-pill" style="background:#1a1a2e;color:#fff">\uD83D\uDCC8 FY Tracker</span><div class="sec-title">'+D.run.labels[2]+' Progress \u2014 Are We on Track?</div><div class="sec-sub">Monthly revenue compared to previous financial years (Dec\u2013Nov). Projection to end of FY in Nov '+(D.fyStart+1)+'.</div></div>';
+  h+='<div class="g2 mb-20">';
+  h+='<div class="card"><div style="font-size:12px;font-weight:700;color:#374151;margin-bottom:8px">Monthly Revenue \u2014 FY Comparison</div><canvas id="fyBarChart" style="width:100%;max-height:280px"></canvas></div>';
+  h+='<div class="card"><div style="font-size:12px;font-weight:700;color:#374151;margin-bottom:8px">Cumulative Revenue \u2014 On Track?</div><canvas id="fyCumChart" style="width:100%;max-height:280px"></canvas></div>';
+  h+="</div>";
+
+  // FY projection summary
+  h+='<div class="card mb-20"><div class="g3" style="text-align:center">';
+  h+='<div><div class="st-label">FY So Far ('+D.run.monthsIn+' months)</div><div class="st-val">'+f(D.run.tot[2])+"</div>";
+  if(D.run.tot[1])h+='<div style="font-size:12px;color:#6b7280;margin-top:4px">'+dl(po(D.run.tot[2],D.run.tot[1]))+" vs same point last FY</div>";
+  h+="</div>";
+  h+='<div><div class="st-label">Projected Full FY</div><div class="st-val" style="color:#2d6e0e">'+f(D.projTot)+"</div>";
+  h+='<div style="font-size:12px;color:#6b7280;margin-top:4px">'+D.projMethod+" based"+(D.projSeasonalPct?" ("+D.projSeasonalPct+"% seasonal shape)":"")+"</div></div>";
+  h+='<div><div class="st-label">Previous FY Total</div><div class="st-val">'+f(D.prevFYTotal)+"</div>";
+  if(D.projTot&&D.prevFYTotal)h+='<div style="font-size:12px;color:#6b7280;margin-top:4px">Projected '+dl(D.projGrowth)+" growth</div>";
+  h+="</div></div></div>";
+
+  // Historical month chart
+  h+='<div class="card mb-20"><div style="margin-bottom:16px"><span class="sec-pill" style="background:#6BD4EC;color:#1a1a2e">Historical</span><div class="sec-title">'+D.monthName+' Revenue by Brand \u2014 All Years</div><div class="sec-sub">Stacked bar showing brand split for every '+D.monthName+' on record</div></div>';
   h+='<canvas id="histChart" style="width:100%;max-height:300px"></canvas></div>';
 
   // Rankings & FY Running
@@ -539,6 +580,7 @@ function render(D){
 
   // === Build Historical Chart ===
   buildHistChart(D);
+  buildFYCharts(D);
 }
 
 function buildHistChart(D){
@@ -572,6 +614,59 @@ function buildHistChart(D){
       }
     }
   });
+}
+
+function buildFYCharts(D){
+  if(!D.fyTrend||D.fyTrend.length===0)return;
+  var labels=D.fyLabels;
+  var colors=["#2d6e0e","#94a3b8","#d1d5db"];
+  var bgColors=["rgba(45,110,14,0.1)","rgba(148,163,184,0.05)","rgba(209,213,219,0.03)"];
+
+  // Bar chart
+  var barEl=document.getElementById("fyBarChart");
+  if(barEl){
+    var datasets=D.fyTrend.map(function(fy,i){
+      return{label:fy.label,data:fy.data,backgroundColor:colors[i],borderRadius:3,barPercentage:0.85,categoryPercentage:0.8};
+    });
+    new Chart(barEl.getContext("2d"),{
+      type:"bar",data:{labels:labels,datasets:datasets},
+      options:{responsive:true,maintainAspectRatio:true,aspectRatio:1.8,
+        plugins:{legend:{display:true,position:"top",labels:{usePointStyle:true,padding:14,font:{family:"Inter",size:11}}}},
+        scales:{y:{beginAtZero:true,grid:{color:"#e5e7eb"},ticks:{font:{family:"Inter",size:10},callback:function(v){return"\u00A3"+Math.round(v/1000)+"k"}}},
+          x:{grid:{display:false},ticks:{font:{family:"Inter",size:10}}}}
+      }
+    });
+  }
+
+  // Cumulative line chart
+  var cumEl=document.getElementById("fyCumChart");
+  if(cumEl){
+    var curFY=D.fyTrend[0];
+    var projLine=curFY.cumulative.slice();
+    var lastIdx=-1;
+    for(var i=0;i<projLine.length;i++){if(projLine[i]!==null)lastIdx=i;}
+    if(lastIdx>=0&&lastIdx<11&&D.fyTrend.length>1){
+      var prevFY=D.fyTrend[1];
+      var prevAtPt=prevFY.cumulative[lastIdx]||1;
+      var growthFactor=prevAtPt>0?projLine[lastIdx]/prevAtPt:1;
+      for(var j=lastIdx+1;j<12;j++){projLine[j]=Math.round((prevFY.cumulative[j]||0)*growthFactor);}
+    }
+    var datasets2=[];
+    datasets2.push({label:curFY.label,data:curFY.cumulative,borderColor:"#2d6e0e",backgroundColor:"rgba(45,110,14,0.08)",borderWidth:3,pointRadius:3,pointBackgroundColor:"#2d6e0e",fill:true,tension:0.3,spanGaps:false});
+    var projData=[];for(var k=0;k<12;k++){if(k<lastIdx)projData.push(null);else projData.push(projLine[k]);}
+    datasets2.push({label:"Projected",data:projData,borderColor:"rgba(45,110,14,0.35)",borderWidth:2,borderDash:[6,4],pointRadius:0,fill:false,tension:0.3,spanGaps:true});
+    for(var fi=1;fi<D.fyTrend.length;fi++){
+      datasets2.push({label:D.fyTrend[fi].label,data:D.fyTrend[fi].cumulative,borderColor:colors[fi],backgroundColor:bgColors[fi],borderWidth:fi===1?2:1.5,pointRadius:1,fill:false,tension:0.3});
+    }
+    new Chart(cumEl.getContext("2d"),{
+      type:"line",data:{labels:labels,datasets:datasets2},
+      options:{responsive:true,maintainAspectRatio:true,aspectRatio:1.8,
+        plugins:{legend:{display:true,position:"top",labels:{usePointStyle:true,padding:14,font:{family:"Inter",size:11}}}},
+        scales:{y:{beginAtZero:true,grid:{color:"#e5e7eb"},ticks:{font:{family:"Inter",size:10},callback:function(v){return v>=1000000?"\u00A3"+(v/1000000).toFixed(1)+"m":"\u00A3"+Math.round(v/1000)+"k"}}},
+          x:{grid:{color:"#f3f4f6"},ticks:{font:{family:"Inter",size:10}}}}
+      }
+    });
+  }
 }
 
 // ============================================================
