@@ -21,13 +21,15 @@
 
   var path = window.location.pathname;
   var isSales = path.indexOf('/sales') === 0;
-  var isConversions = path === '/' || path === '/index.html' || path === '';
+  var isReview = path.indexOf('/review') === 0;
+  var isConversions = !isSales && !isReview && (path === '/' || path === '/index.html' || path === '');
 
   nav.innerHTML = [
     '<img src="https://cdn.shopify.com/s/files/1/1070/8974/files/TSG-Logo-Roundel-Black.png?v=1772037610" class="tn-logo" alt="TSG">',
     '<span class="tn-title">The Sign Group\u2122</span>',
     '<div class="tn-pills">',
     '<a href="/sales"' + (isSales ? ' class="active"' : '') + '>Revenue &amp; Invoicing</a>',
+    '<a href="/review"' + (isReview ? ' class="active"' : '') + '>Month Review</a>',
     '<a href="/"' + (isConversions ? ' class="active"' : '') + '>Sales Performance</a>',
     '</div>',
     '<div class="tn-spacer"></div>',
