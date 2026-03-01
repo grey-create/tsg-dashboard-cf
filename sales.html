@@ -211,7 +211,7 @@ function processData(raw){
     D.wllProj=Math.round(D.wllDaily*D.wdTotal);D.nvProj=Math.round(D.nvDaily*D.wdTotal);
     D.wllNeed=D.wllTgt>D.wllInv&&D.wdLeft>0?(D.wllTgt-D.wllInv)/D.wdLeft:0;
     D.tsgProj=D.hasWip?D.tsgInv+(D.tsgWipDue||0):Math.round((D.tsgInv/D.wdDone)*D.wdTotal);
-  }else{D.wllDaily=0;D.nvDaily=0;D.wllProj=0;D.nvProj=0;D.tsgProj=0;D.wllNeed=0;}
+  }else{D.wllDaily=0;D.nvDaily=0;D.wllProj=D.wllInv;D.nvProj=D.nvInv;D.tsgProj=D.tsgInv+(D.hasWip?(D.tsgWipDue||0):0);D.wllNeed=0;}
   D.combProj=D.tsgProj+D.wllProj+D.nvProj;
   D.wllPace=D.wllProj>=D.wllTgt?"Ahead":"Behind";
   D.nvPace=D.nvProj>=D.nvTgt?"Ahead":"Behind";
