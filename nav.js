@@ -47,7 +47,10 @@
     '.top-nav .tn-review:hover{color:#fff;border-color:#555;background:rgba(255,255,255,.04)}',
     '.top-nav .tn-review.active{color:#CDE453;border-color:#CDE453;background:rgba(205,228,83,.08)}',
     '.top-nav .tn-review .tn-rv-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:#CDE453;margin-right:6px}',
-    '@media(max-width:700px){.top-nav{padding:10px 16px;height:auto;flex-wrap:wrap;gap:8px}.top-nav .tn-title{font-size:13px;margin-right:0;width:100%}.top-nav .tn-pills{width:100%}.top-nav .tn-sep{display:none}.top-nav .tn-review{margin-top:4px}.top-nav .tn-updated{margin-top:4px;width:100%;justify-content:center}}',
+    '.top-nav .tn-insights{font-size:12px;font-weight:600;color:#94a3b8;text-decoration:none;padding:6px 14px;border-radius:6px;transition:all .15s;white-space:nowrap;border:1px solid #333;background:transparent}',
+    '.top-nav .tn-insights:hover{color:#fff;border-color:#555;background:rgba(255,255,255,.04)}',
+    '.top-nav .tn-insights.active{color:#6BD4EC;border-color:#6BD4EC;background:rgba(107,212,236,.08)}',
+    '@media(max-width:700px){.top-nav{padding:10px 16px;height:auto;flex-wrap:wrap;gap:8px}.top-nav .tn-title{font-size:13px;margin-right:0;width:100%}.top-nav .tn-pills{width:100%}.top-nav .tn-sep{display:none}.top-nav .tn-review{margin-top:4px}.top-nav .tn-insights{margin-top:4px}.top-nav .tn-updated{margin-top:4px;width:100%;justify-content:center}}',
   ].join('\n');
   document.head.appendChild(style);
 
@@ -57,7 +60,8 @@
   var path = window.location.pathname;
   var isSales = path.indexOf('/sales') === 0;
   var isReview = path.indexOf('/review') === 0;
-  var isInvoicing = !isSales && !isReview && (path === '/' || path === '/index.html' || path === '');
+  var isInsights = path.indexOf('/insights') === 0;
+  var isInvoicing = !isSales && !isReview && !isInsights && (path === '/' || path === '/index.html' || path === '');
 
   nav.innerHTML = [
     '<img src="https://cdn.shopify.com/s/files/1/1070/8974/files/TSG-Logo-Roundel-Black.png?v=1772037610" class="tn-logo" alt="TSG">',
@@ -68,6 +72,7 @@
     '</div>',
     '<div class="tn-sep"></div>',
     '<a href="/review" class="tn-review' + (isReview ? ' active' : '') + '"><span class="tn-rv-dot"></span>' + prevMonthName + ' Review</a>',
+    '<a href="/insights" class="tn-insights' + (isInsights ? ' active' : '') + '">\uD83D\uDCA1 Insights</a>',
     '<div class="tn-spacer"></div>',
     '<span class="tn-updated" id="navUpdated">\u23F3 Loading\u2026</span>',
   ].join('');
