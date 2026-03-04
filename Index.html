@@ -195,9 +195,12 @@ function processData(raw){
   var allKeys=Object.keys(invByKey).sort();
 
   var curInv=invByKey[curKey]||{},curConv=convByKey[curKey]||{};
-  D.tsgTgt=Number((ov?ov.tsgTarget:0)||curInv.tsgTarget||0);
-  D.wllTgt=Number((ov?ov.wllTarget:0)||curInv.wllTarget||0);
-  D.nvTgt=Number((ov?ov.nvTarget:0)||curInv.nvTarget||0);
+  // Airtable lookup fields return arrays — unpack before arithmetic
+  function extractNum(v){if(Array.isArray(v))v=v.length>0?v[0]:0;if(v==null)return 0;return parseFloat(v)||0;}
+  function getBrandTgt(ovVal,invVal){var v=extractNum(ovVal);return v||extractNum(invVal)||0;}
+  D.tsgTgt=getBrandTgt(ov?ov.tsgTarget:null,curInv.tsgTarget);
+  D.wllTgt=getBrandTgt(ov?ov.wllTarget:null,curInv.wllTarget);
+  D.nvTgt=getBrandTgt(ov?ov.nvTarget:null,curInv.nvTarget);
   D.combTgt=D.tsgTgt+D.wllTgt+D.nvTgt;
   console.log("Targets — TSG:",D.tsgTgt,"WLL:",D.wllTgt,"NV:",D.nvTgt,"Combined:",D.combTgt);
   console.log("Target sources — ov.tsgTarget:",ov?ov.tsgTarget:"(no ov)","ov.wllTarget:",ov?ov.wllTarget:"(no ov)","ov.nvTarget:",ov?ov.nvTarget:"(no ov)");
