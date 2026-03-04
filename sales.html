@@ -192,6 +192,9 @@ function processData(raw){
   D.wllTgt=(ov?ov.wllTarget:0)||curInv.wllTarget||0;
   D.nvTgt=(ov?ov.nvTarget:0)||curInv.nvTarget||0;
   D.combTgt=D.tsgTgt+D.wllTgt+D.nvTgt;
+  console.log("Targets — TSG:",D.tsgTgt,"WLL:",D.wllTgt,"NV:",D.nvTgt,"Combined:",D.combTgt);
+  console.log("Target sources — ov.tsgTarget:",ov?ov.tsgTarget:"(no ov)","ov.wllTarget:",ov?ov.wllTarget:"(no ov)","ov.nvTarget:",ov?ov.nvTarget:"(no ov)");
+  console.log("Target sources — curInv.tsgTarget:",curInv.tsgTarget,"curInv.wllTarget:",curInv.wllTarget,"curInv.nvTarget:",curInv.nvTarget);
 
   D.tsgInv=(ov&&ov.tsgInvoicedToDate)||curInv.tsg||0;
   D.wllInv=(ov&&ov.wllInvoicedToDate)||curInv.wll||0;
@@ -435,47 +438,51 @@ function render(D){
   if(D.hasWip&&!D.monthComplete)h+='<div><div class="st-label">WIP Due This Month</div><div class="st-val" style="color:#fbbf24">'+f(D.tsgWipDue)+"</div></div>";
   if(D.tsgTgt)h+='<div><div class="st-label">vs Target</div><div class="st-val" style="color:'+(D.tsgInv>=D.tsgTgt?"#16a34a":"#dc2626")+'">'+ps(po(D.tsgInv,D.tsgTgt))+"</div></div>";
   h+="</div>";if(D.tsgTgt)h+=mkbar(D.tsgInv,D.tsgTgt,C.tsg.color);
-  if(D.hasWip||D.tsgConfNote){h+='<details class="detail-panel"><summary>Details \u2014 WIP, Notes</summary><div class="detail-content">';if(D.hasWip)h+='<div style="display:flex;gap:24px;margin-bottom:6px"><span>Undated WIP: <strong style="color:#f1f5f9">'+f(D.tsgWipUndated)+"</strong></span><span>Next Month: <strong style=\"color:#f1f5f9\">"+f(D.tsgWipNextMonth)+"</strong></span></div>";if(D.tsgConfNote)h+='<div style="font-style:italic">\uD83D\uDCA1 '+D.tsgConfNote+"</div>";h+="</div></details>";}
+  if(D.hasWip||D.tsgConfNote){h+='<details class="detail-panel" open><summary>Details \u2014 WIP, Notes</summary><div class="detail-content">';if(D.hasWip)h+='<div style="display:flex;gap:24px;margin-bottom:6px"><span>Undated WIP: <strong style="color:#f1f5f9">'+f(D.tsgWipUndated)+"</strong></span><span>Next Month: <strong style=\"color:#f1f5f9\">"+f(D.tsgWipNextMonth)+"</strong></span></div>";if(D.tsgConfNote)h+='<div style="font-style:italic">\uD83D\uDCA1 '+D.tsgConfNote+"</div>";h+="</div></details>";}
   h+="</div>";
 
   // WLL — projected from historical daily avg
+  var wllDailyTgt=D.wllTgt&&D.wdLeft>0?(D.wllTgt-D.wllInv)/D.wdLeft:0;
+  var wllDailyDiff=D.wllDaily-wllDailyTgt;
   h+='<div class="b-row" style="background:'+C.wll.bg+";border-color:"+C.wll.bd+'">';
   h+='<div class="b-hdr"><div class="b-name"><img src="'+LOGOS.wll+'" class="logo"><strong>WeLoveLEDs\u2122</strong> '+(D.monthComplete?plb("Final","#eff6ff","#1e40af"):pl(D.wllPace))+"</div>";
   if(D.wllTgt)h+='<div style="font-size:12px;color:#94a3b8">Target '+f(D.wllTgt)+" \u00B7 "+(D.wllProj>=D.wllTgt?'<span class="up">+'+f(D.wllProj-D.wllTgt)+"</span>":'<span class="dn">'+f(D.wllProj-D.wllTgt)+"</span>")+"</div>";
   h+="</div><div class=\"g4 mb-10\">";
   h+='<div><div class="st-label">'+(D.monthComplete?"Final Total":"Invoiced to Date")+'</div><div class="st-val">'+f(D.wllInv)+"</div></div>";
   if(!D.monthComplete){
-    h+='<div><div class="st-label">Hist. Avg Daily</div><div class="st-val" style="color:'+C.wll.color+'">'+f(D.wllHistDaily)+'<span class="st-unit">/day</span></div></div>';
-    if(D.wllNeed>0)h+='<div><div class="st-label">Needed to Hit Target</div><div class="st-val" style="color:#dc2626">'+f(D.wllNeed)+'<span class="st-unit">/day</span></div></div>';
-    h+='<div><div class="st-label">Projected</div><div class="st-val" style="color:'+C.wll.color+'">'+f(D.wllProj)+"</div></div>";
+    h+='<div><div class="st-label">Current Daily Rate</div><div class="st-val" style="color:'+C.wll.color+'">'+f(D.wllDaily)+'<span class="st-unit">/day</span></div></div>';
+    if(D.wllTgt&&D.wdLeft>0)h+='<div><div class="st-label">Daily Target Needed</div><div class="st-val" style="color:'+(wllDailyDiff>=0?"#16a34a":"#dc2626")+'">'+f(wllDailyTgt)+'<span class="st-unit">/day</span></div><div style="font-size:11px;margin-top:2px"><span class="'+(wllDailyDiff>=0?"up":"dn")+'">'+(wllDailyDiff>=0?"+":"")+f(wllDailyDiff)+'/day</span></div></div>';
+    h+='<div><div class="st-label">Projected</div><div class="st-val" style="color:'+C.wll.color+'">'+f(D.wllProj)+"</div>"+(D.wllTgt?'<div style="font-size:11px;margin-top:2px"><span class="'+(D.wllProj>=D.wllTgt?"up":"dn")+'">'+ps(po(D.wllProj,D.wllTgt))+" vs target</span></div>":"")+"</div>";
   }else{if(D.wllTgt)h+='<div><div class="st-label">vs Target</div><div class="st-val" style="color:'+(D.wllInv>=D.wllTgt?"#16a34a":"#dc2626")+'">'+ps(po(D.wllInv,D.wllTgt))+"</div></div>";}
   h+="</div>";if(D.wllTgt)h+=mkbar(D.wllInv,D.wllTgt,C.wll.color,D.monthComplete?null:D.wllProj);
-  if(D.wllNote||!D.monthComplete){h+='<details class="detail-panel"><summary>Projection Detail</summary><div class="detail-content">';
-  if(!D.monthComplete)h+='<div style="margin-bottom:6px"><span>This month daily rate: <strong style="color:#f1f5f9">'+f(D.wllDaily)+'/day</strong></span> <span style="color:#475569">\u00B7</span> <span>'+D.histMonthsUsed+'-month historical avg: <strong style="color:#6BD4EC">'+f(D.wllHistDaily)+'/day</strong></span> <span style="color:#475569">\u00B7</span> <span>Projection uses historical avg \u00D7 '+D.wdTotal+' working days</span></div>';
+  if(D.wllNote||!D.monthComplete){h+='<details class="detail-panel" open><summary>Projection Detail</summary><div class="detail-content">';
+  if(!D.monthComplete)h+='<div style="margin-bottom:6px"><span>'+D.histMonthsUsed+'-month historical avg: <strong style="color:#6BD4EC">'+f(D.wllHistDaily)+'/day</strong></span> <span style="color:#475569">\u00B7</span> <span>Current month rate: <strong style="color:#f1f5f9">'+f(D.wllDaily)+'/day</strong></span> <span style="color:#475569">\u00B7</span> <span>Projection uses historical avg \u00D7 '+D.wdTotal+' working days = '+f(D.wllProj)+'</span></div>';
   if(D.wllNote)h+='<div>\u26A1 '+D.wllNote+"</div>";h+="</div></details>";}
   h+="</div>";
 
   // NV — projected from historical daily avg
+  var nvDailyTgt=D.nvTgt&&D.wdLeft>0?(D.nvTgt-D.nvInv)/D.wdLeft:0;
+  var nvDailyDiff=D.nvDaily-nvDailyTgt;
   h+='<div class="b-row" style="background:'+C.nv.bg+";border-color:"+C.nv.bd+'">';
   h+='<div class="b-hdr"><div class="b-name"><img src="'+LOGOS.nv+'" class="logo"><strong>Neon Vibes\u00AE</strong> '+(D.monthComplete?plb("Final","#eff6ff","#1e40af"):pl(D.nvPace))+"</div>";
   if(D.nvTgt)h+='<div style="font-size:12px;color:#94a3b8">Target '+f(D.nvTgt)+" \u00B7 "+(D.nvProj>=D.nvTgt?'<span class="up">+'+f(D.nvProj-D.nvTgt)+"</span>":'<span class="dn">'+f(D.nvProj-D.nvTgt)+"</span>")+"</div>";
   h+="</div><div class=\"g4 mb-10\">";
   h+='<div><div class="st-label">'+(D.monthComplete?"Final Total":"Invoiced to Date")+'</div><div class="st-val">'+f(D.nvInv)+"</div></div>";
   if(!D.monthComplete){
-    h+='<div><div class="st-label">Hist. Avg Daily</div><div class="st-val" style="color:'+C.nv.color+'">'+f(D.nvHistDaily)+'<span class="st-unit">/day</span></div></div>';
-    h+='<div><div class="st-label">Projected</div><div class="st-val" style="color:'+C.nv.color+'">'+f(D.nvProj)+"</div></div>";
-  }
-  if(D.nvTgt)h+='<div><div class="st-label">vs Target</div><div class="st-val" style="color:'+(D.nvProj>=D.nvTgt?"#16a34a":"#dc2626")+'">'+ps(po(D.nvProj,D.nvTgt))+"</div></div>";
+    h+='<div><div class="st-label">Current Daily Rate</div><div class="st-val" style="color:'+C.nv.color+'">'+f(D.nvDaily)+'<span class="st-unit">/day</span></div></div>';
+    if(D.nvTgt&&D.wdLeft>0)h+='<div><div class="st-label">Daily Target Needed</div><div class="st-val" style="color:'+(nvDailyDiff>=0?"#16a34a":"#dc2626")+'">'+f(nvDailyTgt)+'<span class="st-unit">/day</span></div><div style="font-size:11px;margin-top:2px"><span class="'+(nvDailyDiff>=0?"up":"dn")+'">'+(nvDailyDiff>=0?"+":"")+f(nvDailyDiff)+'/day</span></div></div>';
+    h+='<div><div class="st-label">Projected</div><div class="st-val" style="color:'+C.nv.color+'">'+f(D.nvProj)+"</div>"+(D.nvTgt?'<div style="font-size:11px;margin-top:2px"><span class="'+(D.nvProj>=D.nvTgt?"up":"dn")+'">'+ps(po(D.nvProj,D.nvTgt))+" vs target</span></div>":"")+"</div>";
+  }else{if(D.nvTgt)h+='<div><div class="st-label">vs Target</div><div class="st-val" style="color:'+(D.nvInv>=D.nvTgt?"#16a34a":"#dc2626")+'">'+ps(po(D.nvInv,D.nvTgt))+"</div></div>";}
   h+="</div>";if(D.nvTgt)h+=mkbar(D.nvInv,D.nvTgt,C.nv.color,D.monthComplete?null:D.nvProj);
-  if(D.nvNote||!D.monthComplete){h+='<details class="detail-panel"><summary>Projection Detail</summary><div class="detail-content">';
-  if(!D.monthComplete)h+='<div style="margin-bottom:6px"><span>This month daily rate: <strong style="color:#f1f5f9">'+f(D.nvDaily)+'/day</strong></span> <span style="color:#475569">\u00B7</span> <span>'+D.histMonthsUsed+'-month historical avg: <strong style="color:#ff3399">'+f(D.nvHistDaily)+'/day</strong></span> <span style="color:#475569">\u00B7</span> <span>Projection uses historical avg \u00D7 '+D.wdTotal+' working days</span></div>';
+  if(D.nvNote||!D.monthComplete){h+='<details class="detail-panel" open><summary>Projection Detail</summary><div class="detail-content">';
+  if(!D.monthComplete)h+='<div style="margin-bottom:6px"><span>'+D.histMonthsUsed+'-month historical avg: <strong style="color:#ff3399">'+f(D.nvHistDaily)+'/day</strong></span> <span style="color:#475569">\u00B7</span> <span>Current month rate: <strong style="color:#f1f5f9">'+f(D.nvDaily)+'/day</strong></span> <span style="color:#475569">\u00B7</span> <span>Projection uses historical avg \u00D7 '+D.wdTotal+' working days = '+f(D.nvProj)+'</span></div>';
   if(D.nvNote)h+='<div>'+D.nvNote+"</div>";h+="</div></details>";}
   h+="</div>";
 
   // Combined
   h+='<div class="comb fx-b" style="flex-wrap:wrap;gap:8px"><div class="fx-c"><span style="font-weight:700;font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:.5px">Combined</span><span style="font-size:20px;font-weight:800">'+f(D.combInv)+"</span>";
   if(!D.monthComplete)h+='<span style="color:#475569;font-size:14px">\u2192</span><span style="font-size:16px;font-weight:700;color:#fbbf24">'+f(D.combProj)+'</span><span style="font-size:12px;color:#64748b">projected (TSG as-is + WLL/NV from hist. avg)</span>';
-  h+="</div>";if(D.combTgt)h+='<div style="font-size:12px;color:#94a3b8">Target: '+f(D.combTgt)+' \u00B7 <span class="'+(D.combProj>=D.combTgt?"up":"dn")+'">'+f(D.combProj-D.combTgt)+"</span></div>";
+  h+="</div>";if(D.combTgt)h+='<div style="text-align:right"><div style="font-size:12px;color:#94a3b8">Target: '+f(D.combTgt)+' \u00B7 <span class="'+(D.combProj>=D.combTgt?"up":"dn")+'">'+f(D.combProj-D.combTgt)+'</span></div><div style="font-size:10px;color:#475569;margin-top:2px">TSG '+f(D.tsgTgt)+' + WLL '+f(D.wllTgt)+' + NV '+f(D.nvTgt)+'</div></div>';
   h+="</div></div>";
 
   // ==============================
