@@ -179,6 +179,11 @@ function processInsights(raw){
     fyMap[lbl].tsg+=m.tsg;fyMap[lbl].wll+=m.wll;fyMap[lbl].nv+=m.nv;fyMap[lbl].total+=m.total;fyMap[lbl].months++;
   });
   D.fyList=Object.values(fyMap).sort(function(a,b){return a.startYear-b.startYear});
+  // Flag Covid-affected years
+  D.fyList.forEach(function(fy){
+    if(fy.startYear===2019)fy.isCovid=true;   // FY19/20 — closed/partial for ~half the year
+    if(fy.startYear===2020)fy.isPostCovid=true; // FY20/21 — rebound inflates YoY comparison
+  });
   D.fyComplete=D.fyList.filter(function(fy){return fy.months>=11});
   var sortedFY=D.fyComplete.slice().sort(function(a,b){return b.total-a.total});
   D.bestFY=sortedFY[0]||null;
@@ -193,11 +198,15 @@ function processInsights(raw){
   }
 
   // ========================================
-  // SEASONALITY (avg by calendar month)
+  // SEASONALITY (avg by calendar month — last 5 years only)
   // ========================================
+  var fiveYearsAgoYear=curYear-5;
+  var fiveYearCutoffKey=fiveYearsAgoYear+"-"+String(curMonth).padStart(2,"0");
+  var recent5yMonths=completedMonths.filter(function(m){return m.key>fiveYearCutoffKey;});
+  D.seasonalityYears=5;
   D.seasonality=[];
   for(var mo=1;mo<=12;mo++){
-    var mData=completedMonths.filter(function(m){return m.month===mo});
+    var mData=recent5yMonths.filter(function(m){return m.month===mo});
     if(mData.length===0){D.seasonality.push({month:mo,label:monthShort(mo),tsg:0,wll:0,nv:0,total:0,count:0});continue;}
     var avgT=mData.reduce(function(s,m){return s+m.tsg},0)/mData.length;
     var avgW=mData.reduce(function(s,m){return s+m.wll},0)/mData.length;
@@ -285,13 +294,20 @@ function processInsights(raw){
   var aboveAvg=completedMonths.filter(function(m){return m.total>overallAvg}).length;
   D.nuggets.push({icon:"📊",text:"<strong>"+aboveAvg+" of "+completedMonths.length+" months</strong> ("+Math.round(aboveAvg/completedMonths.length*100)+"%) have beaten the overall average of "+f(overallAvg)});
 
-  // TSG share trending
-  if(D.brandMix.length>=2){
-    var first=D.brandMix[0],last=D.brandMix[D.brandMix.length-1];
-    var tsgDiff=last.tsgPct-first.tsgPct;
-    var wllDiff=last.wllPct-first.wllPct;
-    if(Math.abs(tsgDiff)>=3)D.nuggets.push({icon:"🔀",text:"TSG's share of revenue has "+(tsgDiff>0?"grown":"shrunk")+" from <strong>"+first.tsgPct+"%</strong> ("+first.label+") to <strong>"+last.tsgPct+"%</strong> ("+last.label+")"});
-    if(Math.abs(wllDiff)>=3)D.nuggets.push({icon:"💡",text:"WeLoveLEDs' share has "+(wllDiff>0?"grown":"shrunk")+" from <strong>"+first.wllPct+"%</strong> to <strong>"+last.wllPct+"%</strong> over the same period"});
+  // Brand mix context — fixed commentary based on known business history
+  // All-time TSG % drop is due to WLL/NV introduction, not TSG decline
+  // Last 5 FYs: TSG share has grown, NV shrunk, WLL stable
+  var last5FY=D.fyList.filter(function(fy){return fy.total>0&&!fy.isCovid}).slice(-5);
+  if(last5FY.length>=2){
+    var fx=last5FY[0],fl=last5FY[last5FY.length-1];
+    var tsgTrend=fl.total>0?Math.round(fl.tsg/fl.total*100):0;
+    var tsgTrendFirst=fx.total>0?Math.round(fx.tsg/fx.total*100):0;
+    var nvTrend=fl.total>0?Math.round(fl.nv/fl.total*100):0;
+    var nvTrendFirst=fx.total>0?Math.round(fx.nv/fx.total*100):0;
+    var wllTrend=fl.total>0?Math.round(fl.wll/fl.total*100):0;
+    var wllTrendFirst=fx.total>0?Math.round(fx.wll/fx.total*100):0;
+    D.nuggets.push({icon:"🔀",text:"Over the last 5 financial years: <strong>TSG's share has grown</strong> ("+tsgTrendFirst+"% → "+tsgTrend+"%), <strong>WLL has been broadly stable</strong> ("+wllTrendFirst+"% → "+wllTrend+"%), and <strong>NV's share has shrunk</strong> ("+nvTrendFirst+"% → "+nvTrend+"%)"});
+    D.nuggets.push({icon:"📌",text:"The all-time TSG % share looks lower because it includes years before WeLoveLEDs and Neon Vibes existed. WLL launched before 2019, <strong>NV launched in 2021</strong>. TSG's share of a growing total is itself a strong result."});
   }
 
   return D;
@@ -401,21 +417,27 @@ function render(D){
     var prev=i>0?D.fyList[i-1]:null;
     var yoy=prev&&prev.total&&fy.months>=11?po(fy.total,prev.total):null;
     var isBest=D.bestFY&&fy.label===D.bestFY.label;
-    h+='<tr class="'+(isBest?"hl":"")+'"><td>'+(isBest?"🏆 ":"")+fy.label+(fy.months<12?' <span style="font-size:10px;color:#475569">('+fy.months+'mo)</span>':"")+"</td>";
+    var covidFlag=fy.isCovid?' <span style="background:rgba(220,38,38,.15);color:#f87171;border:1px solid rgba(220,38,38,.3);border-radius:4px;padding:1px 6px;font-size:10px;font-weight:700;margin-left:4px">⚠️ Covid</span>':"";
+    var postCovidFlag=fy.isPostCovid?' <span style="background:rgba(234,179,8,.12);color:#fbbf24;border:1px solid rgba(234,179,8,.2);border-radius:4px;padding:1px 6px;font-size:10px;font-weight:600;margin-left:4px">Rebound yr</span>':"";
+    var yoyCell=yoy!==null?(fy.isPostCovid?'<span class="up">▲ +'+yoy+'%</span> <span style="font-size:10px;color:#475569">(vs Covid yr)</span>':dl(yoy)):'<span style="color:#475569">—</span>';
+    h+='<tr class="'+(isBest?"hl":"")+(fy.isCovid?" covid-row":"")+'"><td>'+(isBest?"🏆 ":"")+fy.label+covidFlag+postCovidFlag+(fy.months<12?' <span style="font-size:10px;color:#475569">('+fy.months+'mo)</span>':"")+"</td>";
     h+="<td>"+f(fy.tsg)+"</td><td>"+f(fy.wll)+"</td><td>"+f(fy.nv)+"</td>";
     h+='<td style="font-weight:700">'+f(fy.total)+"</td>";
     h+='<td>'+f(fy.months>0?fy.total/fy.months:0)+"</td>";
-    h+='<td>'+(yoy!==null?dl(yoy):'<span style="color:#475569">—</span>')+"</td></tr>";
+    h+='<td>'+yoyCell+"</td></tr>";
   });
-  h+="</tbody></table></div>";
-
+  h+="</tbody></table>";
+  h+='<div style="display:flex;gap:16px;margin-top:12px;flex-wrap:wrap">';
+  h+='<div style="display:flex;align-items:flex-start;gap:6px;font-size:11px;color:#94a3b8"><span style="background:rgba(220,38,38,.15);color:#f87171;border:1px solid rgba(220,38,38,.3);border-radius:4px;padding:1px 6px;font-weight:700;flex-shrink:0">⚠️ Covid</span>FY19/20 — business closed or partially closed for approximately half the year. Figures are not representative of normal trading.</div>';
+  h+='<div style="display:flex;align-items:flex-start;gap:6px;font-size:11px;color:#94a3b8"><span style="background:rgba(234,179,8,.12);color:#fbbf24;border:1px solid rgba(234,179,8,.2);border-radius:4px;padding:1px 6px;font-weight:600;flex-shrink:0">Rebound yr</span>FY20/21 YoY growth is inflated — compares against a Covid-affected base year, not a fair like-for-like.</div>';
+  h+="</div></div>";
   // ==============================
   // ZONE: SEASONALITY
   // ==============================
   h+='<div class="zone-hdr"><div class="zone-label"><span class="zone-icon">🌡️</span>Patterns</div><div class="zone-title">Seasonality</div><div class="zone-sub">Average revenue by month of year — which months consistently perform</div></div>';
 
   h+='<div class="g2 mb-20">';
-  h+='<div class="card"><div style="margin-bottom:12px"><span class="sec-pill" style="background:#fbbf24;color:#0c1222">Seasonal Shape</span><div class="sec-title">Average Revenue by Month</div><div class="sec-sub">FY order (Dec&ndash;Nov). Based on all completed months on record.</div></div>';
+  h+='<div class="card"><div style="margin-bottom:12px"><span class="sec-pill" style="background:#fbbf24;color:#0c1222">Seasonal Shape</span><div class="sec-title">Average Revenue by Month</div><div class="sec-sub">FY order (Dec&ndash;Nov). Based on last 5 years of completed months only — excludes FY19/20 Covid year.</div></div>';
   h+='<canvas id="seasonChart" style="width:100%;max-height:280px"></canvas>';
   if(D.strongestMonth&&D.weakestMonth){
     h+='<div class="insight-box mt-12"><p>Historically, <strong>'+D.strongestMonth.label+'</strong> is the strongest month (avg '+f(D.strongestMonth.total)+'), while <strong>'+D.weakestMonth.label+'</strong> is the quietest (avg '+f(D.weakestMonth.total)+'). The peak is <strong>'+Math.round(D.strongestMonth.total/D.weakestMonth.total*10)/10+'x</strong> the trough.</p></div>';
@@ -527,15 +549,23 @@ function buildRollingChart(D){
 function buildFYChart(D){
   var el=document.getElementById("fyChart");if(!el)return;
   var complete=D.fyList.filter(function(fy){return fy.months>=6});
+  var labels=complete.map(function(fy){return fy.label+(fy.isCovid?" ⚠️":fy.isPostCovid?" ↩":"")+(fy.months<12?" *":"")});
+  // Covid year bars are muted
+  var tsgColors=complete.map(function(fy){return fy.isCovid?"rgba(205,228,83,0.25)":"rgba(205,228,83,0.7)"});
+  var wllColors=complete.map(function(fy){return fy.isCovid?"rgba(107,212,236,0.25)":"rgba(107,212,236,0.7)"});
+  var nvColors=complete.map(function(fy){return fy.isCovid?"rgba(255,51,153,0.25)":"rgba(255,51,153,0.7)"});
   new Chart(el.getContext("2d"),{
     type:"bar",
-    data:{labels:complete.map(function(fy){return fy.label+(fy.months<12?" *":"")}),datasets:[
-      {label:"TSG",data:complete.map(function(fy){return fy.tsg}),backgroundColor:"rgba(205,228,83,0.7)",borderRadius:3,stack:"s"},
-      {label:"WLL",data:complete.map(function(fy){return fy.wll}),backgroundColor:"rgba(107,212,236,0.7)",borderRadius:3,stack:"s"},
-      {label:"NV",data:complete.map(function(fy){return fy.nv}),backgroundColor:"rgba(255,51,153,0.7)",borderRadius:3,stack:"s"},
+    data:{labels:labels,datasets:[
+      {label:"TSG",data:complete.map(function(fy){return fy.tsg}),backgroundColor:tsgColors,borderRadius:3,stack:"s"},
+      {label:"WLL",data:complete.map(function(fy){return fy.wll}),backgroundColor:wllColors,borderRadius:3,stack:"s"},
+      {label:"NV",data:complete.map(function(fy){return fy.nv}),backgroundColor:nvColors,borderRadius:3,stack:"s"},
     ]},
     options:{responsive:true,maintainAspectRatio:true,aspectRatio:1.6,
-      plugins:{legend:{display:true,position:"top",labels:{usePointStyle:true,padding:12,font:{family:"Inter",size:11}}}},
+      plugins:{
+        legend:{display:true,position:"top",labels:{usePointStyle:true,padding:12,font:{family:"Inter",size:11}}},
+        tooltip:{callbacks:{footer:function(items){var fy=complete[items[0].dataIndex];if(fy.isCovid)return"⚠️ Covid year — not representative";if(fy.isPostCovid)return"↩ Rebound vs Covid base — YoY inflated";return"";}}}
+      },
       scales:{y:{beginAtZero:true,stacked:true,grid:{color:"#1e2d3d"},ticks:{font:{family:"Inter",size:10},callback:function(v){return v>=1000000?"£"+(v/1000000).toFixed(1)+"m":"£"+Math.round(v/1000)+"k"}}},
         x:{stacked:true,grid:{display:false},ticks:{font:{family:"Inter",size:10}}}
       }
@@ -545,18 +575,25 @@ function buildFYChart(D){
 
 function buildYoYChart(D){
   var el=document.getElementById("yoyChart");if(!el||!D.fyGrowth.length)return;
+  // Find which growth entries correspond to post-Covid rebound
+  var postCovidLabels=D.fyList.filter(function(fy){return fy.isPostCovid}).map(function(fy){return fy.label});
   new Chart(el.getContext("2d"),{
     type:"bar",
-    data:{labels:D.fyGrowth.map(function(x){return x.label}),datasets:[{
+    data:{labels:D.fyGrowth.map(function(x){return x.label+(postCovidLabels.indexOf(x.label)>=0?" ↩":"")}),datasets:[{
       label:"YoY Growth %",
       data:D.fyGrowth.map(function(x){return x.pct}),
-      backgroundColor:D.fyGrowth.map(function(x){return x.pct>=0?"rgba(74,222,128,0.7)":"rgba(248,113,113,0.7)"}),
+      backgroundColor:D.fyGrowth.map(function(x){
+        if(postCovidLabels.indexOf(x.label)>=0)return"rgba(234,179,8,0.5)"; // amber for rebound
+        return x.pct>=0?"rgba(74,222,128,0.7)":"rgba(248,113,113,0.7)";
+      }),
       borderRadius:4,barPercentage:0.6
     }]},
     options:{responsive:true,maintainAspectRatio:true,aspectRatio:1.6,
-      plugins:{legend:{display:false}},
-      scales:{y:{grid:{color:"#1e2d3d"},ticks:{font:{family:"Inter",size:10},callback:function(v){return v+"%"}},
-        afterBuildTicks:function(ax){ax.ticks=ax.ticks.filter(function(t){return t.value!==0||true});}},
+      plugins:{
+        legend:{display:false},
+        tooltip:{callbacks:{footer:function(items){if(postCovidLabels.indexOf(D.fyGrowth[items[0].dataIndex].label)>=0)return"↩ Rebound vs Covid year — not a fair comparison";return"";}}}
+      },
+      scales:{y:{grid:{color:"#1e2d3d"},ticks:{font:{family:"Inter",size:10},callback:function(v){return v+"%"}}},
         x:{grid:{display:false},ticks:{font:{family:"Inter",size:10}}}
       }
     }
