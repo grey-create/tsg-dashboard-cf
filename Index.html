@@ -446,7 +446,7 @@ function render(D){
   var wllDailyGap=D.wllDaily-wllDailyTgt;
   h+='<div class="b-row" style="background:'+C.wll.bg+";border-color:"+C.wll.bd+'">';
   h+='<div class="b-hdr"><div class="b-name"><img src="'+LOGOS.wll+'" class="logo"><strong>WeLoveLEDs\u2122</strong> '+(D.monthComplete?plb("Final","#eff6ff","#1e40af"):pl(D.wllPace))+"</div>";
-  if(D.wllTgt)h+='<div style="font-size:12px;color:#94a3b8">Target '+f(D.wllTgt)+" \u00B7 "+(D.wllProj>=D.wllTgt?'<span class="up">+'+f(D.wllProj-D.wllTgt)+"</span>":'<span class="dn">'+f(D.wllProj-D.wllTgt)+"</span>")+"</div>";
+  if(D.wllTgt)h+='<div style="font-size:12px;color:#94a3b8">Target '+f(D.wllTgt)+" \u00B7 "+(D.wllInv>=D.wllTgt?'<span class="up">+'+f(D.wllInv-D.wllTgt)+"</span>":'<span class="dn">'+f(D.wllInv-D.wllTgt)+"</span>")+"</div>";
   h+="</div><div class=\"g4 mb-10\">";
   h+='<div><div class="st-label">'+(D.monthComplete?"Final Total":"Invoiced to Date")+'</div><div class="st-val">'+f(D.wllInv)+"</div></div>";
   if(!D.monthComplete){
@@ -483,7 +483,7 @@ function render(D){
   var nvDailyGap=D.nvDaily-nvDailyTgt;
   h+='<div class="b-row" style="background:'+C.nv.bg+";border-color:"+C.nv.bd+'">';
   h+='<div class="b-hdr"><div class="b-name"><img src="'+LOGOS.nv+'" class="logo"><strong>Neon Vibes\u00AE</strong> '+(D.monthComplete?plb("Final","#eff6ff","#1e40af"):pl(D.nvPace))+"</div>";
-  if(D.nvTgt)h+='<div style="font-size:12px;color:#94a3b8">Target '+f(D.nvTgt)+" \u00B7 "+(D.nvProj>=D.nvTgt?'<span class="up">+'+f(D.nvProj-D.nvTgt)+"</span>":'<span class="dn">'+f(D.nvProj-D.nvTgt)+"</span>")+"</div>";
+  if(D.nvTgt)h+='<div style="font-size:12px;color:#94a3b8">Target '+f(D.nvTgt)+" \u00B7 "+(D.nvInv>=D.nvTgt?'<span class="up">+'+f(D.nvInv-D.nvTgt)+"</span>":'<span class="dn">'+f(D.nvInv-D.nvTgt)+"</span>")+"</div>";
   h+="</div><div class=\"g4 mb-10\">";
   h+='<div><div class="st-label">'+(D.monthComplete?"Final Total":"Invoiced to Date")+'</div><div class="st-val">'+f(D.nvInv)+"</div></div>";
   if(!D.monthComplete){
@@ -521,11 +521,11 @@ function render(D){
   if(!D.monthComplete)h+='<span style="color:#475569;font-size:14px">\u2192</span><span style="font-size:16px;font-weight:700;color:#fbbf24">'+f(D.combProj)+'</span><span style="font-size:12px;color:#64748b">projected</span>';
   h+="</div>";
   if(D.combTgt){
-    var combGap=D.combProj-D.combTgt;
+    var combGap=D.combInv-D.combTgt;
     h+='<div style="text-align:right">';
     h+='<div style="font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px">Combined Target</div>';
     h+='<div style="font-size:15px;font-weight:700;color:#94a3b8">'+f(D.combTgt)+'</div>';
-    h+='<div style="font-size:12px;margin-top:2px"><span class="'+(combGap>=0?"up":"dn")+'">'+(combGap>=0?"+":"")+f(combGap)+' '+(combGap>=0?"above":"below")+' target</span></div>';
+    h+='<div style="font-size:12px;margin-top:2px"><span class="'+(combGap>=0?"up":"dn")+'">'+(combGap>=0?"+":"")+f(combGap)+' invoiced '+(combGap>=0?"above":"below")+' target</span></div>';
     h+="</div>";
   }
   h+="</div></div>";
