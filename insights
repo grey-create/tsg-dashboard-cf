@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TSG Insights &amp; Trends</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Inter',-apple-system,sans-serif;background:#0c1222;color:#e2e8f0;min-height:100vh;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1200px;margin:0 auto;padding:24px 20px 40px}
+  .card{background:#1a2332;border:1px solid #2a3a4e;border-radius:14px;padding:22px 24px;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+  .sec-pill{display:inline-block;padding:3px 12px;border-radius:99px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
+  .sec-title{font-size:16px;font-weight:700;color:#f1f5f9;line-height:1.3;margin-bottom:2px}
+  .sec-sub{font-size:12px;color:#64748b;line-height:1.4}
+  .g4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+  .g3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  .g2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .kpi{background:#1a2332;border:1px solid #2a3a4e;border-radius:12px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+  .kpi-label{font-size:10px;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px}
+  .kpi-val{font-size:26px;font-weight:800;color:#f1f5f9;letter-spacing:-.03em;line-height:1.2}
+  .kpi-sub{font-size:12px;color:#64748b;margin-top:4px;line-height:1.3}
+  .st-label{font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px;font-weight:600}
+  .st-val{font-size:22px;font-weight:700;line-height:1.2;color:#f1f5f9}
+  .pill{display:inline-block;padding:2px 10px;border-radius:99px;font-size:11px;font-weight:600;line-height:18px}
+  .pill-g{background:rgba(22,163,74,.15);color:#4ade80;border:1px solid rgba(22,163,74,.3)}
+  .pill-r{background:rgba(220,38,38,.15);color:#f87171;border:1px solid rgba(220,38,38,.3)}
+  .pill-y{background:rgba(234,179,8,.15);color:#fbbf24;border:1px solid rgba(234,179,8,.3)}
+  .pill-b{background:rgba(59,130,246,.15);color:#60a5fa;border:1px solid rgba(59,130,246,.3)}
+  .tbl{width:100%;border-collapse:collapse;font-size:12px}
+  .tbl th{text-align:right;padding:6px 8px;font-size:11px;color:#64748b;font-weight:600;border-bottom:1px solid #2a3a4e;text-transform:uppercase;letter-spacing:.3px}
+  .tbl th:first-child{text-align:left}
+  .tbl td{padding:6px 8px;text-align:right;color:#94a3b8;border-bottom:1px solid #1a2332}
+  .tbl td:first-child{text-align:left;font-weight:500;color:#cbd5e1}
+  .tbl .hl{background:rgba(234,179,8,.08)!important}
+  .tbl .hl td{color:#fbbf24;font-weight:600}
+  .tbl .bold td{font-weight:600;color:#f1f5f9}
+  .up{color:#4ade80;font-weight:600}
+  .dn{color:#f87171;font-weight:600}
+  .fx-b{display:flex;justify-content:space-between;align-items:center}
+  .fx-c{display:flex;align-items:center;gap:8px}
+  .zone-hdr{margin:32px 0 16px;padding:10px 0;border-top:1px solid #1e2d3d}
+  .zone-icon{font-size:16px;margin-right:4px}
+  .zone-label{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;color:#64748b}
+  .zone-title{font-size:17px;font-weight:700;color:#f1f5f9;margin-top:3px}
+  .zone-sub{font-size:12px;color:#64748b;margin-top:2px}
+  .logo{width:24px;height:24px;object-fit:contain;border-radius:6px;flex-shrink:0}
+  .rec-card{background:#111b2a;border:1px solid #2a3a4e;border-radius:10px;padding:16px;position:relative;overflow:hidden}
+  .rec-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+  .rec-gold::before{background:linear-gradient(90deg,#f59e0b,#fbbf24)}
+  .rec-tsg::before{background:#CDE453}
+  .rec-wll::before{background:#6BD4EC}
+  .rec-nv::before{background:#ff3399}
+  .rec-label{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:#64748b;margin-bottom:8px}
+  .rec-val{font-size:24px;font-weight:800;color:#f1f5f9;letter-spacing:-.02em;line-height:1.1;margin-bottom:4px}
+  .rec-when{font-size:12px;color:#475569;margin-top:4px}
+  .rec-medal{position:absolute;top:12px;right:12px;font-size:24px}
+  .insight-box{background:rgba(96,165,250,.06);border:1px solid rgba(96,165,250,.15);border-radius:8px;padding:14px 16px;margin-top:12px}
+  .insight-box p{font-size:12px;color:#94a3b8;line-height:1.6}
+  .insight-box strong{color:#60a5fa}
+  .bar-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+  .bar-row-label{font-size:11px;color:#94a3b8;width:28px;flex-shrink:0;text-align:right}
+  .bar-row-track{flex:1;height:18px;background:rgba(255,255,255,.05);border-radius:4px;overflow:hidden;position:relative}
+  .bar-row-fill{height:100%;border-radius:4px;display:flex;align-items:center;padding-left:8px;transition:width .6s ease}
+  .bar-row-fill span{font-size:10px;font-weight:600;white-space:nowrap}
+  .bar-row-val{font-size:11px;color:#94a3b8;width:60px;text-align:right;flex-shrink:0}
+  .fy-row{padding:12px 0;border-bottom:1px solid #1a2332}
+  .fy-row:last-child{border-bottom:none}
+  .streak-badge{display:inline-flex;align-items:center;gap:6px;background:#111b2a;border:1px solid #2a3a4e;border-radius:8px;padding:8px 12px;font-size:12px}
+  .growth-tag{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700}
+  .mb-8{margin-bottom:8px}.mb-10{margin-bottom:10px}.mb-16{margin-bottom:16px}.mb-20{margin-bottom:20px}
+  .mt-8{margin-top:8px}.mt-12{margin-top:12px}.mt-16{margin-top:16px}
+  .loading{display:flex;align-items:center;justify-content:center;min-height:60vh;font-size:14px;color:#64748b}
+  .spinner{width:24px;height:24px;border:3px solid #2a3a4e;border-top-color:#60a5fa;border-radius:50%;animation:spin .8s linear infinite;margin-right:12px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .error-box{background:rgba(220,38,38,.1);border:1px solid rgba(220,38,38,.3);color:#f87171;padding:20px;border-radius:10px;font-size:13px;margin:40px auto;max-width:600px;text-align:center}
+  @media(max-width:900px){.g4{grid-template-columns:repeat(2,1fr)}.g2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<nav class="top-nav" id="legacyNav" style="display:none"></nav>
+<script src="/nav.js"></script>
+
+<div class="wrap">
+  <div id="loading" class="loading"><div class="spinner"></div>Loading from Airtable&hellip;</div>
+  <div id="error"></div>
+  <div id="app"></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+var C={tsg:{color:"#CDE453",bg:"rgba(205,228,83,.06)",bd:"rgba(205,228,83,.15)"},wll:{color:"#6BD4EC",bg:"rgba(107,212,236,.06)",bd:"rgba(107,212,236,.15)"},nv:{color:"#ff3399",bg:"rgba(255,0,119,.06)",bd:"rgba(255,0,119,.15)"}};
+var LOGOS={tsg:"https://cdn.shopify.com/s/files/1/1070/8974/files/TSG-Logo-Roundel-Black.png?v=1772037610",wll:"https://cdn.shopify.com/s/files/1/1070/8974/files/WeLoveLEDs-640px--MASTER.png?v=1772124903",nv:"https://cdn.shopify.com/s/files/1/1070/8974/files/NV-Logo-640px--Grey_s-Stuff.png?v=1772124894"};
+var FY_START_MONTH=12;
+
+function f(n){return"\u00A3"+Math.round(Number(n)||0).toLocaleString("en-GB")}
+function ps(n){return(n>0?"+":"")+n+"%"}
+function po(a,b){if(!b)return 0;return Math.round(((a-b)/b)*100)}
+function dl(v){var p=v>0;return'<span class="'+(p?"up":"dn")+'">'+(p?"\u25B2":"\u25BC")+" "+(p?"+":"")+v+"%</span>"}
+function monthShort(m){return["","Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][m]}
+function parseMY(my){
+  if(!my)return null;
+  var ms=["jan","feb","mar","apr","may","jun","jul","aug","sep","oct","nov","dec"];
+  var parts=my.replace(/[-\s]+/g," ").trim().split(" ");
+  if(parts.length<2)return null;
+  var mi=ms.indexOf(parts[0].toLowerCase().substring(0,3));
+  if(mi<0)return null;var yr=parseInt(parts[1]||parts[0]);
+  if(yr<100)yr+=2000;if(isNaN(yr))return null;
+  return{month:mi+1,year:yr,key:yr+"-"+String(mi+1).padStart(2,"0")};
+}
+function fyPos(month){return month>=12?month-12:month}
+function fyStart(month,year){return month>=12?year:year-1}
+function fyKeys(startYear,maxPos){
+  var keys=[];
+  for(var p=0;p<=maxPos;p++){var m=p===0?12:p,y=p===0?startYear:startYear+1;keys.push(y+"-"+String(m).padStart(2,"0"));}
+  return keys;
+}
+function fyLabel(sy){return"FY"+sy%100+"/"+(sy+1)%100}
+function extractNum(v){if(Array.isArray(v))v=v.length>0?v[0]:0;if(v==null)return 0;return parseFloat(v)||0;}
+
+// ============================================================
+function processInsights(raw){
+  var D={};
+  var now=new Date(),curMonth=now.getMonth()+1,curYear=now.getFullYear();
+  var curKey=curYear+"-"+String(curMonth).padStart(2,"0");
+
+  var invByKey={},ovByKey={};
+  raw.invoiced.forEach(function(r){var p=parseMY(r.monthYear);if(p)invByKey[p.key]=r;});
+  raw.overview.forEach(function(r){var p=parseMY(r.monthYear);if(p)ovByKey[p.key]=r;});
+
+  var allKeys=Object.keys(invByKey).sort();
+  D.curKey=curKey;
+  D.dataMonths=allKeys.length;
+
+  // Build flat monthly records (exclude current in-progress month from records)
+  var allMonths=allKeys.map(function(k){
+    var r=invByKey[k];
+    var parts=k.split("-"),yr=parseInt(parts[0]),mo=parseInt(parts[1]);
+    var tsg=r.tsg||0,wll=r.wll||0,nv=r.nv||0;
+    return{key:k,year:yr,month:mo,label:monthShort(mo)+"-"+String(yr).slice(2),tsg:tsg,wll:wll,nv:nv,total:tsg+wll+nv,isCur:k===curKey};
+  });
+
+  var completedMonths=allMonths.filter(function(m){return!m.isCur&&m.total>0;});
+
+  // ========================================
+  // ALL-TIME RECORDS
+  // ========================================
+  var sorted=completedMonths.slice().sort(function(a,b){return b.total-a.total});
+  D.records={
+    bestMonth:sorted[0]||null,
+    secondBest:sorted[1]||null,
+    thirdBest:sorted[2]||null,
+    top10:sorted.slice(0,10),
+    worst:completedMonths.slice().sort(function(a,b){return a.total-b.total})[0]||null,
+    bestTsg:completedMonths.slice().sort(function(a,b){return b.tsg-a.tsg})[0]||null,
+    bestWll:completedMonths.slice().sort(function(a,b){return b.wll-a.wll})[0]||null,
+    bestNv:completedMonths.slice().sort(function(a,b){return b.nv-a.nv})[0]||null,
+  };
+
+  // ========================================
+  // TOTALS & AVERAGES
+  // ========================================
+  var grandTotal=completedMonths.reduce(function(s,m){return s+m.total},0);
+  var grandTsg=completedMonths.reduce(function(s,m){return s+m.tsg},0);
+  var grandWll=completedMonths.reduce(function(s,m){return s+m.wll},0);
+  var grandNv=completedMonths.reduce(function(s,m){return s+m.nv},0);
+  D.totals={total:grandTotal,tsg:grandTsg,wll:grandWll,nv:grandNv,months:completedMonths.length};
+  D.avgs={total:grandTotal/(completedMonths.length||1),tsg:grandTsg/(completedMonths.length||1),wll:grandWll/(completedMonths.length||1),nv:grandNv/(completedMonths.length||1)};
+
+  // ========================================
+  // FY ANALYSIS
+  // ========================================
+  var fyMap={};
+  completedMonths.forEach(function(m){
+    var fySY=fyStart(m.month,m.year);
+    var lbl=fyLabel(fySY);
+    if(!fyMap[lbl])fyMap[lbl]={label:lbl,startYear:fySY,tsg:0,wll:0,nv:0,total:0,months:0};
+    fyMap[lbl].tsg+=m.tsg;fyMap[lbl].wll+=m.wll;fyMap[lbl].nv+=m.nv;fyMap[lbl].total+=m.total;fyMap[lbl].months++;
+  });
+  D.fyList=Object.values(fyMap).sort(function(a,b){return a.startYear-b.startYear});
+  D.fyComplete=D.fyList.filter(function(fy){return fy.months>=11});
+  var sortedFY=D.fyComplete.slice().sort(function(a,b){return b.total-a.total});
+  D.bestFY=sortedFY[0]||null;
+
+  // FY YoY growth
+  D.fyGrowth=[];
+  for(var i=1;i<D.fyList.length;i++){
+    var prev=D.fyList[i-1],cur=D.fyList[i];
+    if(prev.total>0&&cur.months>=11){
+      D.fyGrowth.push({label:cur.label,pct:po(cur.total,prev.total),abs:cur.total-prev.total});
+    }
+  }
+
+  // ========================================
+  // SEASONALITY (avg by calendar month)
+  // ========================================
+  D.seasonality=[];
+  for(var mo=1;mo<=12;mo++){
+    var mData=completedMonths.filter(function(m){return m.month===mo});
+    if(mData.length===0){D.seasonality.push({month:mo,label:monthShort(mo),tsg:0,wll:0,nv:0,total:0,count:0});continue;}
+    var avgT=mData.reduce(function(s,m){return s+m.tsg},0)/mData.length;
+    var avgW=mData.reduce(function(s,m){return s+m.wll},0)/mData.length;
+    var avgN=mData.reduce(function(s,m){return s+m.nv},0)/mData.length;
+    D.seasonality.push({month:mo,label:monthShort(mo),tsg:avgT,wll:avgW,nv:avgN,total:avgT+avgW+avgN,count:mData.length});
+  }
+  // FY order (Dec first)
+  var fyOrder=[12,1,2,3,4,5,6,7,8,9,10,11];
+  D.seasonalityFY=fyOrder.map(function(mo){return D.seasonality.find(function(s){return s.month===mo});}).filter(Boolean);
+  var maxSeason=Math.max.apply(null,D.seasonalityFY.map(function(s){return s.total}));
+  D.seasonalityFY.forEach(function(s){s.pctOfMax=maxSeason>0?Math.round(s.total/maxSeason*100):0});
+  D.strongestMonth=D.seasonalityFY.slice().sort(function(a,b){return b.total-a.total})[0];
+  D.weakestMonth=D.seasonalityFY.filter(function(s){return s.count>0}).slice().sort(function(a,b){return a.total-b.total})[0];
+
+  // ========================================
+  // BRAND MIX OVER TIME (by FY)
+  // ========================================
+  D.brandMix=D.fyList.filter(function(fy){return fy.total>0}).map(function(fy){
+    return{label:fy.label,tsgPct:fy.total?Math.round(fy.tsg/fy.total*100):0,wllPct:fy.total?Math.round(fy.wll/fy.total*100):0,nvPct:fy.total?Math.round(fy.nv/fy.total*100):0,total:fy.total};
+  });
+
+  // ========================================
+  // ROLLING 12-MONTH (chronological)
+  // ========================================
+  D.rolling12=[];
+  for(var i=11;i<allKeys.length;i++){
+    var window12=allKeys.slice(i-11,i+1);
+    var sum=window12.reduce(function(s,k){var r=invByKey[k];return s+(r?(r.tsg||0)+(r.wll||0)+(r.nv||0):0);},0);
+    var k=allKeys[i],parts=k.split("-");
+    D.rolling12.push({key:k,label:monthShort(parseInt(parts[1]))+"-"+String(parseInt(parts[0])).slice(2),total:sum});
+  }
+
+  // ========================================
+  // MONTHLY TIMELINE (all months for trend chart)
+  // ========================================
+  D.timeline=allMonths;
+
+  // ========================================
+  // YEAR-ON-YEAR SAME MONTH
+  // ========================================
+  D.yoyByMonth={};
+  for(var mo=1;mo<=12;mo++){
+    var mData=allMonths.filter(function(m){return m.month===mo&&!m.isCur}).sort(function(a,b){return a.year-b.year});
+    if(mData.length>1)D.yoyByMonth[mo]=mData;
+  }
+
+  // ========================================
+  // MILESTONES / NUGGETS
+  // ========================================
+  D.nuggets=[];
+
+  // First month to break £X00k barriers
+  var barriers=[200000,250000,300000,350000,400000];
+  barriers.forEach(function(b){
+    var first=completedMonths.find(function(m){return m.total>=b});
+    if(first)D.nuggets.push({icon:"🏆",text:"First month to break "+f(b)+": <strong>"+first.label+"</strong>"});
+  });
+
+  // Biggest single month jump
+  var biggestJump=null,biggestJumpVal=0;
+  for(var i=1;i<allKeys.length;i++){
+    var prev=invByKey[allKeys[i-1]],cur=invByKey[allKeys[i]];
+    if(!prev||!cur)continue;
+    var prevT=(prev.tsg||0)+(prev.wll||0)+(prev.nv||0);
+    var curT=(cur.tsg||0)+(cur.wll||0)+(cur.nv||0);
+    var diff=curT-prevT;
+    if(diff>biggestJumpVal){biggestJumpVal=diff;biggestJump=allKeys[i];}
+  }
+  if(biggestJump){var bj=allMonths.find(function(m){return m.key===biggestJump});if(bj)D.nuggets.push({icon:"📈",text:"Biggest single-month jump: <strong>+"+f(biggestJumpVal)+"</strong> in <strong>"+bj.label+"</strong>"});}
+
+  // Biggest single month drop
+  var biggestDrop=null,biggestDropVal=0;
+  for(var i=1;i<allKeys.length;i++){
+    var prev=invByKey[allKeys[i-1]],cur=invByKey[allKeys[i]];
+    if(!prev||!cur)continue;
+    var prevT=(prev.tsg||0)+(prev.wll||0)+(prev.nv||0);
+    var curT=(cur.tsg||0)+(cur.wll||0)+(cur.nv||0);
+    var diff=prevT-curT;
+    if(diff>biggestDropVal){biggestDropVal=diff;biggestDrop=allKeys[i];}
+  }
+  if(biggestDrop){var bd=allMonths.find(function(m){return m.key===biggestDrop});if(bd)D.nuggets.push({icon:"📉",text:"Biggest single-month drop: <strong>-"+f(biggestDropVal)+"</strong> in <strong>"+bd.label+"</strong>"});}
+
+  // Months above £X overall average
+  var overallAvg=D.avgs.total;
+  var aboveAvg=completedMonths.filter(function(m){return m.total>overallAvg}).length;
+  D.nuggets.push({icon:"📊",text:"<strong>"+aboveAvg+" of "+completedMonths.length+" months</strong> ("+Math.round(aboveAvg/completedMonths.length*100)+"%) have beaten the overall average of "+f(overallAvg)});
+
+  // TSG share trending
+  if(D.brandMix.length>=2){
+    var first=D.brandMix[0],last=D.brandMix[D.brandMix.length-1];
+    var tsgDiff=last.tsgPct-first.tsgPct;
+    var wllDiff=last.wllPct-first.wllPct;
+    if(Math.abs(tsgDiff)>=3)D.nuggets.push({icon:"🔀",text:"TSG's share of revenue has "+(tsgDiff>0?"grown":"shrunk")+" from <strong>"+first.tsgPct+"%</strong> ("+first.label+") to <strong>"+last.tsgPct+"%</strong> ("+last.label+")"});
+    if(Math.abs(wllDiff)>=3)D.nuggets.push({icon:"💡",text:"WeLoveLEDs' share has "+(wllDiff>0?"grown":"shrunk")+" from <strong>"+first.wllPct+"%</strong> to <strong>"+last.wllPct+"%</strong> over the same period"});
+  }
+
+  return D;
+}
+
+// ============================================================
+// RENDER
+// ============================================================
+function render(D){
+  var h="";
+
+  // ==============================
+  // HEADER
+  // ==============================
+  h+='<div style="background:linear-gradient(135deg,#1a2332 0%,#0c1222 50%,#162033 100%);border:1px solid #2a3a4e;border-radius:16px;padding:28px 28px 20px;margin-bottom:24px">';
+  h+='<div style="font-size:12px;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Historical Analysis</div>';
+  h+='<h1 style="font-size:26px;font-weight:900;letter-spacing:-.04em;color:#f1f5f9;margin-bottom:4px">Insights &amp; Trends</h1>';
+  h+='<p style="font-size:13px;color:#64748b">'+D.dataMonths+' months of data &middot; All figures finalised except current month &middot; FY runs Dec&ndash;Nov</p>';
+  h+="</div>";
+
+  // ==============================
+  // HEADLINE STATS
+  // ==============================
+  h+='<div class="g4 mb-20">';
+  h+='<div class="kpi" style="border-top:3px solid #CDE453"><div class="kpi-label">All-Time Revenue</div><div class="kpi-val">'+f(D.totals.total)+"</div><div class=\"kpi-sub\">across "+D.totals.months+" completed months</div></div>";
+  h+='<div class="kpi" style="border-top:3px solid #60a5fa"><div class="kpi-label">Monthly Average</div><div class="kpi-val">'+f(D.avgs.total)+"</div><div class=\"kpi-sub\">all-time mean</div></div>";
+  h+='<div class="kpi" style="border-top:3px solid #fbbf24"><div class="kpi-label">Best Single Month</div><div class="kpi-val">'+(D.records.bestMonth?f(D.records.bestMonth.total):"—")+"</div><div class=\"kpi-sub\">"+(D.records.bestMonth?D.records.bestMonth.label:"")+"</div></div>";
+  h+='<div class="kpi" style="border-top:3px solid #6BD4EC"><div class="kpi-label">Best FY Total</div><div class="kpi-val">'+(D.bestFY?f(D.bestFY.total):"—")+"</div><div class=\"kpi-sub\">"+(D.bestFY?D.bestFY.label:"")+"</div></div>";
+  h+="</div>";
+
+  // ==============================
+  // ZONE: ALL-TIME RECORDS
+  // ==============================
+  h+='<div class="zone-hdr"><div class="zone-label"><span class="zone-icon">🏆</span>Records</div><div class="zone-title">All-Time Bests</div><div class="zone-sub">Best ever months by combined and individual brand</div></div>';
+  h+='<div class="g4 mb-20">';
+
+  // Top 3 combined months
+  [{m:D.records.bestMonth,medal:"🥇",cls:"rec-gold"},{m:D.records.secondBest,medal:"🥈",cls:"rec-gold"},{m:D.records.thirdBest,medal:"🥉",cls:"rec-gold"}].forEach(function(x){
+    if(!x.m)return;
+    h+='<div class="rec-card '+x.cls+'"><div class="rec-label">Combined Revenue</div><div class="rec-medal">'+x.medal+"</div>";
+    h+='<div class="rec-val">'+f(x.m.total)+"</div>";
+    h+='<div style="font-size:12px;color:#94a3b8;margin-top:2px">TSG '+f(x.m.tsg)+' &middot; WLL '+f(x.m.wll)+'</div>';
+    h+='<div class="rec-when">'+x.m.label+"</div></div>";
+  });
+
+  // Best TSG month
+  if(D.records.bestTsg)h+='<div class="rec-card rec-tsg"><div class="rec-label" style="color:#CDE453">Best TSG Month</div><div class="rec-val" style="color:#CDE453">'+f(D.records.bestTsg.tsg)+"</div><div class=\"rec-when\">"+D.records.bestTsg.label+"</div></div>";
+  h+="</div>";
+
+  // Brand records row
+  h+='<div class="g3 mb-20">';
+  if(D.records.bestWll)h+='<div class="rec-card rec-wll"><div class="rec-label" style="color:#6BD4EC">Best WeLoveLEDs Month</div><div class="rec-val" style="color:#6BD4EC">'+f(D.records.bestWll.wll)+"</div><div style=\"font-size:12px;color:#64748b;margin-top:2px\">Total that month: "+f(D.records.bestWll.total)+"</div><div class=\"rec-when\">"+D.records.bestWll.label+"</div></div>";
+  if(D.records.bestNv)h+='<div class="rec-card rec-nv"><div class="rec-label" style="color:#ff3399">Best Neon Vibes Month</div><div class="rec-val" style="color:#ff3399">'+f(D.records.bestNv.nv)+"</div><div style=\"font-size:12px;color:#64748b;margin-top:2px\">Total that month: "+f(D.records.bestNv.total)+"</div><div class=\"rec-when\">"+D.records.bestNv.label+"</div></div>";
+  // Best FY
+  if(D.bestFY)h+='<div class="rec-card rec-gold"><div class="rec-label">Best Full Financial Year</div><div class="rec-medal">🏆</div><div class="rec-val">'+f(D.bestFY.total)+"</div><div style=\"font-size:12px;color:#94a3b8;margin-top:2px\">TSG "+f(D.bestFY.tsg)+" &middot; WLL "+f(D.bestFY.wll)+"</div><div class=\"rec-when\">"+D.bestFY.label+"</div></div>";
+  h+="</div>";
+
+  // Top 10 table
+  h+='<div class="card mb-20">';
+  h+='<div style="margin-bottom:14px"><span class="sec-pill" style="background:#fbbf24;color:#0c1222">Top 10</span><div class="sec-title">Best Months Ever</div></div>';
+  h+='<table class="tbl"><thead><tr><th>Rank</th><th>Month</th><th style="color:'+C.tsg.color+'">TSG</th><th style="color:'+C.wll.color+'">WLL</th><th style="color:'+C.nv.color+'">NV</th><th>Total</th></tr></thead><tbody>';
+  var medals=["🥇","🥈","🥉"];
+  D.records.top10.forEach(function(m,i){
+    h+='<tr class="'+(i<3?"hl":"")+'"><td style="color:#fbbf24">'+(i<3?medals[i]:"#"+(i+1))+"</td><td>"+m.label+"</td><td>"+f(m.tsg)+"</td><td>"+f(m.wll)+"</td><td>"+f(m.nv)+"</td><td style=\"font-weight:700\">"+f(m.total)+"</td></tr>";
+  });
+  h+="</tbody></table></div>";
+
+  // ==============================
+  // ZONE: REVENUE TREND
+  // ==============================
+  h+='<div class="zone-hdr"><div class="zone-label"><span class="zone-icon">📈</span>Trends</div><div class="zone-title">Revenue Over Time</div><div class="zone-sub">How the business has grown month by month across all years</div></div>';
+
+  h+='<div class="card mb-20"><div style="margin-bottom:12px"><span class="sec-pill" style="background:#60a5fa;color:#0c1222">Timeline</span><div class="sec-title">All Months — Combined Revenue</div><div class="sec-sub">Every month on record, stacked by brand</div></div>';
+  h+='<canvas id="timelineChart" style="width:100%;max-height:280px"></canvas></div>';
+
+  h+='<div class="card mb-20"><div style="margin-bottom:12px"><span class="sec-pill" style="background:#6BD4EC;color:#0c1222">Rolling Average</span><div class="sec-title">Rolling 12-Month Revenue</div><div class="sec-sub">Smooths out monthly variation — shows the real underlying trajectory</div></div>';
+  h+='<canvas id="rollingChart" style="width:100%;max-height:220px"></canvas>';
+  // Insight box
+  if(D.rolling12.length>=2){
+    var first12=D.rolling12[0].total,last12=D.rolling12[D.rolling12.length-1].total;
+    var r12Growth=po(last12,first12);
+    h+='<div class="insight-box mt-12"><p>The rolling 12-month total has moved from <strong>'+f(first12)+'</strong> to <strong>'+f(last12)+'</strong> — a <strong>'+dl(r12Growth)+'</strong> change over the recorded period. '+(r12Growth>0?"The underlying trend is upward.":"The underlying trend has contracted.")+"</p></div>";
+  }
+  h+="</div>";
+
+  // ==============================
+  // ZONE: FINANCIAL YEAR ANALYSIS
+  // ==============================
+  h+='<div class="zone-hdr"><div class="zone-label"><span class="zone-icon">📊</span>Financial Years</div><div class="zone-title">FY Comparison</div><div class="zone-sub">All financial years side by side with brand breakdown</div></div>';
+
+  h+='<div class="g2 mb-20">';
+  h+='<div class="card"><div style="margin-bottom:12px"><span class="sec-pill" style="background:#CDE453;color:#0c1222">FY Totals</span><div class="sec-title">Revenue by Financial Year</div></div>';
+  h+='<canvas id="fyChart" style="width:100%;max-height:280px"></canvas></div>';
+
+  h+='<div class="card"><div style="margin-bottom:12px"><span class="sec-pill" style="background:#ff3399;color:#fff">YoY Growth</span><div class="sec-title">Year-on-Year Growth</div></div>';
+  if(D.fyGrowth.length>0){
+    h+='<canvas id="yoyChart" style="width:100%;max-height:280px"></canvas>';
+  }else{
+    h+='<p style="color:#64748b;font-size:13px">Not enough complete financial years for YoY comparison yet.</p>';
+  }
+  h+="</div></div>";
+
+  // FY detail table
+  h+='<div class="card mb-20"><div style="margin-bottom:14px"><span class="sec-pill" style="background:#475569;color:#f1f5f9">Detail</span><div class="sec-title">Financial Year Breakdown</div></div>';
+  h+='<table class="tbl"><thead><tr><th>FY</th><th style="color:'+C.tsg.color+'">TSG</th><th style="color:'+C.wll.color+'">WLL</th><th style="color:'+C.nv.color+'">NV</th><th>Total</th><th>Avg/Mo</th><th>YoY</th></tr></thead><tbody>';
+  D.fyList.forEach(function(fy,i){
+    var prev=i>0?D.fyList[i-1]:null;
+    var yoy=prev&&prev.total&&fy.months>=11?po(fy.total,prev.total):null;
+    var isBest=D.bestFY&&fy.label===D.bestFY.label;
+    h+='<tr class="'+(isBest?"hl":"")+'"><td>'+(isBest?"🏆 ":"")+fy.label+(fy.months<12?' <span style="font-size:10px;color:#475569">('+fy.months+'mo)</span>':"")+"</td>";
+    h+="<td>"+f(fy.tsg)+"</td><td>"+f(fy.wll)+"</td><td>"+f(fy.nv)+"</td>";
+    h+='<td style="font-weight:700">'+f(fy.total)+"</td>";
+    h+='<td>'+f(fy.months>0?fy.total/fy.months:0)+"</td>";
+    h+='<td>'+(yoy!==null?dl(yoy):'<span style="color:#475569">—</span>')+"</td></tr>";
+  });
+  h+="</tbody></table></div>";
+
+  // ==============================
+  // ZONE: SEASONALITY
+  // ==============================
+  h+='<div class="zone-hdr"><div class="zone-label"><span class="zone-icon">🌡️</span>Patterns</div><div class="zone-title">Seasonality</div><div class="zone-sub">Average revenue by month of year — which months consistently perform</div></div>';
+
+  h+='<div class="g2 mb-20">';
+  h+='<div class="card"><div style="margin-bottom:12px"><span class="sec-pill" style="background:#fbbf24;color:#0c1222">Seasonal Shape</span><div class="sec-title">Average Revenue by Month</div><div class="sec-sub">FY order (Dec&ndash;Nov). Based on all completed months on record.</div></div>';
+  h+='<canvas id="seasonChart" style="width:100%;max-height:280px"></canvas>';
+  if(D.strongestMonth&&D.weakestMonth){
+    h+='<div class="insight-box mt-12"><p>Historically, <strong>'+D.strongestMonth.label+'</strong> is the strongest month (avg '+f(D.strongestMonth.total)+'), while <strong>'+D.weakestMonth.label+'</strong> is the quietest (avg '+f(D.weakestMonth.total)+'). The peak is <strong>'+Math.round(D.strongestMonth.total/D.weakestMonth.total*10)/10+'x</strong> the trough.</p></div>';
+  }
+  h+="</div>";
+
+  // Seasonality bar table
+  h+='<div class="card"><div style="margin-bottom:12px"><span class="sec-pill" style="background:#fbbf24;color:#0c1222">Ranked</span><div class="sec-title">Month Ranking by Average Revenue</div></div>';
+  var sortedSeason=D.seasonalityFY.slice().sort(function(a,b){return b.total-a.total});
+  var maxSeas=sortedSeason[0]?sortedSeason[0].total:1;
+  sortedSeason.forEach(function(s,i){
+    if(!s.count)return;
+    var w=Math.round(s.total/maxSeas*100);
+    h+='<div class="bar-row"><span style="font-size:10px;color:#475569;width:14px;text-align:right;flex-shrink:0">'+(i+1)+'</span>';
+    h+='<span class="bar-row-label">'+s.label+"</span>";
+    h+='<div class="bar-row-track"><div class="bar-row-fill" style="width:'+w+'%;background:'+(i===0?"#fbbf24":i<3?"#94a3b8":"#2a3a4e")+'">';
+    if(w>35)h+='<span style="color:'+(i<3?"#0c1222":"#94a3b8")+';font-size:10px;font-weight:600">'+f(s.total)+"</span>";
+    h+="</div></div>";
+    if(w<=35)h+='<span class="bar-row-val">'+f(s.total)+"</span>";
+    h+='<span style="font-size:10px;color:#475569;width:32px;text-align:right;flex-shrink:0">('+s.count+'x)</span>';
+    h+="</div>";
+  });
+  h+="</div></div>";
+
+  // ==============================
+  // ZONE: BRAND MIX
+  // ==============================
+  h+='<div class="zone-hdr"><div class="zone-label"><span class="zone-icon">🔀</span>Brand Mix</div><div class="zone-title">How the Mix Has Shifted</div><div class="zone-sub">TSG, WLL and NV as a % of total revenue, by financial year</div></div>';
+
+  h+='<div class="g2 mb-20">';
+  h+='<div class="card"><div style="margin-bottom:12px"><span class="sec-pill" style="background:#475569;color:#f1f5f9">Brand Split</span><div class="sec-title">Revenue Mix by FY</div></div>';
+  h+='<canvas id="mixChart" style="width:100%;max-height:280px"></canvas></div>';
+
+  h+='<div class="card"><div style="margin-bottom:12px"><span class="sec-pill" style="background:#475569;color:#f1f5f9">Mix Detail</span><div class="sec-title">% Split by Financial Year</div></div>';
+  h+='<table class="tbl"><thead><tr><th>FY</th><th style="color:'+C.tsg.color+'">TSG %</th><th style="color:'+C.wll.color+'">WLL %</th><th style="color:'+C.nv.color+'">NV %</th><th>Total</th></tr></thead><tbody>';
+  D.brandMix.forEach(function(fy){
+    h+='<tr><td>'+fy.label+'</td><td style="color:'+C.tsg.color+'">'+fy.tsgPct+'%</td><td style="color:'+C.wll.color+'">'+fy.wllPct+'%</td><td style="color:'+C.nv.color+'">'+fy.nvPct+'%</td><td>'+f(fy.total)+"</td></tr>";
+  });
+  h+="</tbody></table></div></div>";
+
+  // ==============================
+  // ZONE: NUGGETS
+  // ==============================
+  h+='<div class="zone-hdr"><div class="zone-label"><span class="zone-icon">💡</span>Nuggets</div><div class="zone-title">Interesting Facts from the Data</div></div>';
+  h+='<div class="card mb-20"><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">';
+  D.nuggets.forEach(function(n){
+    h+='<div style="background:#111b2a;border:1px solid #2a3a4e;border-radius:8px;padding:12px 14px;display:flex;gap:10px;align-items:flex-start">';
+    h+='<span style="font-size:18px;line-height:1.3;flex-shrink:0">'+n.icon+"</span>";
+    h+='<span style="font-size:12px;color:#94a3b8;line-height:1.6">'+n.text+"</span></div>";
+  });
+  h+="</div></div>";
+
+  // Footer
+  h+='<div style="text-align:center;padding:16px 0;font-size:11px;color:#475569;line-height:1.6">Historical data &middot; The Sign Group&trade; &middot; WeLoveLEDs&trade; &middot; Neon Vibes&reg;<br>Current month excluded from records and averages</div>';
+
+  document.getElementById("app").innerHTML=h;
+
+  Chart.defaults.color="#94a3b8";
+  Chart.defaults.borderColor="#1e2d3d";
+
+  buildTimelineChart(D);
+  buildRollingChart(D);
+  buildFYChart(D);
+  buildYoYChart(D);
+  buildSeasonChart(D);
+  buildMixChart(D);
+}
+
+// ============================================================
+// CHARTS
+// ============================================================
+function buildTimelineChart(D){
+  var el=document.getElementById("timelineChart");if(!el)return;
+  var labels=D.timeline.map(function(m){return m.label});
+  new Chart(el.getContext("2d"),{
+    type:"bar",
+    data:{labels:labels,datasets:[
+      {label:"TSG",data:D.timeline.map(function(m){return m.tsg}),backgroundColor:D.timeline.map(function(m){return m.isCur?"rgba(205,228,83,0.4)":"rgba(205,228,83,0.7)"}),borderRadius:1,stack:"s"},
+      {label:"WLL",data:D.timeline.map(function(m){return m.wll}),backgroundColor:D.timeline.map(function(m){return m.isCur?"rgba(107,212,236,0.4)":"rgba(107,212,236,0.7)"}),borderRadius:1,stack:"s"},
+      {label:"NV",data:D.timeline.map(function(m){return m.nv}),backgroundColor:D.timeline.map(function(m){return m.isCur?"rgba(255,51,153,0.4)":"rgba(255,51,153,0.7)"}),borderRadius:1,stack:"s"},
+    ]},
+    options:{responsive:true,maintainAspectRatio:true,aspectRatio:3,
+      plugins:{legend:{display:true,position:"top",labels:{usePointStyle:true,padding:14,font:{family:"Inter",size:11}}}},
+      scales:{y:{beginAtZero:true,stacked:true,grid:{color:"#1e2d3d"},ticks:{font:{family:"Inter",size:10},callback:function(v){return"£"+Math.round(v/1000)+"k"}}},
+        x:{stacked:true,grid:{display:false},ticks:{font:{family:"Inter",size:9},maxTicksLimit:24,maxRotation:45}}
+      }
+    }
+  });
+}
+
+function buildRollingChart(D){
+  var el=document.getElementById("rollingChart");if(!el)return;
+  new Chart(el.getContext("2d"),{
+    type:"line",
+    data:{labels:D.rolling12.map(function(x){return x.label}),datasets:[{
+      label:"Rolling 12-Month Revenue",data:D.rolling12.map(function(x){return x.total}),
+      borderColor:"#60a5fa",backgroundColor:"rgba(96,165,250,0.08)",borderWidth:2.5,
+      pointRadius:2,pointBackgroundColor:"#60a5fa",fill:true,tension:0.4
+    }]},
+    options:{responsive:true,maintainAspectRatio:true,aspectRatio:3,
+      plugins:{legend:{display:false}},
+      scales:{y:{beginAtZero:false,grid:{color:"#1e2d3d"},ticks:{font:{family:"Inter",size:10},callback:function(v){return v>=1000000?"£"+(v/1000000).toFixed(1)+"m":"£"+Math.round(v/1000)+"k"}}},
+        x:{grid:{display:false},ticks:{font:{family:"Inter",size:9},maxTicksLimit:18,maxRotation:45}}
+      }
+    }
+  });
+}
+
+function buildFYChart(D){
+  var el=document.getElementById("fyChart");if(!el)return;
+  var complete=D.fyList.filter(function(fy){return fy.months>=6});
+  new Chart(el.getContext("2d"),{
+    type:"bar",
+    data:{labels:complete.map(function(fy){return fy.label+(fy.months<12?" *":"")}),datasets:[
+      {label:"TSG",data:complete.map(function(fy){return fy.tsg}),backgroundColor:"rgba(205,228,83,0.7)",borderRadius:3,stack:"s"},
+      {label:"WLL",data:complete.map(function(fy){return fy.wll}),backgroundColor:"rgba(107,212,236,0.7)",borderRadius:3,stack:"s"},
+      {label:"NV",data:complete.map(function(fy){return fy.nv}),backgroundColor:"rgba(255,51,153,0.7)",borderRadius:3,stack:"s"},
+    ]},
+    options:{responsive:true,maintainAspectRatio:true,aspectRatio:1.6,
+      plugins:{legend:{display:true,position:"top",labels:{usePointStyle:true,padding:12,font:{family:"Inter",size:11}}}},
+      scales:{y:{beginAtZero:true,stacked:true,grid:{color:"#1e2d3d"},ticks:{font:{family:"Inter",size:10},callback:function(v){return v>=1000000?"£"+(v/1000000).toFixed(1)+"m":"£"+Math.round(v/1000)+"k"}}},
+        x:{stacked:true,grid:{display:false},ticks:{font:{family:"Inter",size:10}}}
+      }
+    }
+  });
+}
+
+function buildYoYChart(D){
+  var el=document.getElementById("yoyChart");if(!el||!D.fyGrowth.length)return;
+  new Chart(el.getContext("2d"),{
+    type:"bar",
+    data:{labels:D.fyGrowth.map(function(x){return x.label}),datasets:[{
+      label:"YoY Growth %",
+      data:D.fyGrowth.map(function(x){return x.pct}),
+      backgroundColor:D.fyGrowth.map(function(x){return x.pct>=0?"rgba(74,222,128,0.7)":"rgba(248,113,113,0.7)"}),
+      borderRadius:4,barPercentage:0.6
+    }]},
+    options:{responsive:true,maintainAspectRatio:true,aspectRatio:1.6,
+      plugins:{legend:{display:false}},
+      scales:{y:{grid:{color:"#1e2d3d"},ticks:{font:{family:"Inter",size:10},callback:function(v){return v+"%"}},
+        afterBuildTicks:function(ax){ax.ticks=ax.ticks.filter(function(t){return t.value!==0||true});}},
+        x:{grid:{display:false},ticks:{font:{family:"Inter",size:10}}}
+      }
+    }
+  });
+}
+
+function buildSeasonChart(D){
+  var el=document.getElementById("seasonChart");if(!el)return;
+  new Chart(el.getContext("2d"),{
+    type:"bar",
+    data:{labels:D.seasonalityFY.map(function(s){return s.label}),datasets:[
+      {label:"TSG",data:D.seasonalityFY.map(function(s){return Math.round(s.tsg)}),backgroundColor:"rgba(205,228,83,0.7)",borderRadius:2,stack:"s"},
+      {label:"WLL",data:D.seasonalityFY.map(function(s){return Math.round(s.wll)}),backgroundColor:"rgba(107,212,236,0.7)",borderRadius:2,stack:"s"},
+      {label:"NV",data:D.seasonalityFY.map(function(s){return Math.round(s.nv)}),backgroundColor:"rgba(255,51,153,0.7)",borderRadius:2,stack:"s"},
+    ]},
+    options:{responsive:true,maintainAspectRatio:true,aspectRatio:1.8,
+      plugins:{legend:{display:true,position:"top",labels:{usePointStyle:true,padding:12,font:{family:"Inter",size:11}}}},
+      scales:{y:{beginAtZero:true,stacked:true,grid:{color:"#1e2d3d"},ticks:{font:{family:"Inter",size:10},callback:function(v){return"£"+Math.round(v/1000)+"k"}}},
+        x:{stacked:true,grid:{display:false},ticks:{font:{family:"Inter",size:10}}}
+      }
+    }
+  });
+}
+
+function buildMixChart(D){
+  var el=document.getElementById("mixChart");if(!el)return;
+  new Chart(el.getContext("2d"),{
+    type:"bar",
+    data:{labels:D.brandMix.map(function(x){return x.label}),datasets:[
+      {label:"TSG %",data:D.brandMix.map(function(x){return x.tsgPct}),backgroundColor:"rgba(205,228,83,0.7)",borderRadius:3,stack:"s"},
+      {label:"WLL %",data:D.brandMix.map(function(x){return x.wllPct}),backgroundColor:"rgba(107,212,236,0.7)",borderRadius:3,stack:"s"},
+      {label:"NV %",data:D.brandMix.map(function(x){return x.nvPct}),backgroundColor:"rgba(255,51,153,0.7)",borderRadius:3,stack:"s"},
+    ]},
+    options:{responsive:true,maintainAspectRatio:true,aspectRatio:1.6,
+      plugins:{legend:{display:true,position:"top",labels:{usePointStyle:true,padding:12,font:{family:"Inter",size:11}}}},
+      scales:{y:{beginAtZero:true,max:100,stacked:true,grid:{color:"#1e2d3d"},ticks:{font:{family:"Inter",size:10},callback:function(v){return v+"%"}}},
+        x:{stacked:true,grid:{display:false},ticks:{font:{family:"Inter",size:10}}}
+      }
+    }
+  });
+}
+
+// ============================================================
+async function init(){
+  try{
+    var res=await fetch("/sales-data");
+    if(!res.ok)throw new Error("API returned "+res.status);
+    var raw=await res.json();if(raw.error)throw new Error(raw.error);
+    document.getElementById("loading").style.display="none";
+    var D=processInsights(raw);render(D);
+    if(raw.lastFetched){var ft=new Date(raw.lastFetched);if(window.setNavTimestamp)window.setNavTimestamp(ft);}
+  }catch(err){
+    document.getElementById("loading").style.display="none";
+    document.getElementById("error").innerHTML='<div class="error-box"><strong>Failed to load data</strong><br><br>'+err.message+"</div>";
+  }
+}
+init();
+</script>
+</body>
+</html>
