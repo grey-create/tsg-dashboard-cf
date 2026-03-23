@@ -13,7 +13,7 @@ export async function onRequestPost(context) {
 
   try {
     const body = await context.request.json();
-    const { data, currentMonth, isPartialMonth } = body;
+    const { data, currentMonth, isPartialMonth, userContext, salesTeamData } = body;
 
     // Build the prompt with financial logic rules baked in
     const systemPrompt = `You are a financial analyst for The Sign Group (TSG), a trade signage manufacturer near Leeds with ~40 staff. You write concise weekly/monthly sales commentary for the senior team.
@@ -55,7 +55,7 @@ STRUCTURE (follow this order):
 3. Target performance: Who is ahead, who is behind, and by how much.
 4. Close with the one or two things that will most likely determine how the month finishes.`;
 
-    const userPrompt = buildUserPrompt(data, currentMonth, isPartialMonth);
+    const userPrompt = buildUserPrompt(data, currentMonth, isPartialMonth, userContext, salesTeamData);
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -100,17 +100,26 @@ STRUCTURE (follow this order):
   }
 }
 
-function buildUserPrompt(data, currentMonth, isPartialMonth) {
-  // data is an array of monthly records sorted by date
-  // Each record: { date, monthYear, tsg, wll, nv, overall, tsgTarget, wllTarget, nvTarget, overallTarget, ... }
-
+function buildUserPrompt(data, currentMonth, isPartialMonth, userContext, salesTeamData) {
   const current = data.find(d => d.monthYear === currentMonth);
   const prevMonths = data.filter(d => d.monthYear !== currentMonth).slice(-12);
 
+  // Helper: calculate overall from brands if the overall field is 0
+  function calcOverall(d) {
+    return d.overall > 0 ? d.overall : (d.tsg + d.wll + d.nv + (d.other || 0));
+  }
+
   let prompt = `Here are the brand sales figures. Write a concise commentary.\n\n`;
 
+  // User context first if provided
+  if (userContext) {
+    prompt += `## ADDITIONAL CONTEXT FROM MANAGEMENT:\n${userContext}\n\nIncorporate the above context naturally into the commentary where relevant.\n\n`;
+  }
+
   if (current) {
-    prompt += `## CURRENT MONTH: ${currentMonth}${isPartialMonth ? ' (INCOMPLETE - month still in progress)' : ''}\n`;
+    const overall = calcOverall(current);
+    prompt += `## CURRENT MONTH INVOICED SALES: ${currentMonth}${isPartialMonth ? ' (INCOMPLETE - month still in progress)' : ''}\n`;
+    prompt += `These are INVOICED figures (completed work). This is separate from new orders placed.\n`;
     prompt += `TSG Invoiced: £${fmt(current.tsg)}`;
     if (current.tsgTarget) prompt += ` (Target: £${fmt(current.tsgTarget)}, ${current.tsg >= current.tsgTarget ? 'ABOVE' : 'BELOW'} by £${fmt(Math.abs(current.tsg - current.tsgTarget))})`;
     prompt += `\n`;
@@ -120,54 +129,62 @@ function buildUserPrompt(data, currentMonth, isPartialMonth) {
     prompt += `NV Invoiced: £${fmt(current.nv)}`;
     if (current.nvTarget) prompt += ` (Target: £${fmt(current.nvTarget)}, ${current.nv >= current.nvTarget ? 'ABOVE' : 'BELOW'} by £${fmt(Math.abs(current.nv - current.nvTarget))})`;
     prompt += `\n`;
-    prompt += `Combined: £${fmt(current.overall)}`;
+    prompt += `Combined Invoiced: £${fmt(overall)}`;
     if (current.overallTarget) prompt += ` (Target: £${fmt(current.overallTarget)})`;
     prompt += `\n\n`;
   }
 
+  // NEW SALES ORDERED (separate from invoicing)
+  if (salesTeamData && salesTeamData.totalNewSales > 0) {
+    prompt += `## NEW SALES ORDERED THIS MONTH (orders placed, NOT invoiced):\n`;
+    prompt += `IMPORTANT: New Sales are orders confirmed this month. This is order intake, completely separate from invoiced revenue above.\n`;
+    prompt += `Total New Orders: £${fmt(salesTeamData.totalNewSales)}`;
+    if (salesTeamData.prevMonthNewSales > 0) {
+      const pct = ((salesTeamData.totalNewSales - salesTeamData.prevMonthNewSales) / salesTeamData.prevMonthNewSales * 100);
+      prompt += ` (${pct >= 0 ? '+' : ''}${pct.toFixed(0)}% vs last month's £${fmt(salesTeamData.prevMonthNewSales)})`;
+    }
+    prompt += `\n`;
+    prompt += `Total Enquiries: ${salesTeamData.totalEnquiries}, Total Orders: ${salesTeamData.totalOrders}\n`;
+    if (salesTeamData.employees && salesTeamData.employees.length > 0) {
+      prompt += `By person:\n`;
+      salesTeamData.employees.forEach(e => {
+        prompt += `  ${e.name}: £${fmt(e.newSales)} from ${e.orders} orders (${e.enquiries} enquiries, ${(e.convRate * 100).toFixed(0)}% conversion)\n`;
+      });
+    }
+    prompt += `\n`;
+  }
+
   if (prevMonths.length > 0) {
-    prompt += `## RECENT HISTORY (last ${prevMonths.length} months):\n`;
+    prompt += `## RECENT INVOICING HISTORY (last ${prevMonths.length} months):\n`;
     prompt += `Month | TSG | WLL | NV | Overall\n`;
     prevMonths.forEach(m => {
-      prompt += `${m.monthYear} | £${fmt(m.tsg)} | £${fmt(m.wll)} | £${fmt(m.nv)} | £${fmt(m.overall)}\n`;
+      prompt += `${m.monthYear} | £${fmt(m.tsg)} | £${fmt(m.wll)} | £${fmt(m.nv)} | £${fmt(calcOverall(m))}\n`;
     });
     prompt += `\n`;
 
-    // Calculate some context
     const last3 = prevMonths.slice(-3);
     const avgTSG = last3.reduce((s, m) => s + m.tsg, 0) / last3.length;
     const avgWLL = last3.reduce((s, m) => s + m.wll, 0) / last3.length;
     const avgNV = last3.reduce((s, m) => s + m.nv, 0) / last3.length;
-    prompt += `3-month averages: TSG £${fmt(avgTSG)}, WLL £${fmt(avgWLL)}, NV £${fmt(avgNV)}\n`;
+    prompt += `3-month invoicing averages: TSG £${fmt(avgTSG)}, WLL £${fmt(avgWLL)}, NV £${fmt(avgNV)}\n`;
 
     // Same month last year comparison
     if (current) {
-      const [monthName] = currentMonth.split('-');
-      // Find same month name in previous year
-      const sameMonthLastYear = data.find(d => {
+      const monthPart = currentMonth.split('-')[0];
+      const sameMonthLastYear = [...data].reverse().find(d => {
         const parts = d.monthYear.split('-');
-        return parts[0] === monthName && d.monthYear !== currentMonth;
+        return parts[0] === monthPart && d.monthYear !== currentMonth;
       });
       if (sameMonthLastYear) {
-        prompt += `\nSame month last year (${sameMonthLastYear.monthYear}): TSG £${fmt(sameMonthLastYear.tsg)}, WLL £${fmt(sameMonthLastYear.wll)}, NV £${fmt(sameMonthLastYear.nv)}, Overall £${fmt(sameMonthLastYear.overall)}\n`;
+        prompt += `\nSame month last year (${sameMonthLastYear.monthYear}): TSG £${fmt(sameMonthLastYear.tsg)}, WLL £${fmt(sameMonthLastYear.wll)}, NV £${fmt(sameMonthLastYear.nv)}, Overall £${fmt(calcOverall(sameMonthLastYear))}\n`;
       }
     }
-
-    // Financial year running total (Dec-Nov)
-    const now = new Date();
-    const fyStart = now.getMonth() >= 11 ? `Dec-${now.getFullYear().toString().slice(-2)}` : `Dec-${(now.getFullYear() - 1).toString().slice(-2)}`;
-    const fyMonths = data.filter(d => {
-      // Simple approach: include all months from Dec of FY start year
-      return true; // Will be filtered by the frontend before sending
-    });
-
-    prompt += `\n## ADDITIONAL CONTEXT:\n`;
-    if (current && current.enquiries) prompt += `TSG Enquiries this month: ${current.enquiries}\n`;
-    if (current && current.convRate) prompt += `TSG Conversion Rate: ${current.convRate}%\n`;
-    if (current && current.newOrders) prompt += `TSG New Orders: £${fmt(current.newOrders)}\n`;
   }
 
-  prompt += `\nWrite the commentary now. Remember: TSG is NOT pace-sensitive (production-based invoicing), WLL and NV ARE pace-sensitive.`;
+  prompt += `\nWrite the commentary now. Remember:
+- TSG invoicing is NOT pace-sensitive (production-based). WLL and NV ARE pace-sensitive.
+- Keep INVOICED sales and NEW SALES ORDERED clearly separated in the commentary. They are different things.
+- New Sales Ordered is the pipeline being filled. Invoiced Sales is revenue being realised.`;
 
   return prompt;
 }
