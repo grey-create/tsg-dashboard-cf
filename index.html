@@ -308,6 +308,7 @@
 </style>
 </head>
 <body>
+<script src="/nav.js"></script>
 
 <header>
   <div class="header-left">
@@ -532,6 +533,10 @@
         <div class="section-header" style="cursor:default;">
           <h2>Generate Report</h2>
         </div>
+        <div style="margin-bottom:16px;">
+          <label style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.6px; color:var(--gray1); display:block; margin-bottom:6px;">Additional Context (optional)</label>
+          <textarea id="reportContext" rows="3" style="width:100%; padding:10px 12px; border:1px solid var(--gray4); border-radius:6px; font-size:13px; font-family:'Inter',sans-serif; resize:vertical; color:var(--dark);" placeholder="Add any notes to steer the commentary, e.g. 'Big order landed mid-month', 'WLL had a quiet week due to website issues', 'Focus on NV growth this month'..."></textarea>
+        </div>
         <div class="report-actions">
           <button class="btn btn-primary" id="btnGenerate" onclick="generateCommentary()">Generate Commentary</button>
           <button class="btn btn-secondary" id="btnCopy" onclick="copyCommentary()" style="display:none;">Copy to Clipboard</button>
@@ -635,6 +640,7 @@ async function loadData() {
     ['dateTo','teamDateTo'].forEach(id => document.getElementById(id).value = last);
     const ft = new Date(json.lastFetched);
     document.getElementById('lastUpdated').textContent = 'Live from Airtable \u2022 ' + ft.toLocaleString('en-GB',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+    if (window.setNavTimestamp) window.setNavTimestamp(ft);
     document.getElementById('loadingOverlay').style.display = 'none';
     document.getElementById('mainContent').style.display = 'block';
     updateTeam();
@@ -1099,6 +1105,9 @@ async function loadBrandData() {
 function updateBrandPage() {
   if (BRAND_DATA.length === 0) return;
 
+  // Helper: calculate overall from brands if the Airtable overall field is 0
+  function calcOverall(d) { return d.overall > 0 ? d.overall : (d.tsg + d.wll + d.nv + (d.other || 0)); }
+
   const now = new Date();
   const curYM = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
   const current = BRAND_DATA.find(d => d.date && d.date.startsWith(curYM));
@@ -1110,16 +1119,17 @@ function updateBrandPage() {
   document.getElementById('brandPartialNote').style.display = isPartial ? 'block' : 'none';
 
   // KPI cards
+  const latestOverall = calcOverall(latest);
   const brands = [
-    { key: 'tsg', label: 'TSG', cls: 'brand-tsg', target: latest.tsgTarget, color: '#111' },
-    { key: 'wll', label: 'WLL', cls: 'brand-wll', target: latest.wllTarget, color: '#2563eb' },
-    { key: 'nv', label: 'NV', cls: 'brand-nv', target: latest.nvTarget, color: '#7c3aed' },
-    { key: 'overall', label: 'OVERALL', cls: 'brand-overall', target: latest.overallTarget, color: '#22c55e' }
+    { key: 'tsg', label: 'TSG', cls: 'brand-tsg', target: latest.tsgTarget, color: '#111', val: latest.tsg },
+    { key: 'wll', label: 'WLL', cls: 'brand-wll', target: latest.wllTarget, color: '#2563eb', val: latest.wll },
+    { key: 'nv', label: 'NV', cls: 'brand-nv', target: latest.nvTarget, color: '#7c3aed', val: latest.nv },
+    { key: 'overall', label: 'OVERALL', cls: 'brand-overall', target: latest.overallTarget, color: '#22c55e', val: latestOverall }
   ];
 
   let kpiHtml = '';
   brands.forEach(b => {
-    const val = latest[b.key] || 0;
+    const val = b.val || 0;
     const target = b.target || 0;
     const diff = val - target;
     let targetHtml = '';
@@ -1130,7 +1140,7 @@ function updateBrandPage() {
     }
     let vsLastMonth = '';
     if (prev) {
-      const prevVal = prev[b.key] || 0;
+      const prevVal = b.key === 'overall' ? calcOverall(prev) : (prev[b.key] || 0);
       if (prevVal > 0) {
         const pct = ((val - prevVal) / prevVal * 100);
         const cls2 = pct >= 0 ? 'above' : 'below';
@@ -1208,16 +1218,20 @@ function updateBrandHistory() {
   let html = '<table class="ranking-table"><thead><tr><th>Month</th><th>TSG</th><th>WLL</th><th>NV</th><th>Overall</th><th>Target</th><th>+/-</th></tr></thead><tbody>';
   // Show newest first
   [...data].reverse().forEach(d => {
-    const diff = d.overallTarget > 0 ? d.overall - d.overallTarget : 0;
+    // Calculate overall from brands if the Airtable overall field is 0 but brands have data
+    const calcOverall = d.overall > 0 ? d.overall : (d.tsg + d.wll + d.nv + (d.other || 0));
+    const hasData = calcOverall > 0;
+    const hasTarget = d.overallTarget > 0;
+    const diff = hasTarget && hasData ? calcOverall - d.overallTarget : 0;
     const diffCls = diff >= 0 ? 'color:#15803d' : 'color:#b91c1c';
     html += `<tr>
       <td style="font-weight:600">${d.monthYear}</td>
       <td>${fmt(d.tsg)}</td>
       <td>${fmt(d.wll)}</td>
       <td>${fmt(d.nv)}</td>
-      <td style="font-weight:700">${fmt(d.overall)}</td>
-      <td>${d.overallTarget > 0 ? fmt(d.overallTarget) : '\u2014'}</td>
-      <td style="${d.overallTarget > 0 ? diffCls : ''};font-weight:600">${d.overallTarget > 0 ? (diff >= 0 ? '+' : '') + fmt(diff) : '\u2014'}</td>
+      <td style="font-weight:700">${hasData ? fmt(calcOverall) : '\u2014'}</td>
+      <td>${hasTarget ? fmt(d.overallTarget) : '\u2014'}</td>
+      <td style="${hasTarget && hasData ? diffCls : ''};font-weight:600">${hasTarget && hasData ? (diff >= 0 ? '+' : '') + fmt(diff) : '\u2014'}</td>
     </tr>`;
   });
   html += '</tbody></table>';
@@ -1225,6 +1239,43 @@ function updateBrandHistory() {
 }
 
 // ==================== COMMENTARY GENERATION ====================
+function getSalesTeamSummary() {
+  // Pull current month new sales data from the individual employee data (DATA)
+  const now = new Date();
+  const curYM = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+  const prevDate = new Date(now.getFullYear(), now.getMonth()-1, 1);
+  const prevYM = prevDate.getFullYear()+'-'+String(prevDate.getMonth()+1).padStart(2,'0');
+
+  const summary = { currentMonth: curYM, employees: [] };
+  let totalNewSales = 0, totalEnq = 0, totalOrders = 0;
+  let prevTotalNewSales = 0;
+
+  EMPLOYEES.forEach(emp => {
+    const curr = (DATA[emp]||[]).find(d => d.date === curYM);
+    const prev = (DATA[emp]||[]).find(d => d.date === prevYM);
+    if (curr) {
+      totalNewSales += curr.valueOrd;
+      totalEnq += curr.enq;
+      totalOrders += curr.orders;
+      summary.employees.push({
+        name: emp,
+        newSales: curr.valueOrd,
+        enquiries: curr.enq,
+        orders: curr.orders,
+        convRate: curr.convRate,
+        aov: curr.aov
+      });
+    }
+    if (prev) prevTotalNewSales += prev.valueOrd;
+  });
+
+  summary.totalNewSales = totalNewSales;
+  summary.totalEnquiries = totalEnq;
+  summary.totalOrders = totalOrders;
+  summary.prevMonthNewSales = prevTotalNewSales;
+  return summary;
+}
+
 async function generateCommentary() {
   if (BRAND_DATA.length === 0) return;
 
@@ -1244,13 +1295,16 @@ async function generateCommentary() {
   const isPartial = !!current;
 
   try {
+    const userContext = document.getElementById('reportContext').value.trim();
     const res = await fetch('/commentary', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         data: BRAND_DATA.slice(-24),
         currentMonth: latest.monthYear,
-        isPartialMonth: isPartial
+        isPartialMonth: isPartial,
+        userContext: userContext || null,
+        salesTeamData: getSalesTeamSummary()
       })
     });
 
