@@ -122,7 +122,12 @@ export async function onRequest(context) {
       };
     });
 
-    return new Response(JSON.stringify({ overview, invoiced, conversions, debugFields, lastFetched: new Date().toISOString() }), {
+   // Find the most recent modification time from invoiced records
+    var lastMod = null;
+    invoicedRaw.forEach(function(r){ var t = r.fields["Last Modified"]; if(t && (!lastMod || t > lastMod)) lastMod = t; });
+    var lastFetched = lastMod || new Date().toISOString();
+
+    return new Response(JSON.stringify({ overview, invoiced, conversions, debugFields, lastFetched: lastFetched }), {
       status: 200,
       headers: { "Content-Type": "application/json", "Cache-Control": "public, max-age=300", "Access-Control-Allow-Origin": "*" },
     });
