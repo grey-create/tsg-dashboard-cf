@@ -90,16 +90,16 @@ export async function onRequest(context) {
       return {
         dateEntered: f["Date Entered"] || "", monthYear: gf(f, "Month/Year") || "",
         month: gf(f, "Month") || "",
-        overall: gf(f, "Overall Sales + VAT copy", "Overall Sales + VAT", "Overall Sales") || 0,
-        tsg: gf(f, "TSG Sales + VAT", "TSG Sales") || 0,
-        wll: gf(f, "WLL Sales + VAT", "WLL Sales") || 0,
-        nv: gf(f, "NV Sales + VAT", "NV Sales") || 0,
-        other: gf(f, "Other Sales + VAT", "Other Sales") || 0,
-        overallTarget: gf(f, "Overall Invoice Target + VAT", "Overall Invoice Target") || 0,
-        tsgTarget: gf(f, "TSG Invoice Target + VAT", "TSG Invoice Target") || 0,
-        wllTarget: gf(f, "WLL Invoice Target + VAT", "WLL Invoice Target") || 0,
-        nvTarget: gf(f, "NV Invoice Target + VAT", "NV Invoice Target") || 0,
-        tsgNewSalesTarget: gf(f, "TSG NEW Sales Target + VAT", "TSG NEW Sales Target", "New Sales Target") || 0,
+      overall: Number(gf(f, "Overall Sales + VAT copy", "Overall Sales + VAT", "Overall Sales")) || 0,
+        tsg: Number(gf(f, "TSG Sales + VAT", "TSG Sales")) || 0,
+        wll: Number(gf(f, "WLL Sales + VAT", "WLL Sales")) || 0,
+        nv: Number(gf(f, "NV Sales + VAT", "NV Sales")) || 0,
+        other: Number(gf(f, "Other Sales + VAT", "Other Sales")) || 0,
+        overallTarget: Number(gf(f, "Overall Invoice Target + VAT", "Overall Invoice Target")) || 0,
+        tsgTarget: Number(gf(f, "TSG Invoice Target + VAT", "TSG Invoice Target")) || 0,
+        wllTarget: Number(gf(f, "WLL Invoice Target + VAT", "WLL Invoice Target")) || 0,
+        nvTarget: Number(gf(f, "NV Invoice Target + VAT", "NV Invoice Target")) || 0,
+        tsgNewSalesTarget: Number(gf(f, "TSG NEW Sales Target + VAT", "TSG NEW Sales Target", "New Sales Target")) || 0,
       };
     });
 
