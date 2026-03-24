@@ -250,9 +250,9 @@
   .brand-kpi .brand-target.below { color: var(--red); }
   .brand-kpi .brand-target.neutral { color: var(--gray2); }
 
-  .brand-tsg { border-top: 4px solid #111; }
+  .brand-tsg { border-top: 4px solid #22c55e; }
   .brand-wll { border-top: 4px solid #2563eb; }
-  .brand-nv { border-top: 4px solid #7c3aed; }
+  .brand-nv { border-top: 4px solid #ef4444; }
   .brand-overall { border-top: 4px solid #22c55e; }
 
   /* Report Generator */
@@ -318,11 +318,11 @@
       <div class="subtitle">Individual Conversions &bull; <span id="lastUpdated">Loading...</span></div>
     </div>
   </div>
-  <div class="nav-tabs">
-    <button class="nav-tab active" onclick="showPage('team', this)">Team Comparison</button>
-    <button class="nav-tab" onclick="showPage('individual', this)">Individual Review</button>
-    <button class="nav-tab" onclick="showPage('rankings', this)">Rankings</button>
-    <button class="nav-tab" onclick="showPage('brand', this)">Brand Sales</button>
+  <div class="nav-tabs" id="pageTabs">
+    <button class="nav-tab" data-page="team" data-route="sales" onclick="showPage('team', this)">Team Comparison</button>
+    <button class="nav-tab" data-page="individual" data-route="sales" onclick="showPage('individual', this)">Individual Review</button>
+    <button class="nav-tab" data-page="rankings" data-route="sales" onclick="showPage('rankings', this)">Rankings</button>
+    <button class="nav-tab" data-page="brand" data-route="index" onclick="showPage('brand', this)">Brand Sales</button>
   </div>
 </header>
 
@@ -643,7 +643,13 @@ async function loadData() {
     if (window.setNavTimestamp) window.setNavTimestamp(ft);
     document.getElementById('loadingOverlay').style.display = 'none';
     document.getElementById('mainContent').style.display = 'block';
-    updateTeam();
+    // Route-aware: load the right section
+    const isSales = window.location.pathname.indexOf('/sales') === 0;
+    if (isSales) {
+      updateTeam();
+    } else {
+      loadBrandData();
+    }
   } catch (err) {
     document.getElementById('loadingOverlay').style.display = 'none';
     document.getElementById('errorContainer').innerHTML = `<div class="error-msg"><strong>Failed to load data:</strong> ${err.message}<br><br>Check that AIRTABLE_TOKEN is set in Cloudflare Pages environment variables.</div>`;
@@ -1121,9 +1127,9 @@ function updateBrandPage() {
   // KPI cards
   const latestOverall = calcOverall(latest);
   const brands = [
-    { key: 'tsg', label: 'TSG', cls: 'brand-tsg', target: latest.tsgTarget, color: '#111', val: latest.tsg },
+    { key: 'tsg', label: 'TSG', cls: 'brand-tsg', target: latest.tsgTarget, color: '#22c55e', val: latest.tsg },
     { key: 'wll', label: 'WLL', cls: 'brand-wll', target: latest.wllTarget, color: '#2563eb', val: latest.wll },
-    { key: 'nv', label: 'NV', cls: 'brand-nv', target: latest.nvTarget, color: '#7c3aed', val: latest.nv },
+    { key: 'nv', label: 'NV', cls: 'brand-nv', target: latest.nvTarget, color: '#ef4444', val: latest.nv },
     { key: 'overall', label: 'OVERALL', cls: 'brand-overall', target: latest.overallTarget, color: '#22c55e', val: latestOverall }
   ];
 
@@ -1159,9 +1165,9 @@ function updateBrandPage() {
   const recentData = BRAND_DATA.slice(-12);
   const chartLabels = recentData.map(d => d.monthYear || '');
   createLineChart('brandRevenueChart', chartLabels, [
-    { label: 'TSG', data: recentData.map(d=>d.tsg), borderColor: '#111', backgroundColor: 'rgba(0,0,0,0.05)', fill: true, tension: 0.3, borderWidth: 2.5, pointRadius: 3 },
+    { label: 'TSG', data: recentData.map(d=>d.tsg), borderColor: '#22c55e', backgroundColor: 'rgba(34,197,94,0.05)', fill: true, tension: 0.3, borderWidth: 2.5, pointRadius: 3 },
     { label: 'WLL', data: recentData.map(d=>d.wll), borderColor: '#2563eb', backgroundColor: 'rgba(37,99,235,0.05)', fill: true, tension: 0.3, borderWidth: 2, pointRadius: 3 },
-    { label: 'NV', data: recentData.map(d=>d.nv), borderColor: '#7c3aed', backgroundColor: 'rgba(124,58,237,0.05)', fill: true, tension: 0.3, borderWidth: 2, pointRadius: 3 }
+    { label: 'NV', data: recentData.map(d=>d.nv), borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,0.05)', fill: true, tension: 0.3, borderWidth: 2, pointRadius: 3 }
   ], 'currency');
 
   // Pie chart for current month split
@@ -1172,7 +1178,7 @@ function updateBrandPage() {
       labels: ['TSG', 'WLL', 'NV', 'Other'],
       datasets: [{
         data: [latest.tsg, latest.wll, latest.nv, latest.other || 0],
-        backgroundColor: ['#111', '#2563eb', '#7c3aed', '#999'],
+        backgroundColor: ['#22c55e', '#2563eb', '#ef4444', '#999'],
         borderWidth: 2, borderColor: '#fff'
       }]
     },
@@ -1193,8 +1199,8 @@ function updateBrandPage() {
       data: {
         labels: ['TSG', 'WLL', 'NV'],
         datasets: [
-          { label: 'Actual', data: [latest.tsg, latest.wll, latest.nv], backgroundColor: ['#111', '#2563eb', '#7c3aed'], borderRadius: 6 },
-          { label: 'Target', data: [latest.tsgTarget, latest.wllTarget, latest.nvTarget], backgroundColor: ['rgba(0,0,0,0.15)', 'rgba(37,99,235,0.15)', 'rgba(124,58,237,0.15)'], borderRadius: 6 }
+          { label: 'Actual', data: [latest.tsg, latest.wll, latest.nv], backgroundColor: ['#22c55e', '#2563eb', '#ef4444'], borderRadius: 6 },
+          { label: 'Target', data: [latest.tsgTarget, latest.wllTarget, latest.nvTarget], backgroundColor: ['rgba(34,197,94,0.15)', 'rgba(37,99,235,0.15)', 'rgba(239,68,68,0.15)'], borderRadius: 6 }
         ]
       },
       options: {
@@ -1390,6 +1396,34 @@ async function sendReport() {
     btn.textContent = 'Send Email';
   }
 }
+
+// ==================== ROUTE-AWARE INIT ====================
+(function initRouting() {
+  const path = window.location.pathname;
+  const isSalesPage = path.indexOf('/sales') === 0;
+  const route = isSalesPage ? 'sales' : 'index';
+
+  // Show/hide tabs based on route
+  document.querySelectorAll('#pageTabs .nav-tab').forEach(btn => {
+    if (btn.dataset.route === route) {
+      btn.style.display = '';
+    } else {
+      btn.style.display = 'none';
+    }
+  });
+
+  // Set default active tab
+  const defaultPage = isSalesPage ? 'team' : 'brand';
+  const defaultBtn = document.querySelector(`#pageTabs .nav-tab[data-page="${defaultPage}"]`);
+  if (defaultBtn) {
+    defaultBtn.classList.add('active');
+    document.getElementById('page-' + defaultPage).classList.add('active');
+  }
+
+  // Remove the hardcoded active from all pages first
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + defaultPage).classList.add('active');
+})();
 
 loadData();
 </script>
