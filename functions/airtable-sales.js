@@ -52,7 +52,7 @@ export async function onRequestGet(context) {
           month: f['Month'] || '',
           monthYear: f['Month/Year'] || '',
           overall: Number(f['Overall Sales + VAT']) || 0,
-          tsg: Number(f['TSG Sales + VAT']) || 0,
+          tsg: Number(f['TSG Sales + VAT']) || 0,           tsgInvoiced: Number(f['TSG Invoiced + VAT']) || 0,           tsgWip: Number(f['TSG WIP + VAT']) || 0,           tsgUndated: Number(f['TSG Undated WIP + VAT']) || 0,           tsgNextMonth: Number(f['TSG NM WIP + VAT']) || 0,
           wll: Number(f['WLL Sales + VAT']) || 0,
           nv: Number(f['NV Sales + VAT']) || 0,
           other: Number(f['Other Sales + VAT']) || 0,
