@@ -1,194 +1,1397 @@
-// Cloudflare Pages Function: /commentary
-// Accepts POST with brand sales data, sends to Claude API, returns commentary
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TSG Sales Performance Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --black: #000000;
+    --dark: #111111;
+    --dark2: #1a1a1a;
+    --dark3: #2a2a2a;
+    --gray1: #555555;
+    --gray2: #888888;
+    --gray3: #bbbbbb;
+    --gray4: #e0e0e0;
+    --gray5: #f2f2f2;
+    --white: #ffffff;
+    --green: #22c55e;
+    --red: #ef4444;
+    --blue: #2563eb;
+    --orange: #f97316;
+    --purple: #7c3aed;
+    --teal: #0d9488;
+  }
 
-export async function onRequestPost(context) {
-  const { env } = context;
-  const ANTHROPIC_API_KEY = env.ANTHROPIC_API_KEY;
+  * { margin: 0; padding: 0; box-sizing: border-box; }
 
-  if (!ANTHROPIC_API_KEY) {
-    return new Response(JSON.stringify({ error: 'ANTHROPIC_API_KEY not configured' }), {
-      status: 500, headers: { 'Content-Type': 'application/json' }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--gray5);
+    color: var(--dark);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  header {
+    background: var(--black);
+    color: var(--white);
+    padding: 20px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .header-logo {
+    width: 36px;
+    height: 36px;
+    opacity: 0.85;
+  }
+
+  header h1 { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; }
+  header .subtitle { font-size: 12px; color: var(--gray2); margin-top: 2px; font-weight: 400; }
+  #lastUpdated { font-size: 11px; color: var(--gray2); }
+
+  .nav-tabs { display: flex; gap: 2px; background: var(--dark2); border-radius: 8px; padding: 3px; }
+  .nav-tab {
+    padding: 8px 20px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500;
+    color: var(--gray2); transition: all 0.2s; border: none; background: none; font-family: 'Inter', sans-serif;
+  }
+  .nav-tab:hover { color: var(--white); }
+  .nav-tab.active { color: var(--black); background: var(--white); }
+
+  .container { max-width: 1400px; margin: 0 auto; padding: 24px; }
+
+  .controls { display: flex; gap: 12px; align-items: center; margin-bottom: 24px; flex-wrap: wrap; }
+  .control-group { display: flex; align-items: center; gap: 8px; }
+  .control-group label { font-size: 11px; font-weight: 700; color: var(--gray1); text-transform: uppercase; letter-spacing: 0.8px; }
+
+  select, input[type="date"], input[type="month"] {
+    padding: 8px 12px; border: 1px solid var(--gray4); border-radius: 6px; font-size: 13px;
+    font-family: 'Inter', sans-serif; background: var(--white); color: var(--dark); font-weight: 500;
+  }
+  select:focus, input:focus { outline: none; border-color: var(--black); }
+
+  .date-range { display: none; align-items: center; gap: 8px; }
+  .date-range.visible { display: flex; }
+  .date-range span { font-size: 12px; color: var(--gray1); font-weight: 500; }
+
+  .page { display: none; }
+  .page.active { display: block; }
+
+  .loading-overlay { display: flex; align-items: center; justify-content: center; min-height: 400px; font-size: 14px; color: var(--gray1); }
+  .loading-spinner { width: 24px; height: 24px; border: 3px solid var(--gray4); border-top-color: var(--black); border-radius: 50%; animation: spin 0.8s linear infinite; margin-right: 12px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ===== SECTION HEADERS ===== */
+  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; cursor: pointer; user-select: none; }
+  .section-header h2 { font-size: 15px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: var(--dark); }
+  .section-header .section-badge { font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 12px; background: var(--dark); color: var(--white); }
+  .section-header .toggle-icon { font-size: 18px; color: var(--gray2); transition: transform 0.2s; }
+  .section-header .toggle-icon.collapsed { transform: rotate(-90deg); }
+
+  .section-content { transition: all 0.3s; overflow: hidden; }
+  .section-content.collapsed { display: none; }
+  .section-divider { border: none; border-top: 2px solid var(--gray4); margin: 28px 0 20px 0; }
+
+  /* ===== INDIVIDUAL SECTION BLOCKS ===== */
+  .individual-section-block { background: var(--white); border: 1px solid var(--gray4); border-radius: 12px; padding: 24px; margin-bottom: 24px; }
+  .individual-section-block .section-header { margin-bottom: 20px; }
+
+  /* ===== METRIC GROUP HEADERS (Individual page) ===== */
+  .metric-group-label {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: var(--gray2);
+    margin-bottom: 10px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--gray4);
+  }
+
+  .metric-group { margin-bottom: 18px; }
+
+  /* ===== MTD CARDS (Individual) ===== */
+  .mtd-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 20px; }
+
+  .mtd-card {
+    background: var(--white); border-radius: 10px; padding: 16px 18px;
+    border: 1px solid var(--gray4); text-align: center;
+  }
+  .mtd-card .mtd-label {
+    font-size: 12px; color: var(--dark); text-transform: uppercase; letter-spacing: 0.4px;
+    font-weight: 700; margin-bottom: 6px;
+  }
+  .mtd-card .mtd-value { font-size: 24px; font-weight: 800; letter-spacing: -0.3px; }
+  .mtd-card .mtd-compare { font-size: 11px; margin-top: 4px; font-weight: 500; }
+  .mtd-card .mtd-compare.up { color: var(--green); }
+  .mtd-card .mtd-compare.down { color: var(--red); }
+  .mtd-card .mtd-compare.neutral { color: var(--gray2); }
+
+  /* Key metric emphasis */
+  .mtd-card.key-metric { border-width: 2px; }
+  .mtd-card.key-metric .mtd-label { font-size: 13px; font-weight: 800; color: var(--black); }
+  .mtd-card.key-metric .mtd-value { font-size: 28px; }
+
+  /* ===== KPI CARDS ===== */
+  .kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; margin-bottom: 24px; }
+  .kpi-card { background: var(--white); border-radius: 10px; padding: 18px 20px; border: 1px solid var(--gray4); }
+  .kpi-card .label { font-size: 11px; color: var(--gray1); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+  .kpi-card .value { font-size: 26px; font-weight: 800; margin-top: 4px; letter-spacing: -0.5px; }
+  .kpi-card .trend { font-size: 11px; margin-top: 4px; font-weight: 500; }
+  .kpi-card .trend.up { color: var(--green); }
+  .kpi-card .trend.down { color: var(--red); }
+  .kpi-card .trend.neutral { color: var(--gray2); }
+
+  /* ===== TEAM SUMMARY TABLE ===== */
+  .team-summary-wrap { margin-bottom: 28px; }
+
+  .team-summary-table {
+    width: 100%; border-collapse: collapse; font-size: 13px;
+    background: var(--white); border-radius: 10px; overflow: hidden; border: 1px solid var(--gray4);
+  }
+  .team-summary-table th {
+    text-align: left; padding: 12px 16px; font-size: 11px; text-transform: uppercase;
+    letter-spacing: 0.6px; color: var(--gray1); border-bottom: 2px solid var(--dark);
+    font-weight: 700; background: var(--gray5);
+  }
+  .team-summary-table th:first-child { width: 160px; }
+  .team-summary-table td { padding: 11px 16px; border-bottom: 1px solid var(--gray4); font-weight: 600; text-align: left; }
+  .team-summary-table tr:last-child td { border-bottom: none; }
+  .team-summary-table tr:hover { background: var(--gray5); }
+  .team-summary-table .metric-label { font-weight: 700; color: var(--dark); font-size: 12px; text-transform: uppercase; letter-spacing: 0.3px; }
+
+  .cell-below-target { background: rgba(239,68,68,0.10); color: #b91c1c; font-weight: 700; }
+  .cell-above-target { background: rgba(34,197,94,0.10); color: #15803d; font-weight: 700; }
+  .cell-best { background: rgba(234,179,8,0.15); color: #92400e; font-weight: 800; position: relative; }
+  .cell-best::after { content: '\2605'; margin-left: 4px; font-size: 10px; color: #ca8a04; }
+
+  /* ===== INSIGHTS ROW ===== */
+  .insights-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; margin-bottom: 24px; }
+  .insight-card { background: var(--white); border-radius: 10px; padding: 18px 20px; border: 1px solid var(--gray4); }
+  .insight-card h4 { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; color: var(--dark); margin-bottom: 12px; }
+  .insight-item { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; font-size: 13px; border-bottom: 1px solid var(--gray5); }
+  .insight-item:last-child { border-bottom: none; }
+  .insight-item .insight-label { color: var(--gray1); font-weight: 500; }
+  .insight-item .insight-value { font-weight: 700; }
+
+  /* ===== CHARTS ===== */
+  .chart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 24px; }
+  .chart-card { background: var(--white); border-radius: 10px; padding: 20px; border: 1px solid var(--gray4); }
+  .chart-card.full-width { grid-column: 1 / -1; }
+  .chart-card h3 { font-size: 13px; font-weight: 700; margin-bottom: 14px; color: var(--dark); text-transform: uppercase; letter-spacing: 0.3px; }
+  canvas { width: 100% !important; }
+
+  /* ===== TABLES ===== */
+  .ranking-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .ranking-table th { text-align: left; padding: 10px 14px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.6px; color: var(--gray1); border-bottom: 2px solid var(--dark); font-weight: 700; }
+  .ranking-table td { padding: 12px 14px; border-bottom: 1px solid var(--gray4); font-weight: 500; }
+  .ranking-table tr:hover { background: var(--gray5); }
+
+  .rank-badge { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; font-weight: 800; font-size: 11px; }
+  .rank-1 { background: var(--black); color: var(--white); }
+  .rank-2 { background: var(--dark3); color: var(--white); }
+  .rank-3 { background: var(--gray2); color: var(--white); }
+  .rank-4 { background: var(--gray4); color: var(--dark); }
+
+  .bar-cell { display: flex; align-items: center; gap: 8px; }
+  .bar-bg { flex: 1; height: 8px; background: var(--gray4); border-radius: 4px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 4px; transition: width 0.5s; }
+  .bar-value { font-size: 13px; font-weight: 700; min-width: 75px; text-align: right; }
+
+  .employee-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; }
+  .data-note { font-size: 12px; color: var(--gray1); font-style: italic; margin-bottom: 14px; }
+  .error-msg { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; padding: 16px; border-radius: 8px; font-size: 13px; margin-bottom: 16px; }
+
+  @media (max-width: 768px) {
+    .chart-grid { grid-template-columns: 1fr; }
+    .insights-row { grid-template-columns: 1fr; }
+    header { flex-direction: column; gap: 12px; align-items: flex-start; }
+    .nav-tabs { flex-wrap: wrap; }
+    .team-summary-table { font-size: 12px; }
+    .team-summary-table th, .team-summary-table td { padding: 8px 10px; }
+  }
+
+  /* ===== BRAND SALES PAGE ===== */
+  .brand-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .brand-kpi {
+    background: var(--white);
+    border-radius: 10px;
+    padding: 20px;
+    border: 1px solid var(--gray4);
+    text-align: center;
+  }
+  .brand-kpi .brand-name {
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.8px; margin-bottom: 8px;
+  }
+  .brand-kpi .brand-amount {
+    font-size: 28px; font-weight: 800; letter-spacing: -0.5px;
+  }
+  .brand-kpi .brand-target {
+    font-size: 12px; margin-top: 6px; font-weight: 600;
+  }
+  .brand-kpi .brand-target.above { color: var(--green); }
+  .brand-kpi .brand-target.below { color: var(--red); }
+  .brand-kpi .brand-target.neutral { color: var(--gray2); }
+
+  .brand-tsg { border-top: 4px solid #111; }
+  .brand-wll { border-top: 4px solid #2563eb; }
+  .brand-nv { border-top: 4px solid #7c3aed; }
+  .brand-overall { border-top: 4px solid #22c55e; }
+
+  /* Report Generator */
+  .report-section {
+    background: var(--white);
+    border: 1px solid var(--gray4);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 24px;
+  }
+  .report-actions {
+    display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 16px;
+  }
+  .btn {
+    padding: 10px 20px; border-radius: 8px; font-size: 13px; font-weight: 600;
+    font-family: 'Inter', sans-serif; cursor: pointer; border: none; transition: all 0.2s;
+  }
+  .btn-primary { background: var(--black); color: var(--white); }
+  .btn-primary:hover { background: var(--dark3); }
+  .btn-primary:disabled { background: var(--gray2); cursor: not-allowed; }
+  .btn-secondary { background: var(--white); color: var(--dark); border: 1px solid var(--gray4); }
+  .btn-secondary:hover { border-color: var(--dark); }
+  .btn-send { background: #2563eb; color: var(--white); }
+  .btn-send:hover { background: #1d4ed8; }
+
+  .report-output {
+    background: var(--gray5); border-radius: 8px; padding: 20px;
+    font-size: 14px; line-height: 1.7; color: var(--dark);
+    white-space: pre-wrap; min-height: 60px;
+  }
+  .report-output.empty { color: var(--gray2); font-style: italic; font-size: 13px; min-height: auto; }
+
+  .email-panel {
+    margin-top: 16px; padding: 16px; background: var(--gray5);
+    border-radius: 8px; display: none;
+  }
+  .email-panel.visible { display: block; }
+  .email-panel label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--gray1); display: block; margin-bottom: 6px; }
+  .email-panel input[type="text"] {
+    width: 100%; padding: 10px 12px; border: 1px solid var(--gray4); border-radius: 6px;
+    font-size: 13px; font-family: 'Inter', sans-serif; margin-bottom: 12px;
+  }
+  .email-status { font-size: 12px; margin-top: 8px; font-weight: 500; }
+  .email-status.success { color: var(--green); }
+  .email-status.error { color: var(--red); }
+
+  .report-loading { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--gray1); }
+  .report-loading .loading-spinner { width: 16px; height: 16px; margin-right: 0; }
+
+  @media (max-width: 768px) {
+    .brand-kpi-grid { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+<script src="/nav.js"></script>
+
+<header>
+  <div class="header-left">
+    <img src="https://cdn.shopify.com/s/files/1/1070/8974/files/TSG-Logo-Roundel-Black.png?v=1772037610" alt="TSG" class="header-logo" style="filter: invert(1) brightness(2);">
+    <div>
+      <h1>TSG Sales Performance</h1>
+      <div class="subtitle">Individual Conversions &bull; <span id="lastUpdated">Loading...</span></div>
+    </div>
+  </div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="showPage('team', this)">Team Comparison</button>
+    <button class="nav-tab" onclick="showPage('individual', this)">Individual Review</button>
+    <button class="nav-tab" onclick="showPage('rankings', this)">Rankings</button>
+    <button class="nav-tab" onclick="showPage('brand', this)">Brand Sales</button>
+  </div>
+</header>
+
+<div class="container">
+  <div id="loadingOverlay" class="loading-overlay">
+    <div class="loading-spinner"></div>
+    Fetching data from Airtable...
+  </div>
+  <div id="errorContainer"></div>
+
+  <div id="mainContent" style="display:none;">
+
+    <!-- ==================== TEAM COMPARISON ==================== -->
+    <div id="page-team" class="page active">
+
+      <div class="team-summary-wrap">
+        <div class="section-header" style="cursor:default;">
+          <h2>Team Overview <span class="section-badge" id="teamSummaryPeriodLabel">Month to Date</span></h2>
+        </div>
+        <div id="teamSummaryTable"></div>
+      </div>
+
+      <hr class="section-divider">
+
+      <!-- TEAM COMPARISON CHARTS (all key metrics) -->
+      <div class="section-header" onclick="toggleSection('teamChartsSection', this)">
+        <h2>Performance Comparison</h2>
+        <span class="toggle-icon">&#9660;</span>
+      </div>
+      <div class="section-content" id="teamChartsSection">
+        <div class="controls">
+          <div class="control-group">
+            <label>Period</label>
+            <select id="teamPeriod" onchange="handleTeamPeriodChange()">
+              <option value="mtd" selected>Month to Date</option>
+              <option value="lastMonth">Last Month</option>
+              <option value="last3">Last 3 Months</option>
+              <option value="last6">Last 6 Months</option>
+              <option value="last12">Last 12 Months</option>
+              <option value="all">All Available</option>
+              <option value="custom">Custom Date Range</option>
+            </select>
+          </div>
+          <div class="date-range" id="teamDateRange">
+            <span>From</span>
+            <input type="month" id="teamDateFrom" onchange="updateTeam()">
+            <span>To</span>
+            <input type="month" id="teamDateTo" onchange="updateTeam()">
+          </div>
+        </div>
+        <div class="data-note" id="teamNote"></div>
+
+        <div class="chart-grid">
+          <div class="chart-card"><h3>Enquiries &amp; Orders</h3><canvas id="teamChartEnqOrd"></canvas></div>
+          <div class="chart-card"><h3>Conversion Rate (%)</h3><canvas id="teamChartConv"></canvas></div>
+          <div class="chart-card"><h3>Total Sales</h3><canvas id="teamChartSales"></canvas></div>
+          <div class="chart-card"><h3>Average Order Value</h3><canvas id="teamChartAOV"></canvas></div>
+          <div class="chart-card"><h3>Gross Profit</h3><canvas id="teamChartGP"></canvas></div>
+          <div class="chart-card"><h3>Profit Margin (%)</h3><canvas id="teamChartMargin"></canvas></div>
+        </div>
+      </div>
+
+      <hr class="section-divider">
+
+      <!-- DEEP DIVE: single metric selector -->
+      <div class="section-header" onclick="toggleSection('teamDeepDive', this)">
+        <h2>Deep Dive</h2>
+        <span class="toggle-icon">&#9660;</span>
+      </div>
+      <div class="section-content" id="teamDeepDive">
+        <div class="controls">
+          <div class="control-group">
+            <label>Metric</label>
+            <select id="teamMetric" onchange="updateTeamDeepDive()">
+              <option value="enquiries">Enquiries</option>
+              <option value="orders">Orders</option>
+              <option value="convRate">Conversion Rate</option>
+              <option value="sales" selected>Total Sales</option>
+              <option value="aov">Average Order Value</option>
+              <option value="margin">Profit Margin</option>
+              <option value="gp">Gross Profit</option>
+            </select>
+          </div>
+        </div>
+        <div class="chart-grid">
+          <div class="chart-card full-width"><h3 id="teamChartTitle">Total Sales — All Employees</h3><canvas id="chartTeamLine"></canvas></div>
+          <div class="chart-card"><h3 id="teamBarTitle">Total Sales — Period Totals</h3><canvas id="chartTeamBar"></canvas></div>
+          <div class="chart-card"><h3>Monthly Breakdown</h3><div style="overflow-x:auto;max-height:400px;overflow-y:auto;" id="teamTableWrap"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== INDIVIDUAL REVIEW ==================== -->
+    <div id="page-individual" class="page">
+      <div class="controls">
+        <div class="control-group">
+          <label>Employee</label>
+          <select id="employeeSelect" onchange="updateIndividual()"></select>
+        </div>
+      </div>
+
+      <div class="individual-section-block">
+        <div class="section-header" onclick="toggleSection('mtdSection', this)">
+          <h2>This Month <span class="section-badge" id="mtdMonthLabel">Feb 2026</span></h2>
+          <span class="toggle-icon">&#9660;</span>
+        </div>
+        <div class="section-content" id="mtdSection">
+          <div id="mtdContent"></div>
+        </div>
+      </div>
+
+      <div class="individual-section-block">
+        <div class="section-header" onclick="toggleSection('lastMonthSection', this)">
+          <h2>Last Month <span class="section-badge" id="lastMonthLabel">Jan 2026</span></h2>
+          <span class="toggle-icon">&#9660;</span>
+        </div>
+        <div class="section-content" id="lastMonthSection">
+          <div id="lastMonthContent"></div>
+        </div>
+      </div>
+
+      <div class="individual-section-block">
+        <div class="section-header" onclick="toggleSection('histSection', this)">
+          <h2>Historical Performance</h2>
+          <span class="toggle-icon">&#9660;</span>
+        </div>
+        <div class="section-content" id="histSection">
+          <div class="controls" style="margin-top:4px;">
+            <div class="control-group">
+              <label>Period</label>
+              <select id="periodSelect" onchange="handlePeriodChange()">
+                <option value="last3">Last 3 Months</option>
+                <option value="last6">Last 6 Months</option>
+                <option value="last12" selected>Last 12 Months</option>
+                <option value="all">All Available</option>
+                <option value="custom">Custom Date Range</option>
+              </select>
+            </div>
+            <div class="date-range" id="dateRange">
+              <span>From</span>
+              <input type="month" id="dateFrom" onchange="updateHistorical()">
+              <span>To</span>
+              <input type="month" id="dateTo" onchange="updateHistorical()">
+            </div>
+          </div>
+          <div class="kpi-row" id="kpiRow"></div>
+          <div class="insights-row" id="histInsights"></div>
+          <div class="chart-grid">
+            <div class="chart-card"><h3>Enquiries &amp; Orders</h3><canvas id="chartEnqOrders"></canvas></div>
+            <div class="chart-card"><h3>Conversion Rate (%)</h3><canvas id="chartConvRate"></canvas></div>
+            <div class="chart-card"><h3>Sales &amp; Gross Profit</h3><canvas id="chartSales"></canvas></div>
+            <div class="chart-card"><h3>Average Order Value</h3><canvas id="chartAOV"></canvas></div>
+            <div class="chart-card"><h3>Profit Margin (%)</h3><canvas id="chartMargin"></canvas></div>
+            <div class="chart-card"><h3>Pipeline: Rejected &amp; To Follow</h3><canvas id="chartPipeline"></canvas></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== RANKINGS ==================== -->
+    <div id="page-rankings" class="page">
+      <div class="controls">
+        <div class="control-group">
+          <label>Period</label>
+          <select id="rankPeriod" onchange="updateRankings()">
+            <option value="mtd">Month to Date</option>
+            <option value="lastMonth">Last Month</option>
+            <option value="last3">Last 3 Months</option>
+            <option value="last6" selected>Last 6 Months</option>
+            <option value="last12">Last 12 Months</option>
+            <option value="all">All Available</option>
+          </select>
+        </div>
+      </div>
+      <div class="data-note" id="rankNote"></div>
+      <div class="chart-grid">
+        <div class="chart-card"><h3>Enquiry Volume</h3><table class="ranking-table" id="rankEnq"></table></div>
+        <div class="chart-card"><h3>Conversion Rate</h3><table class="ranking-table" id="rankConv"></table></div>
+        <div class="chart-card"><h3>Total Sales</h3><table class="ranking-table" id="rankSales"></table></div>
+        <div class="chart-card"><h3>Average Order Value</h3><table class="ranking-table" id="rankAOV"></table></div>
+        <div class="chart-card"><h3>Gross Profit</h3><table class="ranking-table" id="rankGP"></table></div>
+        <div class="chart-card"><h3>Profit Margin</h3><table class="ranking-table" id="rankMargin"></table></div>
+      </div>
+    </div>
+
+    <!-- ==================== BRAND SALES ==================== -->
+    <div id="page-brand" class="page">
+
+      <div class="section-header" style="cursor:default;">
+        <h2>Brand Revenue <span class="section-badge" id="brandMonthLabel">Loading...</span></h2>
+      </div>
+      <div class="data-note" id="brandPartialNote" style="display:none; color:#b91c1c; font-style:normal; font-weight:600;">Current month figures are incomplete. Month still in progress.</div>
+
+      <div class="brand-kpi-grid" id="brandKPIs">
+        <div class="data-note">Loading brand sales data...</div>
+      </div>
+
+      <div class="chart-grid">
+        <div class="chart-card full-width"><h3>Monthly Revenue by Brand</h3><canvas id="brandRevenueChart"></canvas></div>
+        <div class="chart-card"><h3>Brand Split (Current Month)</h3><canvas id="brandPieChart"></canvas></div>
+        <div class="chart-card"><h3>vs Target</h3><canvas id="brandTargetChart"></canvas></div>
+      </div>
+
+      <hr class="section-divider">
+
+      <!-- REPORT GENERATOR -->
+      <div class="report-section">
+        <div class="section-header" style="cursor:default;">
+          <h2>Generate Report</h2>
+        </div>
+        <div style="margin-bottom:16px;">
+          <label style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.6px; color:var(--gray1); display:block; margin-bottom:6px;">Additional Context (optional)</label>
+          <textarea id="reportContext" rows="3" style="width:100%; padding:10px 12px; border:1px solid var(--gray4); border-radius:6px; font-size:13px; font-family:'Inter',sans-serif; resize:vertical; color:var(--dark);" placeholder="Add any notes to steer the commentary, e.g. 'Big order landed mid-month', 'WLL had a quiet week due to website issues', 'Focus on NV growth this month'..."></textarea>
+        </div>
+        <div class="report-actions">
+          <button class="btn btn-primary" id="btnGenerate" onclick="generateCommentary()">Generate Commentary</button>
+          <button class="btn btn-secondary" id="btnCopy" onclick="copyCommentary()" style="display:none;">Copy to Clipboard</button>
+          <button class="btn btn-secondary" id="btnEmailToggle" onclick="toggleEmailPanel()" style="display:none;">Email Report</button>
+        </div>
+        <div id="reportLoading" style="display:none;" class="report-loading">
+          <div class="loading-spinner"></div>
+          Generating commentary...
+        </div>
+        <div id="reportOutput" class="report-output empty">Click "Generate Commentary" to create an AI-powered sales summary based on the latest figures.</div>
+
+        <div id="emailPanel" class="email-panel">
+          <label>Recipients (comma-separated email addresses)</label>
+          <input type="text" id="emailRecipients" placeholder="grey@thesigngroup.co.uk, team@thesigngroup.co.uk">
+          <label>Subject Line</label>
+          <input type="text" id="emailSubject" placeholder="TSG Sales Update">
+          <button class="btn btn-send" id="btnSendEmail" onclick="sendReport()">Send Email</button>
+          <div id="emailStatus" class="email-status"></div>
+        </div>
+      </div>
+
+      <hr class="section-divider">
+
+      <!-- HISTORICAL TABLE -->
+      <div class="section-header" onclick="toggleSection('brandHistorySection', this)">
+        <h2>Monthly History</h2>
+        <span class="toggle-icon">&#9660;</span>
+      </div>
+      <div class="section-content" id="brandHistorySection">
+        <div class="controls">
+          <div class="control-group">
+            <label>Show</label>
+            <select id="brandHistoryPeriod" onchange="updateBrandHistory()">
+              <option value="12" selected>Last 12 Months</option>
+              <option value="24">Last 24 Months</option>
+              <option value="36">Last 3 Years</option>
+              <option value="9999">All Data</option>
+            </select>
+          </div>
+        </div>
+        <div style="overflow-x:auto; max-height:500px; overflow-y:auto;" id="brandHistoryTable"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+let DATA = {}, EMPLOYEES = [], ALL_MONTHS = [];
+const TARGETS = { convRate: 0.30, aov: 1500 };
+
+const EMPLOYEE_COLOURS = {
+  "Adam Charlton":  { solid: "#2563eb", light: "rgba(37,99,235,0.12)" },
+  "Anthony Lowe":   { solid: "#f97316", light: "rgba(249,115,22,0.12)" },
+  "Mick Farrell":   { solid: "#7c3aed", light: "rgba(124,58,237,0.12)" },
+  "Lyam Roche":     { solid: "#0d9488", light: "rgba(13,148,136,0.12)" }
+};
+const FALLBACK_COLOURS = [
+  { solid: "#e11d48", light: "rgba(225,29,72,0.12)" },
+  { solid: "#ca8a04", light: "rgba(202,138,4,0.12)" },
+  { solid: "#0284c7", light: "rgba(2,132,199,0.12)" },
+  { solid: "#16a34a", light: "rgba(22,163,74,0.12)" }
+];
+function getEmployeeColour(name) {
+  if (EMPLOYEE_COLOURS[name]) return EMPLOYEE_COLOURS[name];
+  const idx = EMPLOYEES.indexOf(name);
+  return FALLBACK_COLOURS[idx % FALLBACK_COLOURS.length] || { solid: "#888", light: "rgba(136,136,136,0.12)" };
+}
+
+// ==================== FETCH ====================
+async function loadData() {
+  try {
+    const res = await fetch("/airtable");
+    if (!res.ok) throw new Error(`API returned ${res.status}`);
+    const json = await res.json();
+    const grouped = {};
+    json.records.forEach(r => {
+      if (!r.employee || !r.date) return;
+      if (!grouped[r.employee]) grouped[r.employee] = [];
+      const d = new Date(r.date);
+      const ym = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+      grouped[r.employee].push({
+        date: ym, month: r.monthYear || ym,
+        enq: Number(r.enq)||0, orders: Number(r.orders)||0, convRate: Number(r.convRate)||0,
+        rejected: Number(r.rejected)||0, follow: Number(r.follow)||0,
+        valueEnq: Number(r.valueEnq)||0, valueOrd: Number(r.valueOrd)||0,
+        ordCost: Number(r.ordCost)||0, gp: Number(r.gp)||0,
+        margin: Number(r.margin)||0, aov: Number(r.aov)||0
+      });
+    });
+    for (const emp in grouped) grouped[emp].sort((a,b) => a.date.localeCompare(b.date));
+    DATA = grouped;
+    EMPLOYEES = Object.keys(DATA).sort();
+    const monthSet = new Set();
+    for (const emp in DATA) DATA[emp].forEach(d => monthSet.add(d.date));
+    ALL_MONTHS = [...monthSet].sort();
+    document.getElementById('employeeSelect').innerHTML = EMPLOYEES.map(e => `<option value="${e}">${e}</option>`).join('');
+    const last = ALL_MONTHS[ALL_MONTHS.length-1], first = ALL_MONTHS[0];
+    ['dateFrom','teamDateFrom'].forEach(id => document.getElementById(id).value = first);
+    ['dateTo','teamDateTo'].forEach(id => document.getElementById(id).value = last);
+    const ft = new Date(json.lastFetched);
+    document.getElementById('lastUpdated').textContent = 'Live from Airtable \u2022 ' + ft.toLocaleString('en-GB',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+    if (window.setNavTimestamp) window.setNavTimestamp(ft);
+    document.getElementById('loadingOverlay').style.display = 'none';
+    document.getElementById('mainContent').style.display = 'block';
+    updateTeam();
+  } catch (err) {
+    document.getElementById('loadingOverlay').style.display = 'none';
+    document.getElementById('errorContainer').innerHTML = `<div class="error-msg"><strong>Failed to load data:</strong> ${err.message}<br><br>Check that AIRTABLE_TOKEN is set in Cloudflare Pages environment variables.</div>`;
+  }
+}
+
+// ==================== UTILITY ====================
+function fmt(n) { return '\u00a3' + Math.round(Number(n)||0).toLocaleString('en-GB'); }
+function fmtPct(n) { return (Number(n)*100).toFixed(1)+'%'; }
+function fmtPctRaw(n) { return Number(n).toFixed(1)+'%'; }
+function monthLabel(d) { const [y,m]=d.split('-'); return ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][parseInt(m)]+' '+y.slice(2); }
+function monthLabelFull(d) { const [y,m]=d.split('-'); return ['','January','February','March','April','May','June','July','August','September','October','November','December'][parseInt(m)]+' '+y; }
+
+function getFilteredMonths(periodSelectId, dateFromId, dateToId) {
+  const period = document.getElementById(periodSelectId).value;
+  const now = new Date();
+  const curYM = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+  const lm = new Date(now.getFullYear(), now.getMonth()-1, 1);
+  const lmStr = lm.getFullYear()+'-'+String(lm.getMonth()+1).padStart(2,'0');
+  if (period==='mtd') return [curYM];
+  if (period==='lastMonth') return [lmStr];
+  if (period==='custom') { const f=document.getElementById(dateFromId).value, t=document.getElementById(dateToId).value; return (!f||!t)?ALL_MONTHS:ALL_MONTHS.filter(m=>m>=f&&m<=t); }
+  const n = period==='last3'?3:period==='last6'?6:period==='last12'?12:9999;
+  return ALL_MONTHS.slice(-n);
+}
+function getDataForMonths(emp, months) { return DATA[emp] ? DATA[emp].filter(d => months.includes(d.date)) : []; }
+
+function compareArrow(curr, prev) {
+  if (prev===0 && curr===0) return { html: '<span class="mtd-compare neutral">\u2014 No change</span>' };
+  if (prev===0) return { html: '<span class="mtd-compare up">\u2191 New</span>' };
+  const pct = ((curr-prev)/Math.abs(prev)*100);
+  const dir = pct>=0?'up':'down', arrow = pct>=0?'\u2191':'\u2193';
+  return { html: `<span class="mtd-compare ${dir}">${arrow} ${Math.abs(pct).toFixed(0)}% vs prev month</span>` };
+}
+function toggleSection(id, el) { document.getElementById(id).classList.toggle('collapsed'); el.querySelector('.toggle-icon').classList.toggle('collapsed'); }
+
+// ==================== CHARTS ====================
+let charts = {};
+function destroyChart(id) { if(charts[id]) { charts[id].destroy(); delete charts[id]; } }
+
+function createLineChart(canvasId, labels, datasets, yFormat, targetLines) {
+  destroyChart(canvasId);
+  if (targetLines) targetLines.forEach(t => {
+    datasets.push({ label:t.label, data:labels.map(()=>t.value), borderColor:t.color||'#ef4444', borderWidth:2, borderDash:[8,4], pointRadius:0, pointHoverRadius:0, fill:false, tension:0 });
+  });
+  charts[canvasId] = new Chart(document.getElementById(canvasId).getContext('2d'), {
+    type:'line', data:{labels, datasets},
+    options:{
+      responsive:true, maintainAspectRatio:true, aspectRatio:2,
+      interaction:{mode:'index',intersect:false},
+      plugins:{legend:{display:datasets.length>1,position:'top',labels:{usePointStyle:true,padding:16,font:{family:'Inter',size:12}}}},
+      scales:{
+        y:{beginAtZero:true,grid:{color:'#e5e5e5'},ticks:{font:{family:'Inter',size:11},callback:yFormat==='currency'?v=>fmt(v):yFormat==='pct'?v=>(v*100).toFixed(0)+'%':yFormat==='pctRaw'?v=>v.toFixed(0)+'%':v=>v}},
+        x:{grid:{display:false},ticks:{font:{family:'Inter',size:11}}}
+      }
+    }
+  });
+}
+
+function createBarChart(canvasId, labels, datasets, yFormat) {
+  destroyChart(canvasId);
+  charts[canvasId] = new Chart(document.getElementById(canvasId).getContext('2d'), {
+    type:'bar', data:{labels, datasets},
+    options:{
+      responsive:true, maintainAspectRatio:true, aspectRatio:1.8,
+      plugins:{legend:{display:datasets.length>1,position:'top',labels:{usePointStyle:true,padding:16,font:{family:'Inter',size:12}}}},
+      scales:{
+        y:{beginAtZero:true,grid:{color:'#e5e5e5'},ticks:{font:{family:'Inter',size:11},callback:yFormat==='currency'?v=>fmt(v):yFormat==='pctRaw'?v=>v.toFixed(0)+'%':yFormat==='pct'?v=>(v*100).toFixed(0)+'%':v=>v}},
+        x:{grid:{display:false},ticks:{font:{family:'Inter',size:11}}}
+      }
+    }
+  });
+}
+
+function createGroupedBarChart(canvasId, empLabels, values, colours, yFormat, targetVal, targetLbl) {
+  destroyChart(canvasId);
+  const ds = [{ data:values, backgroundColor:colours, borderRadius:6, barPercentage:0.6, categoryPercentage:0.7 }];
+  if (targetVal!=null) ds.push({ label:targetLbl||'Target', data:empLabels.map(()=>targetVal), type:'line', borderColor:'#ef4444', borderWidth:2, borderDash:[8,4], pointRadius:0, pointHoverRadius:0, fill:false });
+  charts[canvasId] = new Chart(document.getElementById(canvasId).getContext('2d'), {
+    type:'bar', data:{labels:empLabels, datasets:ds},
+    options:{
+      responsive:true, maintainAspectRatio:true, aspectRatio:2,
+      plugins:{legend:{display:targetVal!=null,position:'top',labels:{usePointStyle:true,padding:16,font:{family:'Inter',size:12},filter:i=>i.text!==undefined}}},
+      scales:{
+        y:{beginAtZero:true,grid:{color:'#e5e5e5'},ticks:{font:{family:'Inter',size:11},callback:yFormat==='currency'?v=>fmt(v):yFormat==='pct'?v=>(v*100).toFixed(0)+'%':yFormat==='pctRaw'?v=>v.toFixed(0)+'%':v=>v}},
+        x:{grid:{display:false},ticks:{font:{family:'Inter',size:12,weight:600}}}
+      }
+    }
+  });
+}
+
+// ==================== PERIOD HANDLERS ====================
+function handlePeriodChange() { document.getElementById('dateRange').classList.toggle('visible', document.getElementById('periodSelect').value==='custom'); updateHistorical(); }
+function handleTeamPeriodChange() { document.getElementById('teamDateRange').classList.toggle('visible', document.getElementById('teamPeriod').value==='custom'); updateTeam(); }
+
+// ==================== INDIVIDUAL: BUILD METRIC HTML ====================
+function buildIndividualMetrics(containerId, curr, prev, colour) {
+  if (!curr) { document.getElementById(containerId).innerHTML = '<div class="data-note">No data available.</div>'; return; }
+
+  const keyMetrics = [
+    { label:'Sales', curr:curr.valueOrd, prev:prev?prev.valueOrd:0, format:'currency', key:true },
+    { label:'Conversion', curr:curr.convRate, prev:prev?prev.convRate:0, format:'pct', key:true },
+    { label:'Avg Order Value', curr:curr.aov, prev:prev?prev.aov:0, format:'currency', key:true },
+    { label:'Profit Margin', curr:Number(curr.margin)*100, prev:prev?Number(prev.margin)*100:0, format:'pctRaw', key:true },
+  ];
+  const volumeMetrics = [
+    { label:'Enquiries', curr:curr.enq, prev:prev?prev.enq:0, format:'num' },
+    { label:'Orders', curr:curr.orders, prev:prev?prev.orders:0, format:'num' },
+    { label:'Enquiry Value', curr:curr.valueEnq, prev:prev?prev.valueEnq:0, format:'currency' },
+    { label:'Gross Profit', curr:curr.gp, prev:prev?prev.gp:0, format:'currency' },
+  ];
+
+  function renderCards(metrics) {
+    return metrics.map(m => {
+      const valStr = m.format==='currency'?fmt(m.curr):m.format==='pct'?fmtPct(m.curr):m.format==='pctRaw'?fmtPctRaw(m.curr):m.curr.toLocaleString();
+      const comp = compareArrow(m.curr, m.prev);
+      const cls = m.key ? 'mtd-card key-metric' : 'mtd-card';
+      return `<div class="${cls}" style="border-top: 3px solid ${colour.solid}">
+        <div class="mtd-label">${m.label}</div>
+        <div class="mtd-value">${valStr}</div>
+        ${comp.html}
+      </div>`;
+    }).join('');
+  }
+
+  const rejectRate = curr.enq>0 ? (curr.rejected/curr.enq*100).toFixed(1) : '0';
+  const followRate = curr.enq>0 ? (curr.follow/curr.enq*100).toFixed(1) : '0';
+  const revenuePerEnq = curr.enq>0 ? fmt(curr.valueOrd/curr.enq) : fmt(0);
+  const costRatio = curr.valueOrd>0 ? ((curr.ordCost/curr.valueOrd)*100).toFixed(1) : '0';
+
+  document.getElementById(containerId).innerHTML = `
+    <div class="metric-group">
+      <div class="metric-group-label">Key Performance</div>
+      <div class="mtd-grid" style="grid-template-columns: repeat(4, 1fr);">${renderCards(keyMetrics)}</div>
+    </div>
+    <div class="metric-group">
+      <div class="metric-group-label">Volume &amp; Value</div>
+      <div class="mtd-grid" style="grid-template-columns: repeat(4, 1fr);">${renderCards(volumeMetrics)}</div>
+    </div>
+    <div class="insights-row">
+      <div class="insight-card">
+        <h4>Pipeline Health</h4>
+        <div class="insight-item"><span class="insight-label">Quotes Rejected</span><span class="insight-value">${curr.rejected} (${rejectRate}%)</span></div>
+        <div class="insight-item"><span class="insight-label">Quotes to Follow Up</span><span class="insight-value">${curr.follow} (${followRate}%)</span></div>
+        <div class="insight-item"><span class="insight-label">Open Pipeline</span><span class="insight-value">${curr.follow} quotes pending</span></div>
+      </div>
+      <div class="insight-card">
+        <h4>Efficiency</h4>
+        <div class="insight-item"><span class="insight-label">Revenue per Enquiry</span><span class="insight-value">${revenuePerEnq}</span></div>
+        <div class="insight-item"><span class="insight-label">Cost Ratio</span><span class="insight-value">${costRatio}%</span></div>
+        <div class="insight-item"><span class="insight-label">Order Cost</span><span class="insight-value">${fmt(curr.ordCost)}</span></div>
+      </div>
+    </div>
+  `;
+}
+
+// ==================== INDIVIDUAL PAGE ====================
+function updateIndividual() { updateMTD(); updateLastMonth(); updateHistorical(); }
+
+function updateMTD() {
+  const emp = document.getElementById('employeeSelect').value;
+  if (!emp||!DATA[emp]) return;
+  const colour = getEmployeeColour(emp);
+  const now = new Date();
+  const curYM = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+  const prevYM = new Date(now.getFullYear(),now.getMonth()-1,1); const pYM = prevYM.getFullYear()+'-'+String(prevYM.getMonth()+1).padStart(2,'0');
+  document.getElementById('mtdMonthLabel').textContent = monthLabelFull(curYM);
+  const curr = (getDataForMonths(emp,[curYM]))[0]||null;
+  const prev = (getDataForMonths(emp,[pYM]))[0]||null;
+  buildIndividualMetrics('mtdContent', curr, prev, colour);
+}
+
+function updateLastMonth() {
+  const emp = document.getElementById('employeeSelect').value;
+  if (!emp||!DATA[emp]) return;
+  const colour = getEmployeeColour(emp);
+  const now = new Date();
+  const lm = new Date(now.getFullYear(),now.getMonth()-1,1); const lYM = lm.getFullYear()+'-'+String(lm.getMonth()+1).padStart(2,'0');
+  const pm = new Date(now.getFullYear(),now.getMonth()-2,1); const pYM = pm.getFullYear()+'-'+String(pm.getMonth()+1).padStart(2,'0');
+  document.getElementById('lastMonthLabel').textContent = monthLabelFull(lYM);
+  const curr = (getDataForMonths(emp,[lYM]))[0]||null;
+  const prev = (getDataForMonths(emp,[pYM]))[0]||null;
+  buildIndividualMetrics('lastMonthContent', curr, prev, colour);
+}
+
+function updateHistorical() {
+  const emp = document.getElementById('employeeSelect').value;
+  if (!emp||!DATA[emp]) return;
+  const colour = getEmployeeColour(emp);
+  const months = getFilteredMonths('periodSelect','dateFrom','dateTo');
+  const data = getDataForMonths(emp, months);
+  if (data.length===0) {
+    document.getElementById('kpiRow').innerHTML='<div class="data-note">No data for this period.</div>';
+    document.getElementById('histInsights').innerHTML='';
+    ['chartEnqOrders','chartConvRate','chartSales','chartAOV','chartMargin','chartPipeline'].forEach(destroyChart);
+    return;
+  }
+  const tEnq=data.reduce((s,d)=>s+d.enq,0), tOrd=data.reduce((s,d)=>s+d.orders,0);
+  const avgConv=tEnq>0?tOrd/tEnq:0, tSales=data.reduce((s,d)=>s+d.valueOrd,0);
+  const tGP=data.reduce((s,d)=>s+d.gp,0), avgAOV=tOrd>0?tSales/tOrd:0;
+  const avgMargin=tSales>0?(tGP/tSales*100):0;
+  const tRej=data.reduce((s,d)=>s+d.rejected,0), tFol=data.reduce((s,d)=>s+d.follow,0);
+
+  document.getElementById('kpiRow').innerHTML = `
+    <div class="kpi-card" style="border-top:3px solid ${colour.solid}"><div class="label">Total Enquiries</div><div class="value">${tEnq.toLocaleString()}</div><div class="trend">${data.length} month${data.length>1?'s':''}</div></div>
+    <div class="kpi-card" style="border-top:3px solid ${colour.solid}"><div class="label">Total Orders</div><div class="value">${tOrd.toLocaleString()}</div><div class="trend">from ${tEnq} enquiries</div></div>
+    <div class="kpi-card" style="border-top:3px solid ${colour.solid}"><div class="label">Avg Conversion</div><div class="value">${fmtPct(avgConv)}</div></div>
+    <div class="kpi-card" style="border-top:3px solid ${colour.solid}"><div class="label">Total Sales</div><div class="value">${fmt(tSales)}</div></div>
+    <div class="kpi-card" style="border-top:3px solid ${colour.solid}"><div class="label">Total GP</div><div class="value">${fmt(tGP)}</div><div class="trend">Margin: ${avgMargin.toFixed(1)}%</div></div>
+  `;
+
+  const best=[...data].sort((a,b)=>b.valueOrd-a.valueOrd)[0], worst=[...data].sort((a,b)=>a.valueOrd-b.valueOrd)[0];
+  const bestConv=[...data].sort((a,b)=>b.convRate-a.convRate)[0];
+  document.getElementById('histInsights').innerHTML = `
+    <div class="insight-card"><h4>Highlights</h4>
+      <div class="insight-item"><span class="insight-label">Best Sales Month</span><span class="insight-value">${monthLabel(best.date)} (${fmt(best.valueOrd)})</span></div>
+      <div class="insight-item"><span class="insight-label">Lowest Sales Month</span><span class="insight-value">${monthLabel(worst.date)} (${fmt(worst.valueOrd)})</span></div>
+      <div class="insight-item"><span class="insight-label">Best Conversion</span><span class="insight-value">${monthLabel(bestConv.date)} (${fmtPct(bestConv.convRate)})</span></div>
+      <div class="insight-item"><span class="insight-label">Avg Revenue/Enquiry</span><span class="insight-value">${fmt(tEnq>0?tSales/tEnq:0)}</span></div>
+    </div>
+    <div class="insight-card"><h4>Pipeline Summary</h4>
+      <div class="insight-item"><span class="insight-label">Quotes Rejected</span><span class="insight-value">${tRej.toLocaleString()} (${tEnq>0?(tRej/tEnq*100).toFixed(1):'0'}%)</span></div>
+      <div class="insight-item"><span class="insight-label">Quotes to Follow</span><span class="insight-value">${tFol.toLocaleString()}</span></div>
+      <div class="insight-item"><span class="insight-label">Avg Order Value</span><span class="insight-value">${fmt(avgAOV)}</span></div>
+      <div class="insight-item"><span class="insight-label">Avg Profit Margin</span><span class="insight-value">${avgMargin.toFixed(1)}%</span></div>
+    </div>
+  `;
+
+  const labels = data.map(d=>monthLabel(d.date));
+  createLineChart('chartEnqOrders',labels,[
+    {label:'Enquiries',data:data.map(d=>d.enq),borderColor:colour.solid,backgroundColor:colour.light,fill:true,tension:0.3,borderWidth:2.5,pointRadius:3},
+    {label:'Orders',data:data.map(d=>d.orders),borderColor:colour.solid,backgroundColor:'transparent',fill:false,tension:0.3,borderWidth:2,borderDash:[6,3],pointRadius:3}
+  ]);
+  createLineChart('chartConvRate',labels,[{label:'Conversion Rate',data:data.map(d=>d.convRate),borderColor:colour.solid,backgroundColor:colour.light,fill:true,tension:0.3,pointRadius:4,borderWidth:2.5}],'pct',[{label:'Target (30%)',value:0.30,color:'#ef4444'}]);
+  createLineChart('chartSales',labels,[
+    {label:'Sales',data:data.map(d=>d.valueOrd),borderColor:colour.solid,backgroundColor:colour.light,fill:true,tension:0.3,borderWidth:2.5},
+    {label:'Gross Profit',data:data.map(d=>d.gp),borderColor:'#22c55e',backgroundColor:'rgba(34,197,94,0.08)',fill:true,tension:0.3,borderWidth:2,borderDash:[6,3]}
+  ],'currency');
+  createLineChart('chartAOV',labels,[{label:'Avg Order Value',data:data.map(d=>d.aov),borderColor:colour.solid,backgroundColor:colour.light,fill:true,tension:0.3,pointRadius:4,borderWidth:2.5}],'currency',[{label:'Target (\u00a31,500)',value:1500,color:'#ef4444'}]);
+  createLineChart('chartMargin',labels,[{label:'Profit Margin %',data:data.map(d=>Number(d.margin)*100),borderColor:'#22c55e',backgroundColor:'rgba(34,197,94,0.08)',fill:true,tension:0.3,pointRadius:4,borderWidth:2.5}],'pctRaw');
+  createBarChart('chartPipeline',labels,[{label:'Rejected',data:data.map(d=>d.rejected),backgroundColor:'#ef4444',borderRadius:4},{label:'To Follow Up',data:data.map(d=>d.follow),backgroundColor:'#f97316',borderRadius:4}]);
+}
+
+// ==================== TEAM SUMMARY TABLE ====================
+function buildTeamSummary(months) {
+  const sel = document.getElementById('teamPeriod');
+  document.getElementById('teamSummaryPeriodLabel').textContent = sel.options[sel.selectedIndex].text;
+  const stats = EMPLOYEES.map(emp => {
+    const d = getDataForMonths(emp,months);
+    const tEnq=d.reduce((s,r)=>s+r.enq,0), tOrd=d.reduce((s,r)=>s+r.orders,0);
+    const tSales=d.reduce((s,r)=>s+r.valueOrd,0), tGP=d.reduce((s,r)=>s+r.gp,0);
+    return { name:emp, enq:tEnq, orders:tOrd, convRate:tEnq>0?tOrd/tEnq:0, sales:tSales, aov:tOrd>0?tSales/tOrd:0, gp:tGP, margin:tSales>0?tGP/tSales:0 };
+  });
+  const rows = [
+    {label:'Enquiries',key:'enq',fmt:v=>v.toLocaleString(),target:null},
+    {label:'Orders',key:'orders',fmt:v=>v.toLocaleString(),target:null},
+    {label:'Conversion',key:'convRate',fmt:v=>(v*100).toFixed(1)+'%',target:TARGETS.convRate},
+    {label:'Total Sales',key:'sales',fmt:v=>fmt(v),target:null},
+    {label:'Avg Order Value',key:'aov',fmt:v=>fmt(v),target:TARGETS.aov},
+    {label:'Gross Profit',key:'gp',fmt:v=>fmt(v),target:null},
+    {label:'Profit Margin',key:'margin',fmt:v=>(v*100).toFixed(1)+'%',target:null}
+  ];
+  let html = '<table class="team-summary-table"><thead><tr><th>Metric</th>';
+  EMPLOYEES.forEach(e => { const c=getEmployeeColour(e); html+=`<th><span class="employee-dot" style="background:${c.solid}"></span>${e.split(' ')[0]}</th>`; });
+  html += '</tr></thead><tbody>';
+  rows.forEach(row => {
+    const vals = stats.map(s=>s[row.key]), best = Math.max(...vals);
+    html += `<tr><td class="metric-label">${row.label}</td>`;
+    stats.forEach(s => {
+      const v=s[row.key], isBest=v===best&&v>0;
+      let cls = isBest ? 'cell-best' : row.target!=null ? (v>=row.target?'cell-above-target':'cell-below-target') : '';
+      html += `<td class="${cls}">${row.fmt(v)}</td>`;
+    });
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+  document.getElementById('teamSummaryTable').innerHTML = html;
+}
+
+// ==================== TEAM COMPARISON CHARTS ====================
+function buildTeamCharts(months) {
+  const isSingle = months.length <= 1;
+  const labels = months.map(monthLabel);
+  const empLabels = EMPLOYEES.map(n=>n.split(' ')[0]);
+  const empColours = EMPLOYEES.map(e=>getEmployeeColour(e).solid);
+
+  function empDatasets(key, multiply) {
+    return EMPLOYEES.map(emp => {
+      const c = getEmployeeColour(emp);
+      return { label:emp, data:months.map(m=>{const r=(DATA[emp]||[]).find(d=>d.date===m); return r?(multiply?Number(r[key])*100:r[key]):null; }), borderColor:c.solid, backgroundColor:c.light, tension:0.3, spanGaps:true, pointRadius:4, borderWidth:2.5 };
+    });
+  }
+  function singleValues(key, multiply) {
+    return EMPLOYEES.map(emp=>{const r=(DATA[emp]||[]).find(d=>d.date===months[0]); return r?(multiply?Number(r[key])*100:r[key]):0;});
+  }
+
+  // Enquiries & Orders (stacked for single, lines for multi)
+  if (isSingle) {
+    const enqVals = singleValues('enq');
+    const ordVals = singleValues('orders');
+    destroyChart('teamChartEnqOrd');
+    charts['teamChartEnqOrd'] = new Chart(document.getElementById('teamChartEnqOrd').getContext('2d'), {
+      type:'bar', data:{ labels:empLabels, datasets:[
+        {label:'Enquiries',data:enqVals,backgroundColor:empColours.map(c=>c+'33'),borderColor:empColours,borderWidth:2,borderRadius:6},
+        {label:'Orders',data:ordVals,backgroundColor:empColours,borderRadius:6}
+      ]}, options:{responsive:true,maintainAspectRatio:true,aspectRatio:2,plugins:{legend:{display:true,position:'top',labels:{usePointStyle:true,padding:16,font:{family:'Inter',size:12}}}},scales:{y:{beginAtZero:true,grid:{color:'#e5e5e5'}},x:{grid:{display:false}}}}
+    });
+  } else {
+    const dsEnq = empDatasets('enq');
+    const dsOrd = EMPLOYEES.map(emp=>{const c=getEmployeeColour(emp); return {label:emp+' Orders',data:months.map(m=>{const r=(DATA[emp]||[]).find(d=>d.date===m);return r?r.orders:null;}),borderColor:c.solid,backgroundColor:'transparent',tension:0.3,spanGaps:true,pointRadius:3,borderWidth:2,borderDash:[6,3]};});
+    createLineChart('teamChartEnqOrd',labels,[...dsEnq,...dsOrd]);
+  }
+
+  // Conversion Rate
+  if (isSingle) { createGroupedBarChart('teamChartConv',empLabels,singleValues('convRate'),empColours,'pct',0.30,'Target (30%)'); }
+  else { createLineChart('teamChartConv',labels,empDatasets('convRate'),'pct',[{label:'Target (30%)',value:0.30,color:'#ef4444'}]); }
+
+  // Total Sales
+  if (isSingle) { createGroupedBarChart('teamChartSales',empLabels,singleValues('valueOrd'),empColours,'currency'); }
+  else { createLineChart('teamChartSales',labels,empDatasets('valueOrd'),'currency'); }
+
+  // AOV
+  if (isSingle) { createGroupedBarChart('teamChartAOV',empLabels,singleValues('aov'),empColours,'currency',1500,'Target (\u00a31,500)'); }
+  else { createLineChart('teamChartAOV',labels,empDatasets('aov'),'currency',[{label:'Target (\u00a31,500)',value:1500,color:'#ef4444'}]); }
+
+  // Gross Profit
+  if (isSingle) { createGroupedBarChart('teamChartGP',empLabels,singleValues('gp'),empColours,'currency'); }
+  else { createLineChart('teamChartGP',labels,empDatasets('gp'),'currency'); }
+
+  // Profit Margin
+  if (isSingle) { createGroupedBarChart('teamChartMargin',empLabels,singleValues('margin',true),empColours,'pctRaw'); }
+  else { createLineChart('teamChartMargin',labels,empDatasets('margin',true),'pctRaw'); }
+}
+
+// ==================== TEAM PAGE MASTER ====================
+function updateTeam() {
+  const months = getFilteredMonths('teamPeriod','teamDateFrom','teamDateTo');
+  buildTeamSummary(months);
+  buildTeamCharts(months);
+
+  const notes = EMPLOYEES.filter(emp=>{const n=getDataForMonths(emp,months).length;return n<months.length&&n>0;}).map(emp=>`${emp}: ${getDataForMonths(emp,months).length} months of data`);
+  document.getElementById('teamNote').textContent = notes.length>0 ? 'Note: '+notes.join('. ')+'.' : '';
+
+  updateTeamDeepDive();
+}
+
+// ==================== TEAM DEEP DIVE ====================
+function updateTeamDeepDive() {
+  const metric = document.getElementById('teamMetric').value;
+  const months = getFilteredMonths('teamPeriod','teamDateFrom','teamDateTo');
+  const labels = months.map(monthLabel);
+  const isSingle = months.length<=1;
+
+  const mc = {enquiries:{key:'enq',label:'Enquiries',fmt:'number'},orders:{key:'orders',label:'Orders',fmt:'number'},convRate:{key:'convRate',label:'Conversion Rate',fmt:'pct'},sales:{key:'valueOrd',label:'Total Sales',fmt:'currency'},aov:{key:'aov',label:'Average Order Value',fmt:'currency'},margin:{key:'margin',label:'Profit Margin',fmt:'pctRaw'},gp:{key:'gp',label:'Gross Profit',fmt:'currency'}}[metric];
+  const isMargin = mc.key==='margin';
+
+  document.getElementById('teamChartTitle').textContent = mc.label+' \u2014 All Employees';
+  document.getElementById('teamBarTitle').textContent = mc.label+' \u2014 Period Totals';
+
+  if (isSingle) {
+    const vals = EMPLOYEES.map(emp=>{const r=(DATA[emp]||[]).find(d=>d.date===months[0]);if(!r)return 0;return isMargin?Number(r[mc.key])*100:r[mc.key];});
+    let tgt=null,tl='';
+    if(mc.key==='convRate'){tgt=0.30;tl='Target (30%)';}else if(mc.key==='aov'){tgt=1500;tl='Target (\u00a31,500)';}
+    createGroupedBarChart('chartTeamLine',EMPLOYEES.map(n=>n.split(' ')[0]),vals,EMPLOYEES.map(e=>getEmployeeColour(e).solid),mc.fmt,tgt,tl);
+  } else {
+    const datasets = EMPLOYEES.map(emp=>{const c=getEmployeeColour(emp);return{label:emp,data:months.map(m=>{const r=(DATA[emp]||[]).find(d=>d.date===m);if(!r)return null;return isMargin?Number(r[mc.key])*100:r[mc.key];}),borderColor:c.solid,backgroundColor:c.light,tension:0.3,spanGaps:true,pointRadius:4,borderWidth:2.5};});
+    let tl=[];
+    if(mc.key==='convRate')tl.push({label:'Target (30%)',value:0.30,color:'#ef4444'});
+    else if(mc.key==='aov')tl.push({label:'Target (\u00a31,500)',value:1500,color:'#ef4444'});
+    createLineChart('chartTeamLine',labels,datasets,mc.fmt,tl);
+  }
+
+  const totals = EMPLOYEES.map(emp=>{
+    const d=getDataForMonths(emp,months);
+    if(mc.key==='convRate'){const o=d.reduce((s,r)=>s+r.orders,0),e=d.reduce((s,r)=>s+r.enq,0);return e>0?o/e:0;}
+    if(mc.key==='aov'){const s=d.reduce((s,r)=>s+r.valueOrd,0),o=d.reduce((s,r)=>s+r.orders,0);return o>0?s/o:0;}
+    if(mc.key==='margin'){const s=d.reduce((s,r)=>s+r.valueOrd,0),g=d.reduce((s,r)=>s+r.gp,0);return s>0?(g/s*100):0;}
+    return d.reduce((s,r)=>s+r[mc.key],0);
+  });
+  createBarChart('chartTeamBar',EMPLOYEES.map(n=>n.split(' ')[0]),[{data:totals,backgroundColor:EMPLOYEES.map(e=>getEmployeeColour(e).solid),borderRadius:4}],mc.fmt);
+
+  let html='<table class="ranking-table"><thead><tr><th>Month</th>';
+  EMPLOYEES.forEach(e=>{const c=getEmployeeColour(e);html+=`<th><span class="employee-dot" style="background:${c.solid}"></span>${e.split(' ')[0]}</th>`;});
+  html+='</tr></thead><tbody>';
+  months.forEach(m=>{
+    html+=`<tr><td style="font-weight:600">${monthLabel(m)}</td>`;
+    EMPLOYEES.forEach(emp=>{
+      const r=(DATA[emp]||[]).find(d=>d.date===m);
+      let v='\u2014';
+      if(r){if(mc.fmt==='currency')v=fmt(r[mc.key]);else if(mc.fmt==='pct')v=fmtPct(r[mc.key]);else if(mc.fmt==='pctRaw')v=fmtPctRaw(Number(r[mc.key])*100);else v=r[mc.key].toLocaleString();}
+      html+=`<td>${v}</td>`;
+    });
+    html+='</tr>';
+  });
+  html+='</tbody></table>';
+  document.getElementById('teamTableWrap').innerHTML=html;
+}
+
+// ==================== RANKINGS ====================
+function updateRankings() {
+  const period=document.getElementById('rankPeriod').value;
+  const now=new Date(), curYM=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+  const lm=new Date(now.getFullYear(),now.getMonth()-1,1), lmStr=lm.getFullYear()+'-'+String(lm.getMonth()+1).padStart(2,'0');
+  let months;
+  if(period==='mtd')months=[curYM];else if(period==='lastMonth')months=[lmStr];
+  else{const n=period==='last3'?3:period==='last6'?6:period==='last12'?12:9999;months=ALL_MONTHS.slice(-n);}
+
+  const stats=EMPLOYEES.map(emp=>{
+    const d=getDataForMonths(emp,months);
+    const tE=d.reduce((s,r)=>s+r.enq,0),tO=d.reduce((s,r)=>s+r.orders,0),tS=d.reduce((s,r)=>s+r.valueOrd,0),tG=d.reduce((s,r)=>s+r.gp,0);
+    return{name:emp,months:d.length,enq:tE,convRate:tE>0?tO/tE:0,sales:tS,aov:tO>0?tS/tO:0,gp:tG,margin:tS>0?(tG/tS*100):0};
+  });
+  const short=stats.filter(s=>s.months<months.length&&s.months>0);
+  document.getElementById('rankNote').textContent=short.length>0?'Note: '+short.map(s=>`${s.name} has ${s.months} month${s.months>1?'s':''} of data`).join('. ')+'.':'';
+
+  function render(tid,key,format) {
+    const sorted=[...stats].filter(s=>s[key]>0||s.months>0).sort((a,b)=>b[key]-a[key]);
+    const mx=sorted.length>0?sorted[0][key]:1;
+    let h='<thead><tr><th>#</th><th>Employee</th><th style="width:55%">Performance</th></tr></thead><tbody>';
+    sorted.forEach((s,i)=>{
+      const c=getEmployeeColour(s.name),pct=mx>0?(s[key]/mx*100):0;
+      const v=format==='currency'?fmt(s[key]):format==='pct'?fmtPct(s[key]):format==='pctRaw'?fmtPctRaw(s[key]):s[key].toLocaleString();
+      const note=s.months<months.length?` <span style="font-size:10px;color:#999">(${s.months}mo)</span>`:'';
+      h+=`<tr><td><span class="rank-badge rank-${i+1}">${i+1}</span></td><td><span class="employee-dot" style="background:${c.solid}"></span>${s.name}${note}</td><td><div class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:${pct}%;background:${c.solid}"></div></div><div class="bar-value">${v}</div></div></td></tr>`;
+    });
+    h+='</tbody>';
+    document.getElementById(tid).innerHTML=h;
+  }
+  render('rankEnq','enq','number');render('rankConv','convRate','pct');render('rankSales','sales','currency');
+  render('rankAOV','aov','currency');render('rankGP','gp','currency');render('rankMargin','margin','pctRaw');
+}
+
+// ==================== NAVIGATION ====================
+function showPage(page, btn) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  btn.classList.add('active');
+  if(page==='individual')updateIndividual();if(page==='team')updateTeam();if(page==='rankings')updateRankings();
+  if(page==='brand'){if(!BRAND_DATA_LOADED)loadBrandData();else updateBrandPage();}
+}
+
+// ==================== BRAND SALES ====================
+let BRAND_DATA = [], BRAND_DATA_LOADED = false, BRAND_COMMENTARY = '';
+
+async function loadBrandData() {
+  try {
+    const res = await fetch('/airtable-sales');
+    if (!res.ok) throw new Error(`API returned ${res.status}`);
+    const json = await res.json();
+    BRAND_DATA = json.records || [];
+    BRAND_DATA_LOADED = true;
+    updateBrandPage();
+  } catch (err) {
+    document.getElementById('brandKPIs').innerHTML = `<div class="error-msg" style="grid-column:1/-1;"><strong>Failed to load brand sales:</strong> ${err.message}<br><br>Make sure the /airtable-sales function is deployed and AIRTABLE_TOKEN is set.</div>`;
+  }
+}
+
+function updateBrandPage() {
+  if (BRAND_DATA.length === 0) return;
+
+  // Helper: calculate overall from brands if the Airtable overall field is 0
+  function calcOverall(d) { return d.overall > 0 ? d.overall : (d.tsg + d.wll + d.nv + (d.other || 0)); }
+
+  const now = new Date();
+  const curYM = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+  const current = BRAND_DATA.find(d => d.date && d.date.startsWith(curYM));
+  const prev = BRAND_DATA.length >= 2 ? BRAND_DATA[BRAND_DATA.length - 2] : null;
+  const latest = current || BRAND_DATA[BRAND_DATA.length - 1];
+  const isPartial = current ? true : false;
+
+  document.getElementById('brandMonthLabel').textContent = latest.monthYear || 'Latest';
+  document.getElementById('brandPartialNote').style.display = isPartial ? 'block' : 'none';
+
+  // KPI cards
+  const latestOverall = calcOverall(latest);
+  const brands = [
+    { key: 'tsg', label: 'TSG', cls: 'brand-tsg', target: latest.tsgTarget, color: '#111', val: latest.tsg },
+    { key: 'wll', label: 'WLL', cls: 'brand-wll', target: latest.wllTarget, color: '#2563eb', val: latest.wll },
+    { key: 'nv', label: 'NV', cls: 'brand-nv', target: latest.nvTarget, color: '#7c3aed', val: latest.nv },
+    { key: 'overall', label: 'OVERALL', cls: 'brand-overall', target: latest.overallTarget, color: '#22c55e', val: latestOverall }
+  ];
+
+  let kpiHtml = '';
+  brands.forEach(b => {
+    const val = b.val || 0;
+    const target = b.target || 0;
+    const diff = val - target;
+    let targetHtml = '';
+    if (target > 0) {
+      const cls = diff >= 0 ? 'above' : 'below';
+      const arrow = diff >= 0 ? '\u2191' : '\u2193';
+      targetHtml = `<div class="brand-target ${cls}">${arrow} ${fmt(Math.abs(diff))} vs ${fmt(target)} target</div>`;
+    }
+    let vsLastMonth = '';
+    if (prev) {
+      const prevVal = b.key === 'overall' ? calcOverall(prev) : (prev[b.key] || 0);
+      if (prevVal > 0) {
+        const pct = ((val - prevVal) / prevVal * 100);
+        const cls2 = pct >= 0 ? 'above' : 'below';
+        vsLastMonth = `<div class="brand-target ${cls2}" style="margin-top:2px; font-size:11px;">${pct >= 0 ? '\u2191' : '\u2193'} ${Math.abs(pct).toFixed(0)}% vs ${prev.monthYear}</div>`;
+      }
+    }
+    kpiHtml += `<div class="brand-kpi ${b.cls}">
+      <div class="brand-name" style="color:${b.color}">${b.label}</div>
+      <div class="brand-amount">${fmt(val)}</div>
+      ${targetHtml}${vsLastMonth}
+    </div>`;
+  });
+  document.getElementById('brandKPIs').innerHTML = kpiHtml;
+
+  // Revenue trend chart (last 12 months)
+  const recentData = BRAND_DATA.slice(-12);
+  const chartLabels = recentData.map(d => d.monthYear || '');
+  createLineChart('brandRevenueChart', chartLabels, [
+    { label: 'TSG', data: recentData.map(d=>d.tsg), borderColor: '#111', backgroundColor: 'rgba(0,0,0,0.05)', fill: true, tension: 0.3, borderWidth: 2.5, pointRadius: 3 },
+    { label: 'WLL', data: recentData.map(d=>d.wll), borderColor: '#2563eb', backgroundColor: 'rgba(37,99,235,0.05)', fill: true, tension: 0.3, borderWidth: 2, pointRadius: 3 },
+    { label: 'NV', data: recentData.map(d=>d.nv), borderColor: '#7c3aed', backgroundColor: 'rgba(124,58,237,0.05)', fill: true, tension: 0.3, borderWidth: 2, pointRadius: 3 }
+  ], 'currency');
+
+  // Pie chart for current month split
+  destroyChart('brandPieChart');
+  charts['brandPieChart'] = new Chart(document.getElementById('brandPieChart').getContext('2d'), {
+    type: 'doughnut',
+    data: {
+      labels: ['TSG', 'WLL', 'NV', 'Other'],
+      datasets: [{
+        data: [latest.tsg, latest.wll, latest.nv, latest.other || 0],
+        backgroundColor: ['#111', '#2563eb', '#7c3aed', '#999'],
+        borderWidth: 2, borderColor: '#fff'
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: true, aspectRatio: 1.8,
+      plugins: {
+        legend: { position: 'bottom', labels: { padding: 16, font: { family: 'Inter', size: 12 } } },
+        tooltip: { callbacks: { label: ctx => `${ctx.label}: ${fmt(ctx.raw)}` } }
+      }
+    }
+  });
+
+  // Target comparison bar chart
+  if (latest.tsgTarget || latest.wllTarget || latest.nvTarget) {
+    destroyChart('brandTargetChart');
+    charts['brandTargetChart'] = new Chart(document.getElementById('brandTargetChart').getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: ['TSG', 'WLL', 'NV'],
+        datasets: [
+          { label: 'Actual', data: [latest.tsg, latest.wll, latest.nv], backgroundColor: ['#111', '#2563eb', '#7c3aed'], borderRadius: 6 },
+          { label: 'Target', data: [latest.tsgTarget, latest.wllTarget, latest.nvTarget], backgroundColor: ['rgba(0,0,0,0.15)', 'rgba(37,99,235,0.15)', 'rgba(124,58,237,0.15)'], borderRadius: 6 }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: true, aspectRatio: 1.8,
+        plugins: { legend: { position: 'top', labels: { padding: 16, font: { family: 'Inter', size: 12 } } } },
+        scales: {
+          y: { beginAtZero: true, ticks: { callback: v => fmt(v) } },
+          x: { grid: { display: false } }
+        }
+      }
     });
   }
 
+  updateBrandHistory();
+}
+
+function updateBrandHistory() {
+  const n = parseInt(document.getElementById('brandHistoryPeriod').value) || 12;
+  const data = BRAND_DATA.slice(-n);
+
+  let html = '<table class="ranking-table"><thead><tr><th>Month</th><th>TSG</th><th>WLL</th><th>NV</th><th>Overall</th><th>Target</th><th>+/-</th></tr></thead><tbody>';
+  // Show newest first
+  [...data].reverse().forEach(d => {
+    // Calculate overall from brands if the Airtable overall field is 0 but brands have data
+    const calcOverall = d.overall > 0 ? d.overall : (d.tsg + d.wll + d.nv + (d.other || 0));
+    const hasData = calcOverall > 0;
+    const hasTarget = d.overallTarget > 0;
+    const diff = hasTarget && hasData ? calcOverall - d.overallTarget : 0;
+    const diffCls = diff >= 0 ? 'color:#15803d' : 'color:#b91c1c';
+    html += `<tr>
+      <td style="font-weight:600">${d.monthYear}</td>
+      <td>${fmt(d.tsg)}</td>
+      <td>${fmt(d.wll)}</td>
+      <td>${fmt(d.nv)}</td>
+      <td style="font-weight:700">${hasData ? fmt(calcOverall) : '\u2014'}</td>
+      <td>${hasTarget ? fmt(d.overallTarget) : '\u2014'}</td>
+      <td style="${hasTarget && hasData ? diffCls : ''};font-weight:600">${hasTarget && hasData ? (diff >= 0 ? '+' : '') + fmt(diff) : '\u2014'}</td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  document.getElementById('brandHistoryTable').innerHTML = html;
+}
+
+// ==================== COMMENTARY GENERATION ====================
+function getSalesTeamSummary() {
+  // Pull current month new sales data from the individual employee data (DATA)
+  const now = new Date();
+  const curYM = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+  const prevDate = new Date(now.getFullYear(), now.getMonth()-1, 1);
+  const prevYM = prevDate.getFullYear()+'-'+String(prevDate.getMonth()+1).padStart(2,'0');
+
+  const summary = { currentMonth: curYM, employees: [] };
+  let totalNewSales = 0, totalEnq = 0, totalOrders = 0;
+  let prevTotalNewSales = 0;
+
+  EMPLOYEES.forEach(emp => {
+    const curr = (DATA[emp]||[]).find(d => d.date === curYM);
+    const prev = (DATA[emp]||[]).find(d => d.date === prevYM);
+    if (curr) {
+      totalNewSales += curr.valueOrd;
+      totalEnq += curr.enq;
+      totalOrders += curr.orders;
+      summary.employees.push({
+        name: emp,
+        newSales: curr.valueOrd,
+        enquiries: curr.enq,
+        orders: curr.orders,
+        convRate: curr.convRate,
+        aov: curr.aov
+      });
+    }
+    if (prev) prevTotalNewSales += prev.valueOrd;
+  });
+
+  summary.totalNewSales = totalNewSales;
+  summary.totalEnquiries = totalEnq;
+  summary.totalOrders = totalOrders;
+  summary.prevMonthNewSales = prevTotalNewSales;
+  return summary;
+}
+
+async function generateCommentary() {
+  if (BRAND_DATA.length === 0) return;
+
+  const btn = document.getElementById('btnGenerate');
+  const loading = document.getElementById('reportLoading');
+  const output = document.getElementById('reportOutput');
+
+  btn.disabled = true;
+  loading.style.display = 'flex';
+  output.className = 'report-output empty';
+  output.textContent = '';
+
+  const now = new Date();
+  const curYM = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+  const current = BRAND_DATA.find(d => d.date && d.date.startsWith(curYM));
+  const latest = current || BRAND_DATA[BRAND_DATA.length - 1];
+  const isPartial = !!current;
+
   try {
-    const body = await context.request.json();
-    const { data, currentMonth, isPartialMonth, userContext, salesTeamData } = body;
-
-    // Build the prompt with financial logic rules baked in
-    const systemPrompt = `You are a financial analyst for The Sign Group (TSG), a trade signage manufacturer near Leeds with ~40 staff. You write concise weekly/monthly sales commentary for the senior team.
-
-BRAND STRUCTURE:
-- TSG (The Sign Group): Core manufacturing. Revenue recognised on job COMPLETION (invoicing), not order placement. NOT pace-sensitive.
-- WLL (WeLoveLEDs): Online LED shop. Invoices at point of order. Pace-sensitive. Daily run rate comparisons valid.
-- NV (Neon Vibes): Newer division. Invoices at point of order. Pace-sensitive. Daily run rate comparisons valid.
-- Overall/Combined: Sum of all brands.
-
-CRITICAL RULES:
-- All figures include VAT.
-- Previous months are CLOSED figures (final). Current month figures are INCOMPLETE until month end.
-- For TSG: Do NOT use daily pace maths. Focus on pipeline, WIP structure, and projected month-end.
-- For WLL and NV: Daily pace and working-day averages ARE valid comparisons.
-- Never compare partial current-month totals directly to full previous-month totals without acknowledging the month is incomplete.
-- TSG financial year runs Dec-Nov.
-
-TONE: Direct, punchy, no waffle. Use actual numbers. Highlight what's going well and what needs attention. Keep it to 200-400 words. Use short paragraphs. No corporate fluff.
-
-WRITING RULES (these override everything else about tone):
-1. DO NOT TEACH THE TEAM TO SUCK EGGS. Everyone reading this knows their role. Sales know they need to win orders. Operations know they need to finish and invoice work. Never say things like "the sales team needs to push harder" or "operations should try to complete as much work as possible" or "we need everyone focused on hitting target." These are patronising and pointless. The update informs, it does not instruct.
-
-2. PURPOSE: Show where we are in the month. Show how that compares to target. Show what currently matters most. It is a monthly scoreboard with context. If the reader instantly understands the situation, the update is doing its job.
-
-3. STATE FACTS WITHOUT DRAMA. Write like a calm, factual briefing from management. Not a motivational speech. Not corporate reporting. Examples of good: "TSG is currently projected at £200k against a £186k target." or "WLL is slightly behind pace but within reach of target." Examples of bad: "We must urgently push sales" or "Everyone needs to step up" or "We must rally together."
-
-4. HIGHLIGHT REAL PRESSURE POINTS only when something actually drives the month's outcome: a large amount of undated work, a slow order pace, a strong start that needs maintaining, limited working days remaining. Say things like "The month now depends largely on converting the undated work" or "With X working days left, the order pace needs to hold." Point at the situation without telling anyone how to do their job.
-
-5. DO NOT make operational assumptions about production capacity, staffing, internal workflow, or what individuals should prioritise. This is a financial position update, not a management instruction.
-
-6. TONE OF VOICE: calm, factual, slightly conversational, confident but not dramatic. Plain English. Avoid corporate jargon, dramatic language, and overly polished AI-sounding writing.
-
-7. Keep commentary short and useful. Good commentary explains why the numbers look the way they do, what could shift the month, and whether confidence is high or low. If a line does not add insight, remove it.
-
-STRUCTURE (follow this order):
-1. Brand-by-brand breakdown: TSG, WLL, NV and Overall. Each brand's position against target with actual figures.
-2. Trends and growth: Compare to previous months and same month last year where data exists. Note direction of travel.
-3. Target performance: Who is ahead, who is behind, and by how much.
-4. Close with the one or two things that will most likely determine how the month finishes.`;
-
-    const userPrompt = buildUserPrompt(data, currentMonth, isPartialMonth, userContext, salesTeamData);
-
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    const userContext = document.getElementById('reportContext').value.trim();
+    const res = await fetch('/commentary', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01'
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
-        system: systemPrompt,
-        messages: [{ role: 'user', content: userPrompt }]
+        data: BRAND_DATA.slice(-24),
+        currentMonth: latest.monthYear,
+        isPartialMonth: isPartial,
+        userContext: userContext || null,
+        salesTeamData: getSalesTeamSummary()
       })
     });
 
-    if (!response.ok) {
-      const errText = await response.text();
-      return new Response(JSON.stringify({ error: `Claude API error: ${response.status}`, detail: errText }), {
-        status: 502, headers: { 'Content-Type': 'application/json' }
-      });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error || `API error ${res.status}`);
     }
 
-    const result = await response.json();
-    const commentary = result.content
-      .filter(block => block.type === 'text')
-      .map(block => block.text)
-      .join('\n');
+    const result = await res.json();
+    BRAND_COMMENTARY = result.commentary;
 
-    return new Response(JSON.stringify({
-      commentary,
-      generatedAt: new Date().toISOString(),
-      monthCovered: currentMonth
-    }), {
-      headers: { 'Content-Type': 'application/json' }
-    });
+    output.className = 'report-output';
+    output.textContent = BRAND_COMMENTARY;
+    document.getElementById('btnCopy').style.display = 'inline-flex';
+    document.getElementById('btnEmailToggle').style.display = 'inline-flex';
 
   } catch (err) {
-    return new Response(JSON.stringify({ error: err.message }), {
-      status: 500, headers: { 'Content-Type': 'application/json' }
+    output.className = 'report-output';
+    output.innerHTML = `<span style="color:#b91c1c;">Error: ${err.message}</span><br><br>Make sure ANTHROPIC_API_KEY is set in your Cloudflare Pages environment variables.`;
+  } finally {
+    btn.disabled = false;
+    loading.style.display = 'none';
+  }
+}
+
+function copyCommentary() {
+  navigator.clipboard.writeText(BRAND_COMMENTARY).then(() => {
+    const btn = document.getElementById('btnCopy');
+    btn.textContent = 'Copied!';
+    setTimeout(() => { btn.textContent = 'Copy to Clipboard'; }, 2000);
+  });
+}
+
+function toggleEmailPanel() {
+  document.getElementById('emailPanel').classList.toggle('visible');
+}
+
+async function sendReport() {
+  if (!BRAND_COMMENTARY) return;
+
+  const recipients = document.getElementById('emailRecipients').value
+    .split(',').map(e => e.trim()).filter(e => e.includes('@'));
+  const subject = document.getElementById('emailSubject').value || `TSG Sales Update`;
+  const status = document.getElementById('emailStatus');
+
+  if (recipients.length === 0) {
+    status.className = 'email-status error';
+    status.textContent = 'Please enter at least one valid email address.';
+    return;
+  }
+
+  const btn = document.getElementById('btnSendEmail');
+  btn.disabled = true;
+  btn.textContent = 'Sending...';
+  status.textContent = '';
+
+  try {
+    const latest = BRAND_DATA[BRAND_DATA.length - 1];
+    const res = await fetch('/send-report', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        commentary: BRAND_COMMENTARY,
+        recipients,
+        subject,
+        monthCovered: latest ? latest.monthYear : 'Sales Update'
+      })
     });
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error || `Send failed: ${res.status}`);
+    }
+
+    status.className = 'email-status success';
+    status.textContent = `Sent to ${recipients.join(', ')}`;
+
+  } catch (err) {
+    status.className = 'email-status error';
+    status.textContent = `Failed: ${err.message}`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Send Email';
   }
 }
 
-function buildUserPrompt(data, currentMonth, isPartialMonth, userContext, salesTeamData) {
-  const current = data.find(d => d.monthYear === currentMonth);
-  const prevMonths = data.filter(d => d.monthYear !== currentMonth).slice(-12);
-
-  // Helper: calculate overall from brands if the overall field is 0
-  function calcOverall(d) {
-    return d.overall > 0 ? d.overall : (d.tsg + d.wll + d.nv + (d.other || 0));
-  }
-
-  let prompt = `Here are the brand sales figures. Write a concise commentary.\n\n`;
-
-  // User context first if provided
-  if (userContext) {
-    prompt += `## ADDITIONAL CONTEXT FROM MANAGEMENT:\n${userContext}\n\nIncorporate the above context naturally into the commentary where relevant.\n\n`;
-  }
-
-  if (current) {
-    const overall = calcOverall(current);
-    prompt += `## CURRENT MONTH INVOICED SALES: ${currentMonth}${isPartialMonth ? ' (INCOMPLETE - month still in progress)' : ''}\n`;
-    prompt += `These are INVOICED figures (completed work). This is separate from new orders placed.\n`;
-    prompt += `TSG Invoiced: £${fmt(current.tsg)}`;
-    if (current.tsgTarget) prompt += ` (Target: £${fmt(current.tsgTarget)}, ${current.tsg >= current.tsgTarget ? 'ABOVE' : 'BELOW'} by £${fmt(Math.abs(current.tsg - current.tsgTarget))})`;
-    prompt += `\n`;
-    prompt += `WLL Invoiced: £${fmt(current.wll)}`;
-    if (current.wllTarget) prompt += ` (Target: £${fmt(current.wllTarget)}, ${current.wll >= current.wllTarget ? 'ABOVE' : 'BELOW'} by £${fmt(Math.abs(current.wll - current.wllTarget))})`;
-    prompt += `\n`;
-    prompt += `NV Invoiced: £${fmt(current.nv)}`;
-    if (current.nvTarget) prompt += ` (Target: £${fmt(current.nvTarget)}, ${current.nv >= current.nvTarget ? 'ABOVE' : 'BELOW'} by £${fmt(Math.abs(current.nv - current.nvTarget))})`;
-    prompt += `\n`;
-    prompt += `Combined Invoiced: £${fmt(overall)}`;
-    if (current.overallTarget) prompt += ` (Target: £${fmt(current.overallTarget)})`;
-    prompt += `\n\n`;
-  }
-
-  // NEW SALES ORDERED (separate from invoicing)
-  if (salesTeamData && salesTeamData.totalNewSales > 0) {
-    prompt += `## NEW SALES ORDERED THIS MONTH (orders placed, NOT invoiced):\n`;
-    prompt += `IMPORTANT: New Sales are orders confirmed this month. This is order intake, completely separate from invoiced revenue above.\n`;
-    prompt += `Total New Orders: £${fmt(salesTeamData.totalNewSales)}`;
-    if (salesTeamData.prevMonthNewSales > 0) {
-      const pct = ((salesTeamData.totalNewSales - salesTeamData.prevMonthNewSales) / salesTeamData.prevMonthNewSales * 100);
-      prompt += ` (${pct >= 0 ? '+' : ''}${pct.toFixed(0)}% vs last month's £${fmt(salesTeamData.prevMonthNewSales)})`;
-    }
-    prompt += `\n`;
-    prompt += `Total Enquiries: ${salesTeamData.totalEnquiries}, Total Orders: ${salesTeamData.totalOrders}\n`;
-    if (salesTeamData.employees && salesTeamData.employees.length > 0) {
-      prompt += `By person:\n`;
-      salesTeamData.employees.forEach(e => {
-        prompt += `  ${e.name}: £${fmt(e.newSales)} from ${e.orders} orders (${e.enquiries} enquiries, ${(e.convRate * 100).toFixed(0)}% conversion)\n`;
-      });
-    }
-    prompt += `\n`;
-  }
-
-  if (prevMonths.length > 0) {
-    prompt += `## RECENT INVOICING HISTORY (last ${prevMonths.length} months):\n`;
-    prompt += `Month | TSG | WLL | NV | Overall\n`;
-    prevMonths.forEach(m => {
-      prompt += `${m.monthYear} | £${fmt(m.tsg)} | £${fmt(m.wll)} | £${fmt(m.nv)} | £${fmt(calcOverall(m))}\n`;
-    });
-    prompt += `\n`;
-
-    const last3 = prevMonths.slice(-3);
-    const avgTSG = last3.reduce((s, m) => s + m.tsg, 0) / last3.length;
-    const avgWLL = last3.reduce((s, m) => s + m.wll, 0) / last3.length;
-    const avgNV = last3.reduce((s, m) => s + m.nv, 0) / last3.length;
-    prompt += `3-month invoicing averages: TSG £${fmt(avgTSG)}, WLL £${fmt(avgWLL)}, NV £${fmt(avgNV)}\n`;
-
-    // Same month last year comparison
-    if (current) {
-      const monthPart = currentMonth.split('-')[0];
-      const sameMonthLastYear = [...data].reverse().find(d => {
-        const parts = d.monthYear.split('-');
-        return parts[0] === monthPart && d.monthYear !== currentMonth;
-      });
-      if (sameMonthLastYear) {
-        prompt += `\nSame month last year (${sameMonthLastYear.monthYear}): TSG £${fmt(sameMonthLastYear.tsg)}, WLL £${fmt(sameMonthLastYear.wll)}, NV £${fmt(sameMonthLastYear.nv)}, Overall £${fmt(calcOverall(sameMonthLastYear))}\n`;
-      }
-    }
-  }
-
-  prompt += `\nWrite the commentary now. Remember:
-- TSG invoicing is NOT pace-sensitive (production-based). WLL and NV ARE pace-sensitive.
-- Keep INVOICED sales and NEW SALES ORDERED clearly separated in the commentary. They are different things.
-- New Sales Ordered is the pipeline being filled. Invoiced Sales is revenue being realised.`;
-
-  return prompt;
-}
-
-function fmt(n) {
-  return Math.round(Number(n) || 0).toLocaleString('en-GB');
-}
+loadData();
+</script>
+</body>
+</html>
