@@ -187,8 +187,18 @@ function processData(raw){
   D.wllNote=ov?ov.wllPaceNote:"";D.nvNote=ov?ov.nvPaceNote:"";
   D.focus=ov?ov.weekFocus:"";D.optFocus=ov?ov.optionalFocus:"";
   D.tsgWipDue=ov?ov.tsgWipDue:null;D.tsgWipUndated=ov?ov.tsgWipUndated:null;D.tsgWipNextMonth=ov?ov.tsgWipNextMonth:null;
-D.hasWip=D.tsgWipDue!==null;
-  D.tsgPureInv=D.hasWip&&D.tsgWipDue?D.tsgInv-D.tsgWipDue:D.tsgInv;
+// TSG split from invoiced table
+  if(curInv.tsgInvoiced>0){
+    D.tsgPureInv=curInv.tsgInvoiced;
+    D.tsgWipDue=curInv.tsgWip||0;
+    D.tsgWipUndated=curInv.tsgUndated||0;
+    D.tsgWipNextMonth=curInv.tsgNextMonth||0;
+    D.hasWip=true;
+  }else{
+    D.hasWip=D.tsgWipDue!==null;
+    D.tsgPureInv=D.hasWip&&D.tsgWipDue?D.tsgInv-D.tsgWipDue:D.tsgInv;
+  }
+  D.combPureInv=D.tsgPureInv+D.wllInv+D.nvInv;
 
   // Also check brand sales feed for TSG split (from /airtable-sales)
   D.brandTsgSplit=null;   D.combPureInv=D.tsgPureInv+D.wllInv+D.nvInv;
