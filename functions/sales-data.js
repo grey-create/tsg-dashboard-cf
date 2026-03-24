@@ -99,7 +99,11 @@ export async function onRequest(context) {
         tsgTarget: Number(gf(f, "TSG Invoice Target + VAT", "TSG Invoice Target")) || 0,
         wllTarget: Number(gf(f, "WLL Invoice Target + VAT", "WLL Invoice Target")) || 0,
         nvTarget: Number(gf(f, "NV Invoice Target + VAT", "NV Invoice Target")) || 0,
-        tsgNewSalesTarget: Number(gf(f, "TSG NEW Sales Target + VAT", "TSG NEW Sales Target", "New Sales Target")) || 0,
+      tsgNewSalesTarget: Number(gf(f, "TSG NEW Sales Target + VAT", "TSG NEW Sales Target", "New Sales Target")) || 0,
+        tsgInvoiced: Number(gf(f, "TSG Invoiced + VAT")) || 0,
+        tsgWip: Number(gf(f, "TSG WIP + VAT")) || 0,
+        tsgUndated: Number(gf(f, "TSG Undated WIP + VAT")) || 0,
+        tsgNextMonth: Number(gf(f, "TSG NM WIP + VAT")) || 0,
       };
     });
 
