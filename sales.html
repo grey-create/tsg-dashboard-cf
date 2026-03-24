@@ -319,10 +319,10 @@
     </div>
   </div>
   <div class="nav-tabs" id="pageTabs">
-    <button class="nav-tab" data-page="team" data-route="sales" onclick="showPage('team', this)">Team Comparison</button>
-    <button class="nav-tab" data-page="individual" data-route="sales" onclick="showPage('individual', this)">Individual Review</button>
-    <button class="nav-tab" data-page="rankings" data-route="sales" onclick="showPage('rankings', this)">Rankings</button>
-    <button class="nav-tab" data-page="brand" data-route="index" onclick="showPage('brand', this)">Brand Sales</button>
+    <button class="nav-tab active" data-page="team" onclick="showPage('team', this)">Team Comparison</button>
+    <button class="nav-tab" data-page="individual" onclick="showPage('individual', this)">Individual Review</button>
+    <button class="nav-tab" data-page="rankings" onclick="showPage('rankings', this)">Rankings</button>
+    <button class="nav-tab" data-page="brand" onclick="showPage('brand', this)">Brand Sales</button>
   </div>
 </header>
 
@@ -643,13 +643,7 @@ async function loadData() {
     if (window.setNavTimestamp) window.setNavTimestamp(ft);
     document.getElementById('loadingOverlay').style.display = 'none';
     document.getElementById('mainContent').style.display = 'block';
-    // Route-aware: load the right section
-    const isSales = window.location.pathname.indexOf('/sales') === 0;
-    if (isSales) {
-      updateTeam();
-    } else {
-      loadBrandData();
-    }
+    updateTeam();
   } catch (err) {
     document.getElementById('loadingOverlay').style.display = 'none';
     document.getElementById('errorContainer').innerHTML = `<div class="error-msg"><strong>Failed to load data:</strong> ${err.message}<br><br>Check that AIRTABLE_TOKEN is set in Cloudflare Pages environment variables.</div>`;
@@ -1397,32 +1391,13 @@ async function sendReport() {
   }
 }
 
-// ==================== ROUTE-AWARE INIT ====================
-(function initRouting() {
-  const path = window.location.pathname;
-  const isSalesPage = path.indexOf('/sales') === 0;
-  const route = isSalesPage ? 'sales' : 'index';
-
-  // Show/hide tabs based on route
-  document.querySelectorAll('#pageTabs .nav-tab').forEach(btn => {
-    if (btn.dataset.route === route) {
-      btn.style.display = '';
-    } else {
-      btn.style.display = 'none';
-    }
-  });
-
-  // Set default active tab
-  const defaultPage = isSalesPage ? 'team' : 'brand';
-  const defaultBtn = document.querySelector(`#pageTabs .nav-tab[data-page="${defaultPage}"]`);
-  if (defaultBtn) {
-    defaultBtn.classList.add('active');
-    document.getElementById('page-' + defaultPage).classList.add('active');
-  }
-
-  // Remove the hardcoded active from all pages first
+// ==================== INIT ====================
+(function initPage() {
+  // Default to Team Comparison tab
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.getElementById('page-' + defaultPage).classList.add('active');
+  document.getElementById('page-team').classList.add('active');
+  document.querySelectorAll('#pageTabs .nav-tab').forEach(btn => btn.classList.remove('active'));
+  document.querySelector('#pageTabs .nav-tab[data-page="team"]').classList.add('active');
 })();
 
 loadData();
