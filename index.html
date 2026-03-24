@@ -243,8 +243,25 @@ D.combInv=D.tsgInv+D.wllInv+D.nvInv;
     histNvSum+=(r.nv||0);
     histDaysSum+=wd;
   });
-  D.wllHistDaily=histDaysSum>0?histWllSum/histDaysSum:0;
-  D.nvHistDaily=histDaysSum>0?histNvSum/histDaysSum:0;
+ // Calendar days for WLL/NV (e-commerce, sells on weekends)
+  var calDaysInMonth=new Date(curYear,curMonth,0).getDate();
+  var calDaysElapsed=Math.min(now.getDate(),calDaysInMonth);
+  D.calDaysTotal=calDaysInMonth;
+  D.calDaysElapsed=calDaysElapsed;
+  D.calDaysLeft=calDaysInMonth-calDaysElapsed;
+
+  // Historical averages using calendar days too
+  var histWllCalSum=0,histNvCalSum=0,histCalDaysSum=0;
+  prevCompleted.forEach(function(k){
+    var r=invByKey[k];
+    var parts=k.split("-");
+    var calDays=new Date(parseInt(parts[0]),parseInt(parts[1]),0).getDate();
+    histWllCalSum+=(r.wll||0);
+    histNvCalSum+=(r.nv||0);
+    histCalDaysSum+=calDays;
+  });
+  D.wllHistDaily=histCalDaysSum>0?histWllCalSum/histCalDaysSum:0;
+  D.nvHistDaily=histCalDaysSum>0?histNvCalSum/histCalDaysSum:0;
   D.histMonthsUsed=prevCompleted.length;
 
   if(D.monthComplete){
