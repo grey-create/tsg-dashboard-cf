@@ -187,7 +187,11 @@ function processData(raw){
   D.wllNote=ov?ov.wllPaceNote:"";D.nvNote=ov?ov.nvPaceNote:"";
   D.focus=ov?ov.weekFocus:"";D.optFocus=ov?ov.optionalFocus:"";
   D.tsgWipDue=ov?ov.tsgWipDue:null;D.tsgWipUndated=ov?ov.tsgWipUndated:null;D.tsgWipNextMonth=ov?ov.tsgWipNextMonth:null;
-  D.hasWip=D.tsgWipDue!==null;   D.tsgPureInv=D.hasWip&&D.tsgWipDue?D.tsgInv-D.tsgWipDue:D.tsgInv;   D.combPureInv=D.tsgPureInv+D.wllInv+D.nvInv;
+D.hasWip=D.tsgWipDue!==null;
+  D.tsgPureInv=D.hasWip&&D.tsgWipDue?D.tsgInv-D.tsgWipDue:D.tsgInv;
+
+  // Also check brand sales feed for TSG split (from /airtable-sales)
+  D.brandTsgSplit=null;   D.combPureInv=D.tsgPureInv+D.wllInv+D.nvInv;
 
   var invByKey={},convByKey={};
   raw.invoiced.forEach(function(r){var p=parseMY(r.monthYear);if(p)invByKey[p.key]=r;});
