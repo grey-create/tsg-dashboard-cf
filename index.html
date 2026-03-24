@@ -761,7 +761,25 @@ async function init(){
       if(raw.conversions.length>0)console.log("Latest conversions:",raw.conversions[raw.conversions.length-1]);
     }
     document.getElementById("loading").style.display="none";
-    var D=processData(raw);render(D);
+   var D=processData(raw);
+    // Fetch brand sales for TSG invoiced/WIP split
+    try{
+      var bRes=await fetch("/airtable-sales");
+      if(bRes.ok){
+        var bJson=await bRes.json();
+        var now_=new Date(),curK_=now_.getFullYear()+"-"+String(now_.getMonth()+1).padStart(2,"0");
+        var curBrand=bJson.records.find(function(r){return r.date&&r.date.startsWith(curK_)});
+        if(curBrand&&curBrand.tsgInvoiced){
+          D.tsgPureInv=curBrand.tsgInvoiced;
+          D.tsgWipDue=curBrand.tsgWip||0;
+          D.tsgWipUndated=curBrand.tsgUndated||0;
+          D.tsgWipNextMonth=curBrand.tsgNextMonth||0;
+          D.hasWip=true;
+          D.combPureInv=D.tsgPureInv+D.wllInv+D.nvInv;
+        }
+      }
+    }catch(e){console.log("Brand split fetch failed:",e)}
+    render(D);
     if(raw.lastFetched){var ft=new Date(raw.lastFetched);if(window.setNavTimestamp)window.setNavTimestamp(ft);}
   }catch(err){
     document.getElementById("loading").style.display="none";
