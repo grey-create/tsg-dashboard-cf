@@ -264,16 +264,24 @@ D.combInv=D.tsgInv+D.wllInv+D.nvInv;
   D.nvHistDaily=histCalDaysSum>0?histNvCalSum/histCalDaysSum:0;
   D.histMonthsUsed=prevCompleted.length;
 
-  if(D.monthComplete){
+ if(D.monthComplete){
     D.tsgProj=D.tsgInv;D.wllProj=D.wllInv;D.nvProj=D.nvInv;
-    D.wllDaily=D.wdTotal>0?D.wllInv/D.wdTotal:0;D.nvDaily=D.wdTotal>0?D.nvInv/D.wdTotal:0;D.wllNeed=0;
+    D.wllDaily=D.calDaysTotal>0?D.wllInv/D.calDaysTotal:0;D.nvDaily=D.calDaysTotal>0?D.nvInv/D.calDaysTotal:0;D.wllNeed=0;
   }else{
     D.tsgProj=D.tsgInv;
-    D.wllDaily=D.wdDone>0?D.wllInv/D.wdDone:0;
-    D.nvDaily=D.wdDone>0?D.nvInv/D.wdDone:0;
-    D.wllProj=Math.max(D.wllInv,Math.round(D.wllHistDaily*D.wdTotal));
-    D.nvProj=Math.max(D.nvInv,Math.round(D.nvHistDaily*D.wdTotal));
-    D.wllNeed=D.wllTgt>D.wllInv&&D.wdLeft>0?(D.wllTgt-D.wllInv)/D.wdLeft:0;
+    // Current daily rate from calendar days (e-commerce = 7 days a week)
+    D.wllDaily=D.calDaysElapsed>0?D.wllInv/D.calDaysElapsed:0;
+    D.nvDaily=D.calDaysElapsed>0?D.nvInv/D.calDaysElapsed:0;
+    // Project using current actual daily rate (primary), floored by historical avg
+    var wllFromCurrent=Math.round(D.wllDaily*D.calDaysTotal);
+    var wllFromHist=Math.round(D.wllHistDaily*D.calDaysTotal);
+    var nvFromCurrent=Math.round(D.nvDaily*D.calDaysTotal);
+    var nvFromHist=Math.round(D.nvHistDaily*D.calDaysTotal);
+    // Use current rate as primary, historical as floor (never project below historical unless current is genuinely lower)
+    D.wllProj=Math.max(D.wllInv,wllFromCurrent);
+    D.nvProj=Math.max(D.nvInv,nvFromCurrent);
+    D.wllProjHist=wllFromHist;D.nvProjHist=nvFromHist;
+    D.wllNeed=D.wllTgt>D.wllInv&&D.calDaysLeft>0?(D.wllTgt-D.wllInv)/D.calDaysLeft:0;
   }
   D.combProj=D.tsgProj+D.wllProj+D.nvProj;
   D.wllPace=D.wllProj>=D.wllTgt?"Ahead":"Behind";
@@ -478,7 +486,7 @@ function render(D){
   h+="</div>";
 
   // ===== WLL =====
-  var wllDailyTgt=D.wllTgt&&D.wdLeft>0?(D.wllTgt-D.wllInv)/D.wdLeft:0;
+var wllDailyTgt=D.wllTgt&&D.calDaysLeft>0?(D.wllTgt-D.wllInv)/D.calDaysLeft:0;
   var wllDailyGap=D.wllDaily-wllDailyTgt;
   h+='<div class="b-row" style="background:'+C.wll.bg+";border-color:"+C.wll.bd+'">';
   h+='<div class="b-hdr"><div class="b-name"><img src="'+LOGOS.wll+'" class="logo"><strong>WeLoveLEDs\u2122</strong> '+(D.monthComplete?plb("Final","#eff6ff","#1e40af"):pl(D.wllPace))+"</div>";
@@ -506,8 +514,8 @@ function render(D){
   h+='<details class="detail-panel" open><summary>Projection Detail</summary><div class="detail-content">';
   if(!D.monthComplete){
     h+='<div style="margin-bottom:6px">';
-    h+='<span>'+D.histMonthsUsed+'-month historical avg: <strong style="color:#6BD4EC">'+f(D.wllHistDaily)+'/day</strong></span>';
-    h+=' <span style="color:#475569">\u00B7</span> <span>historical avg \u00D7 '+D.wdTotal+' working days = <strong style="color:#f1f5f9">'+f(D.wllProj)+'</strong> projected</span>';
+h+='<span>Current rate: <strong style="color:#6BD4EC">'+f(D.wllDaily)+'/day</strong> \u00D7 '+D.calDaysTotal+' days = <strong style="color:#f1f5f9">'+f(D.wllProj)+'</strong></span>';
+    h+=' <span style="color:#475569">\u00B7</span> <span>'+D.histMonthsUsed+'-month avg: '+f(D.wllHistDaily)+'/day ('+f(D.wllProjHist)+' projected)</span>';
     h+="</div>";
   }
   if(D.wllNote)h+='<div>\u26A1 '+D.wllNote+"</div>";
@@ -515,7 +523,7 @@ function render(D){
   h+="</div>";
 
   // ===== NV =====
-  var nvDailyTgt=D.nvTgt&&D.wdLeft>0?(D.nvTgt-D.nvInv)/D.wdLeft:0;
+  var nvDailyTgt=D.nvTgt&&D.calDaysLeft>0?(D.nvTgt-D.nvInv)/D.calDaysLeft:0;
   var nvDailyGap=D.nvDaily-nvDailyTgt;
   h+='<div class="b-row" style="background:'+C.nv.bg+";border-color:"+C.nv.bd+'">';
   h+='<div class="b-hdr"><div class="b-name"><img src="'+LOGOS.nv+'" class="logo"><strong>Neon Vibes\u00AE</strong> '+(D.monthComplete?plb("Final","#eff6ff","#1e40af"):pl(D.nvPace))+"</div>";
@@ -543,8 +551,8 @@ function render(D){
   h+='<details class="detail-panel" open><summary>Projection Detail</summary><div class="detail-content">';
   if(!D.monthComplete){
     h+='<div style="margin-bottom:6px">';
-    h+='<span>'+D.histMonthsUsed+'-month historical avg: <strong style="color:#ff3399">'+f(D.nvHistDaily)+'/day</strong></span>';
-    h+=' <span style="color:#475569">\u00B7</span> <span>historical avg \u00D7 '+D.wdTotal+' working days = <strong style="color:#f1f5f9">'+f(D.nvProj)+'</strong> projected</span>';
+   h+='<span>Current rate: <strong style="color:#ff3399">'+f(D.nvDaily)+'/day</strong> \u00D7 '+D.calDaysTotal+' days = <strong style="color:#f1f5f9">'+f(D.nvProj)+'</strong></span>';
+    h+=' <span style="color:#475569">\u00B7</span> <span>'+D.histMonthsUsed+'-month avg: '+f(D.nvHistDaily)+'/day ('+f(D.nvProjHist)+' projected)</span>';
     h+="</div>";
   }
   if(D.nvNote)h+='<div>'+D.nvNote+"</div>";
