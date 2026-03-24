@@ -436,8 +436,8 @@ function render(D){
   if(D.tsgTgt)h+='<div style="font-size:12px;color:#94a3b8">Target '+f(D.tsgTgt)+" \u00B7 "+(D.tsgInv>=D.tsgTgt?'<span class="up">+'+f(D.tsgInv-D.tsgTgt)+"</span>":'<span class="dn">'+f(D.tsgInv-D.tsgTgt)+"</span>")+"</div>";
   h+="</div><div class=\"g4 mb-10\">";
   h+='<div><div class="st-label">'+(D.monthComplete?"Final Total":"Combined Total")+'</div><div class="st-val">'+f(D.tsgInv)+"</div></div>";
-  if(D.hasWip&&!D.monthComplete){
-    h+='<div><div class="st-label">Invoiced to Date</div><div class="st-val" style="color:#4ade80">'+f(D.tsgPureInv)+"</div></div>";
+ if(D.hasWip&&!D.monthComplete){
+    h+='<div><div class="st-label">Invoiced</div><div class="st-val" style="color:#4ade80">'+f(D.tsgPureInv)+"</div></div>";
     h+='<div><div class="st-label">WIP Due This Month</div><div class="st-val" style="color:#fbbf24">'+f(D.tsgWipDue)+"</div></div>";
   }
   if(D.tsgTgt)h+='<div><div class="st-label">vs Target</div><div class="st-val" style="color:'+(D.tsgInv>=D.tsgTgt?"#16a34a":"#dc2626")+'">'+ps(po(D.tsgInv,D.tsgTgt))+"</div></div>";
@@ -445,7 +445,7 @@ function render(D){
   if(D.tsgTgt)h+=mkbar(D.tsgInv,D.tsgTgt,C.tsg.color);
   if(D.hasWip||D.tsgConfNote){
     h+='<details class="detail-panel" open><summary>WIP & Notes</summary><div class="detail-content">';
-    if(D.hasWip)h+='<div style="display:flex;gap:24px;margin-bottom:6px"><span>Undated WIP: <strong style="color:#f1f5f9">'+f(D.tsgWipUndated)+"</strong></span><span>Next Month: <strong style=\"color:#f1f5f9\">"+f(D.tsgWipNextMonth)+"</strong></span></div>";
+ if(D.hasWip)h+='<div style="display:flex;gap:24px;margin-bottom:6px"><span>Undated WIP: <strong style="color:#f1f5f9">'+f(D.tsgWipUndated)+'</strong></span><span>Next Month WIP: <strong style="color:#f1f5f9">'+f(D.tsgWipNextMonth)+'</strong></span><span>Total Pipeline: <strong style="color:#f1f5f9">'+f((D.tsgWipUndated||0)+(D.tsgWipNextMonth||0))+"</strong></span></div>";
     if(D.tsgConfNote)h+='<div style="font-style:italic">\uD83D\uDCA1 '+D.tsgConfNote+"</div>";
     h+="</div></details>";
   }
