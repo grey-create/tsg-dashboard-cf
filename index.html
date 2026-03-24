@@ -187,7 +187,7 @@ function processData(raw){
   D.wllNote=ov?ov.wllPaceNote:"";D.nvNote=ov?ov.nvPaceNote:"";
   D.focus=ov?ov.weekFocus:"";D.optFocus=ov?ov.optionalFocus:"";
   D.tsgWipDue=ov?ov.tsgWipDue:null;D.tsgWipUndated=ov?ov.tsgWipUndated:null;D.tsgWipNextMonth=ov?ov.tsgWipNextMonth:null;
-  D.hasWip=D.tsgWipDue!==null;
+  D.hasWip=D.tsgWipDue!==null;   D.tsgPureInv=D.hasWip&&D.tsgWipDue?D.tsgInv-D.tsgWipDue:D.tsgInv;   D.combPureInv=D.tsgPureInv+D.wllInv+D.nvInv;
 
   var invByKey={},convByKey={};
   raw.invoiced.forEach(function(r){var p=parseMY(r.monthYear);if(p)invByKey[p.key]=r;});
@@ -346,7 +346,7 @@ function processData(raw){
     D.projNv=fyMonthsIn>0?Math.round(fy0.nv/fyMonthsIn*12):0;
     D.projMethod="run-rate";
     D.projSeasonalPct=0;
-  }
+  } 
   D.projGrowth=D.prevFYTotal>0?po(D.projTot,D.prevFYTotal):0;
 
   D.fyStart=curFYStart;
@@ -407,7 +407,7 @@ function render(D){
   h+='<div style="margin-bottom:16px"><div class="zone-label"><span class="zone-icon">\uD83D\uDCCA</span>Current Month</div><div class="zone-title"><span class="live-dot"></span>The Facts \u2014 '+D.monthName+' '+D.year+'</div></div>';
 
   h+='<div class="g4 mb-20">';
-  h+='<div class="kpi" style="border-top:3px solid #CDE453"><div class="kpi-label">Combined Invoiced</div><div class="kpi-val">'+f(D.combInv)+"</div><div class=\"kpi-sub\">"+(D.combTgt?'<span class="'+(D.combInv>=D.combTgt?"up":"dn")+'">'+(D.combInv>=D.combTgt?"\u25B2":"\u25BC")+" "+ps(po(D.combInv,D.combTgt))+" vs target</span>":"")+"</div></div>";
+  h+='<div class="kpi" style="border-top:3px solid #CDE453"><div class="kpi-label">Combined Invoiced</div><div class="kpi-val">'+f(D.combInv)+'</div><div class="kpi-sub">'+(D.combTgt?'<span class="'+(D.combInv>=D.combTgt?"up":"dn")+'">'+(D.combInv>=D.combTgt?"\u25B2":"\u25BC")+" "+ps(po(D.combInv,D.combTgt))+" vs target</span>":"")+"</div></div>";
   h+='<div class="kpi" style="border-top:3px solid #2d6e0e"><div class="kpi-label">'+(D.monthComplete?"Final Month-End":"Projected Month-End")+'</div><div class="kpi-val">'+f(D.combProj)+"</div><div class=\"kpi-sub\">"+(D.combTgt?f(D.combProj-D.combTgt)+" vs target":"")+(D.histMonthsUsed&&!D.monthComplete?' <span style="font-size:10px;color:#475569">(WLL+NV from '+D.histMonthsUsed+'mo avg)</span>':"")+"</div></div>";
   h+='<div class="kpi" style="border-top:3px solid #6BD4EC"><div class="kpi-label">FY Running Total</div><div class="kpi-val">'+f(D.run.tot[2])+"</div><div class=\"kpi-sub\">"+dl(po(D.run.tot[2],D.run.tot[1]))+" vs prev FY ("+D.run.monthsIn+"mo)</div></div>";
   h+='<div class="kpi" style="border-top:3px solid #FF0077"><div class="kpi-label">Avg Monthly Revenue</div><div class="kpi-val">'+f(D.run.avg[2])+"</div><div class=\"kpi-sub\">Prev FY avg: "+f(D.run.avg[1])+"</div></div>";
@@ -420,7 +420,7 @@ function render(D){
 
   // === INVOICING ===
   h+='<div class="card mb-20">';
-  var invDesc=D.monthComplete?"Final figures for "+D.monthName+" "+D.year:"Revenue from completed & invoiced work";
+  var invDesc=D.monthComplete?"Final figures for "+D.monthName+" "+D.year:"Invoiced revenue and confirmed WIP for "+D.monthName+" "+D.year;
   if(!D.monthComplete)invDesc+=" \u2014 TSG is invoiced + WIP (no projection). WLL & NV projected from "+D.histMonthsUsed+"-month historical daily avg.";
   h+=secHdr("Invoicing","#60a5fa","#0c1222","Monthly Invoicing",invDesc);
 
@@ -431,8 +431,11 @@ function render(D){
   h+="</div>";
   if(D.tsgTgt)h+='<div style="font-size:12px;color:#94a3b8">Target '+f(D.tsgTgt)+" \u00B7 "+(D.tsgInv>=D.tsgTgt?'<span class="up">+'+f(D.tsgInv-D.tsgTgt)+"</span>":'<span class="dn">'+f(D.tsgInv-D.tsgTgt)+"</span>")+"</div>";
   h+="</div><div class=\"g4 mb-10\">";
-  h+='<div><div class="st-label">'+(D.monthComplete?"Final Total":"Invoiced + WIP")+'</div><div class="st-val">'+f(D.tsgInv)+"</div></div>";
-  if(D.hasWip&&!D.monthComplete)h+='<div><div class="st-label">WIP Due This Month</div><div class="st-val" style="color:#fbbf24">'+f(D.tsgWipDue)+"</div></div>";
+  h+='<div><div class="st-label">'+(D.monthComplete?"Final Total":"Combined Total")+'</div><div class="st-val">'+f(D.tsgInv)+"</div></div>";
+  if(D.hasWip&&!D.monthComplete){
+    h+='<div><div class="st-label">Invoiced to Date</div><div class="st-val" style="color:#4ade80">'+f(D.tsgPureInv)+"</div></div>";
+    h+='<div><div class="st-label">WIP Due This Month</div><div class="st-val" style="color:#fbbf24">'+f(D.tsgWipDue)+"</div></div>";
+  }
   if(D.tsgTgt)h+='<div><div class="st-label">vs Target</div><div class="st-val" style="color:'+(D.tsgInv>=D.tsgTgt?"#16a34a":"#dc2626")+'">'+ps(po(D.tsgInv,D.tsgTgt))+"</div></div>";
   h+="</div>";
   if(D.tsgTgt)h+=mkbar(D.tsgInv,D.tsgTgt,C.tsg.color);
