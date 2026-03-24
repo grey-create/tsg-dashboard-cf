@@ -188,7 +188,7 @@ function processData(raw){
   D.focus=ov?ov.weekFocus:"";D.optFocus=ov?ov.optionalFocus:"";
   D.tsgWipDue=ov?ov.tsgWipDue:null;D.tsgWipUndated=ov?ov.tsgWipUndated:null;D.tsgWipNextMonth=ov?ov.tsgWipNextMonth:null;
 // TSG split from invoiced table
-  if(curInv.tsgInvoiced>0){
+if(curInv&&curInv.tsgInvoiced&&curInv.tsgInvoiced>0){
     D.tsgPureInv=curInv.tsgInvoiced;
     D.tsgWipDue=curInv.tsgWip||0;
     D.tsgWipUndated=curInv.tsgUndated||0;
