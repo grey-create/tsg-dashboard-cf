@@ -1317,7 +1317,9 @@ function updateCommentaryMonthNote() {
 function getSalesTeamSummary(targetYM) {
   const now = new Date();
   const curYM = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
-  const selectedYM = targetYM || curYM;
+  // Normalise to YYYY-MM — BRAND_DATA stores full date strings (e.g. 2026-03-01)
+  // but employee DATA uses YYYY-MM keys. Substring to 7 chars fixes the mismatch.
+  const selectedYM = (targetYM || curYM).substring(0, 7);
 
   const [sy, sm] = selectedYM.split('-').map(Number);
 
