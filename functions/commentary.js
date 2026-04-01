@@ -48,11 +48,14 @@ WRITING RULES (these override everything else about tone):
 
 7. Keep commentary short and useful. Good commentary explains why the numbers look the way they do, what could shift the month, and whether confidence is high or low. If a line does not add insight, remove it.
 
+8. SALES TEAM SECTION — NAME NAMES. When covering individual sales performance, use actual names and actual numbers. If someone has had a strong month relative to their own average, say so clearly. If someone is significantly below their own norm, note it factually. Do not hedge. Do not use vague team language like "the team performed well overall." Compare each person to their own recent average — that is the only fair benchmark. This should read like a factual peer review, not a PR piece.
+
 STRUCTURE (follow this order):
-1. Brand-by-brand breakdown: TSG, WLL, NV and Overall. Each brand's position against target with actual figures.
-2. Trends and growth: Compare to previous months and same month last year where data exists. Note direction of travel.
-3. Target performance: Who is ahead, who is behind, and by how much.
-4. Close with the one or two things that will most likely determine how the month finishes.`;
+1. Brand-by-brand breakdown (invoiced): TSG, WLL, NV and Overall. Each brand's position against target with actual figures.
+2. New sales orders: Total new orders confirmed this month and how that compares to recent months.
+3. Sales team performance: Individual breakdown — who won what, enquiry volumes, conversion rates. Compare each person to their own 3-month average. Name who is above and below their own norm, and by how much.
+4. Trends and growth: Direction of travel vs previous months and same month last year where data exists.
+5. Close with the one or two things that will most likely determine how the month finishes (or, for EOM, a one-line verdict on the month).`;
 
     const userPrompt = buildUserPrompt(data, currentMonth, isPartialMonth, periodPosition, userContext, salesTeamData);
 
@@ -146,24 +149,57 @@ function buildUserPrompt(data, currentMonth, isPartialMonth, periodPosition, use
     prompt += `\n\n`;
   }
 
-  // NEW SALES ORDERED
-  if (salesTeamData && salesTeamData.totalNewSales > 0) {
+  // NEW SALES ORDERED — team total + individual breakdown with historical context
+  if (salesTeamData && (salesTeamData.totalNewSales > 0 || salesTeamData.totalOrders > 0)) {
     prompt += `## NEW SALES ORDERED THIS MONTH (orders placed, NOT invoiced):\n`;
     prompt += `IMPORTANT: New Sales are orders confirmed this month. This is order intake, completely separate from invoiced revenue above.\n`;
-    prompt += `Total New Orders: £${fmt(salesTeamData.totalNewSales)}`;
+
+    prompt += `Team Total: £${fmt(salesTeamData.totalNewSales)}`;
     if (salesTeamData.prevMonthNewSales > 0) {
       const pct = ((salesTeamData.totalNewSales - salesTeamData.prevMonthNewSales) / salesTeamData.prevMonthNewSales * 100);
-      prompt += ` (${pct >= 0 ? '+' : ''}${pct.toFixed(0)}% vs last month's £${fmt(salesTeamData.prevMonthNewSales)})`;
+      prompt += ` (${pct >= 0 ? '+' : ''}${pct.toFixed(0)}% vs previous month's £${fmt(salesTeamData.prevMonthNewSales)})`;
     }
     prompt += `\n`;
-    prompt += `Total Enquiries: ${salesTeamData.totalEnquiries}, Total Orders: ${salesTeamData.totalOrders}\n`;
-    if (salesTeamData.employees && salesTeamData.employees.length > 0) {
-      prompt += `By person:\n`;
-      salesTeamData.employees.forEach(e => {
-        prompt += `  ${e.name}: £${fmt(e.newSales)} from ${e.orders} orders (${e.enquiries} enquiries, ${(e.convRate * 100).toFixed(0)}% conversion)\n`;
+    prompt += `Total Enquiries: ${salesTeamData.totalEnquiries} | Total Orders: ${salesTeamData.totalOrders}\n\n`;
+
+    // Team history (prior 3 months totals)
+    if (salesTeamData.teamHistory && salesTeamData.teamHistory.length > 0) {
+      prompt += `Team new sales — recent months:\n`;
+      salesTeamData.teamHistory.forEach(h => {
+        prompt += `  ${h.month}: £${fmt(h.newSales)} from ${h.orders} orders (${h.enquiries} enquiries)\n`;
       });
+      prompt += `\n`;
     }
-    prompt += `\n`;
+
+    // Individual breakdown with vs-their-own-average context
+    if (salesTeamData.employees && salesTeamData.employees.length > 0) {
+      prompt += `Individual performance this month vs their own 3-month average:\n`;
+      salesTeamData.employees.forEach(e => {
+        const salesVsAvg = e.avgSales > 0 ? ((e.newSales - e.avgSales) / e.avgSales * 100) : null;
+        const convVsAvg  = e.avgConv  > 0 ? ((e.convRate - e.avgConv)  / e.avgConv  * 100) : null;
+
+        prompt += `\n${e.name}:\n`;
+        prompt += `  This month: £${fmt(e.newSales)} | ${e.orders} orders from ${e.enquiries} enquiries | ${(e.convRate * 100).toFixed(0)}% conversion | AOV £${fmt(e.aov)}\n`;
+
+        if (e.histMonthsCount > 0) {
+          prompt += `  3-month avg:  £${fmt(e.avgSales)} | ${e.avgOrders.toFixed(1)} orders avg | ${(e.avgConv * 100).toFixed(0)}% conversion avg | AOV £${fmt(e.avgAOV)}\n`;
+          if (salesVsAvg !== null) {
+            const dir = salesVsAvg >= 0 ? 'ABOVE' : 'BELOW';
+            prompt += `  vs own avg: ${dir} by ${Math.abs(salesVsAvg).toFixed(0)}% on new sales`;
+            if (convVsAvg !== null) prompt += `, ${convVsAvg >= 0 ? 'ABOVE' : 'BELOW'} by ${Math.abs(convVsAvg).toFixed(0)}% on conversion`;
+            prompt += `\n`;
+          }
+
+          // Last 3 months detail for this person
+          if (e.history && e.history.length > 0) {
+            prompt += `  Recent months: `;
+            prompt += e.history.map(h => `${h.month}: £${fmt(h.newSales)} (${h.orders} orders, ${(h.convRate*100).toFixed(0)}% conv)`).join(' | ');
+            prompt += `\n`;
+          }
+        }
+      });
+      prompt += `\n`;
+    }
   }
 
   if (prevMonths.length > 0) {
@@ -197,6 +233,7 @@ function buildUserPrompt(data, currentMonth, isPartialMonth, periodPosition, use
 - TSG invoicing is NOT pace-sensitive (production-based). WLL and NV ARE pace-sensitive.
 - Keep INVOICED sales and NEW SALES ORDERED clearly separated in the commentary. They are different things.
 - New Sales Ordered is the pipeline being filled. Invoiced Sales is revenue being realised.
+- For the sales team section, use actual names and compare each person to their own 3-month average — not to the team or to each other.
 - Apply the period context guidance above — it should shape the framing and tone of the whole piece.`;
 
   return prompt;
