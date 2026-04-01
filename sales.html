@@ -1319,37 +1319,92 @@ function getSalesTeamSummary(targetYM) {
   const curYM = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
   const selectedYM = targetYM || curYM;
 
-  // Work out the previous month relative to the selected month
   const [sy, sm] = selectedYM.split('-').map(Number);
-  const prevDate = new Date(sy, sm - 2, 1); // sm-1 = current month (0-indexed), sm-2 = previous
+
+  // Previous month (for team total comparison)
+  const prevDate = new Date(sy, sm - 2, 1);
   const prevYM = prevDate.getFullYear()+'-'+String(prevDate.getMonth()+1).padStart(2,'0');
 
-  const summary = { currentMonth: selectedYM, employees: [] };
+  // Last 3 months before the selected month — for individual and team historical averages
+  const histMonths = [];
+  for (let i = 1; i <= 3; i++) {
+    const d = new Date(sy, sm - 1 - i, 1);
+    histMonths.push(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'));
+  }
+  histMonths.reverse(); // oldest → newest
+
+  const summary = { currentMonth: selectedYM, employees: [], teamHistory: [] };
   let totalNewSales = 0, totalEnq = 0, totalOrders = 0, prevTotalNewSales = 0;
 
   EMPLOYEES.forEach(emp => {
     const curr = (DATA[emp]||[]).find(d => d.date === selectedYM);
     const prev = (DATA[emp]||[]).find(d => d.date === prevYM);
+
+    // Per-employee history for the 3 months prior to selected month
+    const history = histMonths.map(ym => {
+      const r = (DATA[emp]||[]).find(d => d.date === ym);
+      return r ? {
+        month: r.month || ym,
+        newSales: r.valueOrd,
+        orders: r.orders,
+        enquiries: r.enq,
+        convRate: r.convRate,
+        aov: r.aov
+      } : null;
+    }).filter(Boolean);
+
+    // 3-month averages per individual (used in commentary for comparison)
+    const avgSales  = history.length ? history.reduce((s,h)=>s+h.newSales,0) / history.length : 0;
+    const avgOrders = history.length ? history.reduce((s,h)=>s+h.orders,0)  / history.length : 0;
+    const avgConv   = history.length ? history.reduce((s,h)=>s+h.convRate,0) / history.length : 0;
+    const avgAOV    = history.length ? history.reduce((s,h)=>s+h.aov,0)      / history.length : 0;
+
     if (curr) {
       totalNewSales += curr.valueOrd;
-      totalEnq += curr.enq;
-      totalOrders += curr.orders;
+      totalEnq      += curr.enq;
+      totalOrders   += curr.orders;
       summary.employees.push({
         name: emp,
-        newSales: curr.valueOrd,
-        enquiries: curr.enq,
-        orders: curr.orders,
-        convRate: curr.convRate,
-        aov: curr.aov
+        newSales:   curr.valueOrd,
+        enquiries:  curr.enq,
+        orders:     curr.orders,
+        convRate:   curr.convRate,
+        aov:        curr.aov,
+        margin:     curr.margin,
+        // Historical context for this individual
+        history,
+        avgSales,
+        avgOrders,
+        avgConv,
+        avgAOV,
+        histMonthsCount: history.length
       });
     }
     if (prev) prevTotalNewSales += prev.valueOrd;
   });
 
-  summary.totalNewSales = totalNewSales;
-  summary.totalEnquiries = totalEnq;
-  summary.totalOrders = totalOrders;
-  summary.prevMonthNewSales = prevTotalNewSales;
+  // Team-level totals for each of the 3 prior months
+  histMonths.forEach(ym => {
+    let teamSales = 0, teamOrders = 0, teamEnq = 0;
+    let monthLabel = ym;
+    EMPLOYEES.forEach(emp => {
+      const r = (DATA[emp]||[]).find(d => d.date === ym);
+      if (r) {
+        teamSales  += r.valueOrd;
+        teamOrders += r.orders;
+        teamEnq    += r.enq;
+        if (r.month) monthLabel = r.month;
+      }
+    });
+    if (teamSales > 0 || teamOrders > 0) {
+      summary.teamHistory.push({ month: monthLabel, newSales: teamSales, orders: teamOrders, enquiries: teamEnq });
+    }
+  });
+
+  summary.totalNewSales      = totalNewSales;
+  summary.totalEnquiries     = totalEnq;
+  summary.totalOrders        = totalOrders;
+  summary.prevMonthNewSales  = prevTotalNewSales;
   return summary;
 }
 
