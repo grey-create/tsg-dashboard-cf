@@ -574,7 +574,7 @@
           </div>
           <div class="sel-group">
             <label>Position in Month</label>
-            <select id="commentaryPeriod">
+            <select id="commentaryPeriod" onchange="updateEmailSubject()">
               <option value="start">Start of Month &mdash; early figures, cautious tone</option>
               <option value="mid">Mid-Month &mdash; halfway check-in</option>
               <option value="final-week">Final Week &mdash; last push tone</option>
@@ -601,9 +601,9 @@
 
         <div id="emailPanel" class="email-panel">
           <label>Recipients (comma-separated email addresses)</label>
-          <input type="text" id="emailRecipients" placeholder="grey@thesigngroup.co.uk, team@thesigngroup.co.uk">
+          <input type="text" id="emailRecipients" value="financial-updates@thesigngroup.co.uk">
           <label>Subject Line</label>
-          <input type="text" id="emailSubject" placeholder="TSG Sales Update">
+          <input type="text" id="emailSubject" value="TSG Sales Update">
           <button class="btn btn-send" id="btnSendEmail" onclick="sendReport()">Send Email</button>
           <div id="emailStatus" class="email-status"></div>
         </div>
@@ -1262,8 +1262,9 @@ function populateCommentaryMonthSelector() {
   // Auto-set the period position based on day of month
   autoSetPeriodPosition();
 
-  // Update the note label
+  // Update the note label and prefill the email subject
   updateCommentaryMonthNote();
+  updateEmailSubject();
 }
 
 function autoSetPeriodPosition() {
@@ -1283,6 +1284,7 @@ function autoSetPeriodPosition() {
 
 function onCommentaryMonthChange() {
   updateCommentaryMonthNote();
+  updateEmailSubject();
   // Clear any previously generated output when month changes
   const output = document.getElementById('reportOutput');
   output.className = 'report-output empty';
@@ -1310,6 +1312,29 @@ function updateCommentaryMonthNote() {
     note.textContent = '\u2705 Complete month — final figures';
     note.style.color = '#15803d';
   }
+}
+
+function updateEmailSubject() {
+  const monthSel  = document.getElementById('commentaryMonth');
+  const periodSel = document.getElementById('commentaryPeriod');
+  const subjectEl = document.getElementById('emailSubject');
+  if (!monthSel || !periodSel || !subjectEl) return;
+
+  // Get the display label for the selected month
+  const selectedOption = monthSel.options[monthSel.selectedIndex];
+  const monthLabel = selectedOption ? selectedOption.text.replace(' (in progress)', '').trim() : '';
+
+  const periodLabels = {
+    'start':       'Start of Month Update',
+    'mid':         'Mid-Month Update',
+    'final-week':  'Final Week Update',
+    'eom':         'End of Month Results'
+  };
+  const periodLabel = periodLabels[periodSel.value] || 'Sales Update';
+
+  subjectEl.value = monthLabel
+    ? `TSG Sales Update — ${monthLabel} — ${periodLabel}`
+    : `TSG Sales Update — ${periodLabel}`;
 }
 
 // ==================== COMMENTARY GENERATION ====================
