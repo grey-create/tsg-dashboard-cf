@@ -1513,6 +1513,7 @@ async function sendReport() {
         recipients,
         subject,
         monthCovered: selected ? selected.monthYear : 'Sales Update',
+        periodPosition: document.getElementById('commentaryPeriod').value,
         // Pass brand figures for the summary table
         brandSummary: selected || null,
         // Pass new orders headline figures
