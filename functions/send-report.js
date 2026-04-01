@@ -15,7 +15,7 @@ export async function onRequestPost(context) {
 
   try {
     const body = await context.request.json();
-    const { commentary, recipients, subject, monthCovered, brandSummary, salesSummary } = body;
+    const { commentary, recipients, subject, monthCovered, periodPosition, brandSummary, salesSummary } = body;
 
     if (!commentary || !recipients || recipients.length === 0) {
       return new Response(JSON.stringify({ error: 'Missing commentary or recipients' }), {
@@ -23,7 +23,7 @@ export async function onRequestPost(context) {
       });
     }
 
-    const htmlBody = buildEmailHtml(commentary, monthCovered, brandSummary, salesSummary, DASHBOARD_URL);
+    const htmlBody = buildEmailHtml(commentary, monthCovered, brandSummary, salesSummary, DASHBOARD_URL, periodPosition);
 
     const response = await fetch('https://api.resend.com/emails', {
       method: 'POST',
@@ -76,7 +76,15 @@ function calcOverall(d) {
 
 // ─── EMAIL BUILDER ───────────────────────────────────────────────────────────
 
-function buildEmailHtml(commentary, monthCovered, brandSummary, salesSummary, dashboardUrl) {
+function buildEmailHtml(commentary, monthCovered, brandSummary, salesSummary, dashboardUrl, periodPosition) {
+
+  // Derive the site origin cleanly regardless of what DASHBOARD_URL is set to
+  let origin = dashboardUrl;
+  try { origin = new URL(dashboardUrl).origin; } catch(e) { /* use as-is */ }
+
+  // EOM review → /review (last month's final figures)
+  // Everything else → root (Revenue & Invoicing live page)
+  const linkUrl = periodPosition === 'eom' ? `${origin}/review` : origin;
 
   // ── 1. INVOICING SUMMARY TABLE ─────────────────────────────────────────────
   let summaryTable = '';
@@ -177,7 +185,7 @@ function buildEmailHtml(commentary, monthCovered, brandSummary, salesSummary, da
   // ── 4. DASHBOARD BUTTON ────────────────────────────────────────────────────
   const dashboardButton = `
     <div style="text-align:center; margin:28px 0 8px 0;">
-      <a href="${dashboardUrl}"
+      <a href="${linkUrl}"
          style="display:inline-block; background:#000; color:#fff; text-decoration:none;
                 padding:13px 30px; border-radius:7px; font-size:13px; font-weight:700;
                 letter-spacing:0.3px;">
@@ -218,7 +226,7 @@ function buildEmailHtml(commentary, monthCovered, brandSummary, salesSummary, da
 
       <p style="font-size:11px; color:#bbb; margin:0; text-align:center; line-height:1.6;">
         Generated from the
-        <a href="${dashboardUrl}" style="color:#bbb; text-decoration:underline;">TSG Sales Dashboard</a>.
+        <a href="${linkUrl}" style="color:#bbb; text-decoration:underline;">TSG Sales Dashboard</a>.
         AI-assisted summary based on live Airtable data.
       </p>
 
