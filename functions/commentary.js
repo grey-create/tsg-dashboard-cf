@@ -40,22 +40,28 @@ WRITING RULES (these override everything else about tone):
 
 3. STATE FACTS WITHOUT DRAMA. Write like a calm, factual briefing from management. Not a motivational speech. Not corporate reporting. Examples of good: "TSG is currently projected at £200k against a £186k target." or "WLL is slightly behind pace but within reach of target." Examples of bad: "We must urgently push sales" or "Everyone needs to step up" or "We must rally together."
 
-4. HIGHLIGHT REAL PRESSURE POINTS only when something actually drives the month's outcome: a large amount of undated work, a slow order pace, a strong start that needs maintaining, limited working days remaining. Say things like "The month now depends largely on converting the undated work" or "With X working days left, the order pace needs to hold." Point at the situation without telling anyone how to do their job.
+4. HIGHLIGHT REAL PRESSURE POINTS only when something actually drives the month's outcome. Point at the situation without telling anyone how to do their job.
 
 5. DO NOT make operational assumptions about production capacity, staffing, internal workflow, or what individuals should prioritise. This is a financial position update, not a management instruction.
 
 6. TONE OF VOICE: calm, factual, slightly conversational, confident but not dramatic. Plain English. Avoid corporate jargon, dramatic language, and overly polished AI-sounding writing.
 
-7. Keep commentary short and useful. Good commentary explains why the numbers look the way they do, what could shift the month, and whether confidence is high or low. If a line does not add insight, remove it.
+7. Keep commentary short and useful. If a line does not add insight, remove it.
 
-8. SALES TEAM SECTION — NAME NAMES. When covering individual sales performance, use actual names and actual numbers. If someone has had a strong month relative to their own average, say so clearly. If someone is significantly below their own norm, note it factually. Do not hedge. Do not use vague team language like "the team performed well overall." Compare each person to their own recent average — that is the only fair benchmark. This should read like a factual peer review, not a PR piece.
+8. USER CONTEXT IS PRIMARY MATERIAL, NOT A FOOTNOTE. If the person generating this report has provided additional context — absences, retirements, production pressures, upcoming challenges — this is real first-hand information that explains the numbers. Weave it in naturally and prominently where it is relevant. Do not park it at the end or treat it as a rider. If someone was absent for the final week, say so where it explains their numbers. If there was a staffing challenge in the workshop, say so where it explains the invoicing result.
+
+9. RANK INDIVIDUALS BY OUTPUT. List individuals in order of their new sales value this month, highest first. The top earner is the lead story — frame them as such. If their conversion rate dropped slightly, note it separately and briefly. Do not let a minor metric caveat undermine the framing of the top result. A person who won the most deserves to be described as the top earner first, before anything else.
+
+10. CONVERSION RATE NUANCE. Differences in conversion rates between team members are worth noting — a lower rate means the same enquiry pool would yield more orders if converted at the higher rate. However: (a) conversion rates can improve retrospectively as previously quoted work gets confirmed in subsequent months, so a low rate this month may not be final; (b) only flag conversion as a concern when there is a meaningful and sustained gap between one person and the rest of the team; (c) do not frame a single month's conversion dip as a problem unless it fits a clear pattern. Monitor, note, but do not alarm.
+
+11. HISTORICAL CONTEXT MATTERS. You have up to 6 months of individual history. Use it. A result that looks exceptional against a 3-month low baseline may be less impressive against a 6-month view — acknowledge this where relevant. A good month following several weak months is a recovery, not a new benchmark. Say so. Conversely, a strong result that holds up even across the longer window deserves to be called out clearly.
 
 STRUCTURE (follow this order):
 1. Brand-by-brand breakdown (invoiced): TSG, WLL, NV and Overall. Each brand's position against target with actual figures.
 2. New sales orders: Total new orders confirmed this month and how that compares to recent months.
-3. Sales team performance: Individual breakdown — who won what, enquiry volumes, conversion rates. Compare each person to their own 3-month average. Name who is above and below their own norm, and by how much.
+3. Sales team performance: List individuals by this month's sales value, highest first. For each: what they won, how that compares to their 6-month average, and any relevant context (absences, patterns). Note meaningful conversion rate differences across the team factually and with the caveat about retrospective confirmation.
 4. Trends and growth: Direction of travel vs previous months and same month last year where data exists.
-5. Close with the one or two things that will most likely determine how the month finishes (or, for EOM, a one-line verdict on the month).`;
+5. Close with the one or two things that will most likely determine how the month finishes (or, for EOM, a brief one-line verdict and what the result sets up for next month — particularly if the user context mentions upcoming challenges).`;
 
     const userPrompt = buildUserPrompt(data, currentMonth, isPartialMonth, periodPosition, userContext, salesTeamData);
 
@@ -171,10 +177,11 @@ function buildUserPrompt(data, currentMonth, isPartialMonth, periodPosition, use
       prompt += `\n`;
     }
 
-    // Individual breakdown with vs-their-own-average context
+    // Individual breakdown — sorted by this month's sales, highest first
     if (salesTeamData.employees && salesTeamData.employees.length > 0) {
-      prompt += `Individual performance this month vs their own 3-month average:\n`;
-      salesTeamData.employees.forEach(e => {
+      const sorted = [...salesTeamData.employees].sort((a, b) => b.newSales - a.newSales);
+      prompt += `Individual performance this month vs their own 6-month average (list in this order — highest earner first):\n`;
+      sorted.forEach(e => {
         const salesVsAvg = e.avgSales > 0 ? ((e.newSales - e.avgSales) / e.avgSales * 100) : null;
         const convVsAvg  = e.avgConv  > 0 ? ((e.convRate - e.avgConv)  / e.avgConv  * 100) : null;
 
@@ -182,7 +189,7 @@ function buildUserPrompt(data, currentMonth, isPartialMonth, periodPosition, use
         prompt += `  This month: £${fmt(e.newSales)} | ${e.orders} orders from ${e.enquiries} enquiries | ${(e.convRate * 100).toFixed(0)}% conversion | AOV £${fmt(e.aov)}\n`;
 
         if (e.histMonthsCount > 0) {
-          prompt += `  3-month avg:  £${fmt(e.avgSales)} | ${e.avgOrders.toFixed(1)} orders avg | ${(e.avgConv * 100).toFixed(0)}% conversion avg | AOV £${fmt(e.avgAOV)}\n`;
+          prompt += `  ${e.histMonthsCount}-month avg: £${fmt(e.avgSales)} sales | ${e.avgOrders.toFixed(1)} orders avg | ${(e.avgConv * 100).toFixed(0)}% conversion avg | AOV £${fmt(e.avgAOV)}\n`;
           if (salesVsAvg !== null) {
             const dir = salesVsAvg >= 0 ? 'ABOVE' : 'BELOW';
             prompt += `  vs own avg: ${dir} by ${Math.abs(salesVsAvg).toFixed(0)}% on new sales`;
@@ -190,7 +197,7 @@ function buildUserPrompt(data, currentMonth, isPartialMonth, periodPosition, use
             prompt += `\n`;
           }
 
-          // Last 3 months detail for this person
+          // Month-by-month breakdown for context
           if (e.history && e.history.length > 0) {
             prompt += `  Recent months: `;
             prompt += e.history.map(h => `${h.month}: £${fmt(h.newSales)} (${h.orders} orders, ${(h.convRate*100).toFixed(0)}% conv)`).join(' | ');
@@ -198,6 +205,11 @@ function buildUserPrompt(data, currentMonth, isPartialMonth, periodPosition, use
           }
         }
       });
+
+      // Team conversion rate comparison — flag meaningful gaps
+      const convRates = sorted.map(e => ({ name: e.name, conv: (e.convRate * 100).toFixed(0) }));
+      prompt += `\nTeam conversion rates this month: ${convRates.map(c => `${c.name}: ${c.conv}%`).join(' | ')}\n`;
+      prompt += `NOTE: Conversion rates can shift in subsequent months as previously quoted work gets confirmed. A lower rate this month may not be the final picture. Flag persistent gaps across the team, but with that caveat.\n`;
       prompt += `\n`;
     }
   }
@@ -231,10 +243,12 @@ function buildUserPrompt(data, currentMonth, isPartialMonth, periodPosition, use
 
   prompt += `\nWrite the commentary now. Remember:
 - TSG invoicing is NOT pace-sensitive (production-based). WLL and NV ARE pace-sensitive.
-- Keep INVOICED sales and NEW SALES ORDERED clearly separated in the commentary. They are different things.
-- New Sales Ordered is the pipeline being filled. Invoiced Sales is revenue being realised.
-- For the sales team section, use actual names and compare each person to their own 3-month average — not to the team or to each other.
-- Apply the period context guidance above — it should shape the framing and tone of the whole piece.`;
+- Keep INVOICED sales and NEW SALES ORDERED clearly separated. They are different things.
+- List individuals highest earner first. Frame the top earner as the top earner.
+- Use the 6-month history to give context — a good month after a weak run is a recovery, not a benchmark.
+- Weave in any user context (absences, retirements, upcoming challenges) naturally where it explains the numbers.
+- Note conversion rate differences across the team factually, with the caveat that rates can shift as old quotes confirm.
+- Apply the period context guidance — it shapes the framing and tone of the whole piece.`;
 
   return prompt;
 }
