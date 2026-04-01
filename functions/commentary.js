@@ -13,9 +13,8 @@ export async function onRequestPost(context) {
 
   try {
     const body = await context.request.json();
-    const { data, currentMonth, isPartialMonth, userContext, salesTeamData } = body;
+    const { data, currentMonth, isPartialMonth, periodPosition, userContext, salesTeamData } = body;
 
-    // Build the prompt with financial logic rules baked in
     const systemPrompt = `You are a financial analyst for The Sign Group (TSG), a trade signage manufacturer near Leeds with ~40 staff. You write concise weekly/monthly sales commentary for the senior team.
 
 BRAND STRUCTURE:
@@ -55,7 +54,7 @@ STRUCTURE (follow this order):
 3. Target performance: Who is ahead, who is behind, and by how much.
 4. Close with the one or two things that will most likely determine how the month finishes.`;
 
-    const userPrompt = buildUserPrompt(data, currentMonth, isPartialMonth, userContext, salesTeamData);
+    const userPrompt = buildUserPrompt(data, currentMonth, isPartialMonth, periodPosition, userContext, salesTeamData);
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -100,25 +99,38 @@ STRUCTURE (follow this order):
   }
 }
 
-function buildUserPrompt(data, currentMonth, isPartialMonth, userContext, salesTeamData) {
+function buildUserPrompt(data, currentMonth, isPartialMonth, periodPosition, userContext, salesTeamData) {
   const current = data.find(d => d.monthYear === currentMonth);
   const prevMonths = data.filter(d => d.monthYear !== currentMonth).slice(-12);
 
-  // Helper: calculate overall from brands if the overall field is 0
   function calcOverall(d) {
     return d.overall > 0 ? d.overall : (d.tsg + d.wll + d.nv + (d.other || 0));
   }
 
   let prompt = `Here are the brand sales figures. Write a concise commentary.\n\n`;
 
-  // User context first if provided
+  // ── PERIOD POSITION ──────────────────────────────────────────────────────────
+  // Tells the AI where in the month we are, which shapes what's relevant to say
+  // and the framing of the commentary (looking ahead vs wrapping up).
+  const periodGuidance = {
+    'start': `PERIOD CONTEXT: This is a start-of-month update. Figures will be low and incomplete — that is expected. Frame this as an early read on how the month has opened. Compare the opening pace to where this month started last year. Keep projections cautious. The focus should be on the order pipeline and early indicators, not the invoiced totals which are naturally low at this stage.`,
+    'mid':   `PERIOD CONTEXT: This is a mid-month check-in. Figures represent roughly half the month. Assess whether the current pace puts each brand on track or off track to hit target. Highlight the gap still to close (or surplus already built) and what that implies for the second half. For TSG, focus on what is in the pipeline that could complete before month-end.`,
+    'final-week': `PERIOD CONTEXT: This is a final-week update. The shape of the month is now largely set. Flag clearly which brands are on track, which are behind and by how much, and whether the gap is realistically closeable. For TSG specifically, reference any known WIP that is due to complete before month-end. Keep the tone factual — this is where it either comes together or it doesn't.`,
+    'eom':   `PERIOD CONTEXT: These are end-of-month or final figures. The month is complete (or effectively complete). Write this as a definitive wrap-up. No forward-looking projections needed — just a clear summary of how the month landed against target, what the YoY and MoM trends show, and a brief note on what the result means in context. Confident, conclusive tone.`
+  };
+
+  const guidance = periodGuidance[periodPosition] || periodGuidance['eom'];
+  prompt += `## PERIOD POSITION:\n${guidance}\n\n`;
+  // ────────────────────────────────────────────────────────────────────────────
+
+  // User context
   if (userContext) {
     prompt += `## ADDITIONAL CONTEXT FROM MANAGEMENT:\n${userContext}\n\nIncorporate the above context naturally into the commentary where relevant.\n\n`;
   }
 
   if (current) {
     const overall = calcOverall(current);
-    prompt += `## CURRENT MONTH INVOICED SALES: ${currentMonth}${isPartialMonth ? ' (INCOMPLETE - month still in progress)' : ''}\n`;
+    prompt += `## CURRENT MONTH INVOICED SALES: ${currentMonth}${isPartialMonth ? ' (INCOMPLETE - month still in progress)' : ' (FINAL FIGURES)'}\n`;
     prompt += `These are INVOICED figures (completed work). This is separate from new orders placed.\n`;
     prompt += `TSG Invoiced: £${fmt(current.tsg)}`;
     if (current.tsgTarget) prompt += ` (Target: £${fmt(current.tsgTarget)}, ${current.tsg >= current.tsgTarget ? 'ABOVE' : 'BELOW'} by £${fmt(Math.abs(current.tsg - current.tsgTarget))})`;
@@ -134,7 +146,7 @@ function buildUserPrompt(data, currentMonth, isPartialMonth, userContext, salesT
     prompt += `\n\n`;
   }
 
-  // NEW SALES ORDERED (separate from invoicing)
+  // NEW SALES ORDERED
   if (salesTeamData && salesTeamData.totalNewSales > 0) {
     prompt += `## NEW SALES ORDERED THIS MONTH (orders placed, NOT invoiced):\n`;
     prompt += `IMPORTANT: New Sales are orders confirmed this month. This is order intake, completely separate from invoiced revenue above.\n`;
@@ -165,10 +177,10 @@ function buildUserPrompt(data, currentMonth, isPartialMonth, userContext, salesT
     const last3 = prevMonths.slice(-3);
     const avgTSG = last3.reduce((s, m) => s + m.tsg, 0) / last3.length;
     const avgWLL = last3.reduce((s, m) => s + m.wll, 0) / last3.length;
-    const avgNV = last3.reduce((s, m) => s + m.nv, 0) / last3.length;
+    const avgNV  = last3.reduce((s, m) => s + m.nv,  0) / last3.length;
     prompt += `3-month invoicing averages: TSG £${fmt(avgTSG)}, WLL £${fmt(avgWLL)}, NV £${fmt(avgNV)}\n`;
 
-    // Same month last year comparison
+    // Same month last year
     if (current) {
       const monthPart = currentMonth.split('-')[0];
       const sameMonthLastYear = [...data].reverse().find(d => {
@@ -184,7 +196,8 @@ function buildUserPrompt(data, currentMonth, isPartialMonth, userContext, salesT
   prompt += `\nWrite the commentary now. Remember:
 - TSG invoicing is NOT pace-sensitive (production-based). WLL and NV ARE pace-sensitive.
 - Keep INVOICED sales and NEW SALES ORDERED clearly separated in the commentary. They are different things.
-- New Sales Ordered is the pipeline being filled. Invoiced Sales is revenue being realised.`;
+- New Sales Ordered is the pipeline being filled. Invoiced Sales is revenue being realised.
+- Apply the period context guidance above — it should shape the framing and tone of the whole piece.`;
 
   return prompt;
 }
