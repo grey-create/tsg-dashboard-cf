@@ -329,9 +329,9 @@
     width: 100%; padding: 10px 12px; border: 1px solid var(--gray4); border-radius: 6px;
     font-size: 13px; font-family: 'Inter', sans-serif; margin-bottom: 12px;
   }
-  .email-status { font-size: 12px; margin-top: 8px; font-weight: 500; }
-  .email-status.success { color: var(--green); }
-  .email-status.error { color: var(--red); }
+  .email-status { font-size: 13px; margin-top: 10px; font-weight: 600; padding: 8px 12px; border-radius: 6px; display: none; }
+  .email-status.success { color: #15803d; background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.3); display: block; }
+  .email-status.error   { color: #b91c1c; background: rgba(239,68,68,0.1);  border: 1px solid rgba(239,68,68,0.3);  display: block; }
 
   .report-loading { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--gray1); }
   .report-loading .loading-spinner { width: 16px; height: 16px; margin-right: 0; }
@@ -1507,7 +1507,10 @@ function toggleEmailPanel() {
 }
 
 async function sendReport() {
-  if (!BRAND_COMMENTARY) return;
+  if (!BRAND_COMMENTARY) {
+    alert('No commentary generated yet — please generate commentary first.');
+    return;
+  }
 
   const recipients = document.getElementById('emailRecipients').value
     .split(',').map(e => e.trim()).filter(e => e.includes('@'));
@@ -1523,12 +1526,28 @@ async function sendReport() {
   const btn = document.getElementById('btnSendEmail');
   btn.disabled = true;
   btn.textContent = 'Sending...';
+  status.className = '';
   status.textContent = '';
 
   try {
     const selectedMonthDate = document.getElementById('commentaryMonth').value;
     const selected = BRAND_DATA.find(d => d.date === selectedMonthDate) || BRAND_DATA[BRAND_DATA.length - 1];
     const salesSummaryData = getSalesTeamSummary(selectedMonthDate);
+
+    // Sanitise brandSummary — extract only the plain number fields we actually need
+    // so we never accidentally send raw Airtable array values
+    const brandSummary = selected ? {
+      monthYear:     selected.monthYear  || '',
+      tsg:           Number(Array.isArray(selected.tsg) ? selected.tsg[0] : selected.tsg) || 0,
+      wll:           Number(Array.isArray(selected.wll) ? selected.wll[0] : selected.wll) || 0,
+      nv:            Number(Array.isArray(selected.nv)  ? selected.nv[0]  : selected.nv)  || 0,
+      overall:       Number(Array.isArray(selected.overall) ? selected.overall[0] : selected.overall) || 0,
+      other:         Number(Array.isArray(selected.other) ? selected.other[0] : selected.other) || 0,
+      tsgTarget:     Number(Array.isArray(selected.tsgTarget) ? selected.tsgTarget[0] : selected.tsgTarget) || 0,
+      wllTarget:     Number(Array.isArray(selected.wllTarget) ? selected.wllTarget[0] : selected.wllTarget) || 0,
+      nvTarget:      Number(Array.isArray(selected.nvTarget)  ? selected.nvTarget[0]  : selected.nvTarget)  || 0,
+      overallTarget: Number(Array.isArray(selected.overallTarget) ? selected.overallTarget[0] : selected.overallTarget) || 0,
+    } : null;
 
     const res = await fetch('/send-report', {
       method: 'POST',
@@ -1539,9 +1558,7 @@ async function sendReport() {
         subject,
         monthCovered: selected ? selected.monthYear : 'Sales Update',
         periodPosition: document.getElementById('commentaryPeriod').value,
-        // Pass brand figures for the summary table
-        brandSummary: selected || null,
-        // Pass new orders headline figures
+        brandSummary,
         salesSummary: {
           totalNewSales:  salesSummaryData.totalNewSales,
           totalOrders:    salesSummaryData.totalOrders,
@@ -1550,17 +1567,24 @@ async function sendReport() {
       })
     });
 
+    // Always read the response body as text first so we can show it on failure
+    const responseText = await res.text();
     if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.error || `Send failed: ${res.status}`);
+      let errorMsg = `Server error ${res.status}`;
+      try { const j = JSON.parse(responseText); errorMsg = j.error || j.detail || errorMsg; } catch(e) { errorMsg = responseText.substring(0, 200) || errorMsg; }
+      throw new Error(errorMsg);
     }
 
+    let result = {};
+    try { result = JSON.parse(responseText); } catch(e) { /* ignore */ }
+
     status.className = 'email-status success';
-    status.textContent = `Sent to ${recipients.join(', ')}`;
+    status.textContent = `\u2713 Sent to ${recipients.join(', ')}`;
 
   } catch (err) {
     status.className = 'email-status error';
-    status.textContent = `Failed: ${err.message}`;
+    status.textContent = `\u2717 Failed: ${err.message}`;
+    console.error('Send report error:', err);
   } finally {
     btn.disabled = false;
     btn.textContent = 'Send Email';
