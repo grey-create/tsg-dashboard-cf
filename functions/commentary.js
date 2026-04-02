@@ -122,9 +122,26 @@ function buildUserPrompt(data, currentMonth, isPartialMonth, periodPosition, use
   // Tells the AI where in the month we are, which shapes what's relevant to say
   // and the framing of the commentary (looking ahead vs wrapping up).
   const periodGuidance = {
-    'start': `PERIOD CONTEXT: This is a start-of-month update. Figures will be low and incomplete — that is expected. Frame this as an early read on how the month has opened. Compare the opening pace to where this month started last year. Keep projections cautious. The focus should be on the order pipeline and early indicators, not the invoiced totals which are naturally low at this stage.`,
+    'start': `PERIOD CONTEXT: This is a start-of-month update covering only the first few working days. The figures are tiny and almost meaningless in isolation — that is completely expected and normal.
+
+STRICT RULES FOR START-OF-MONTH:
+- DO NOT compare current MTD invoiced totals or order values to last month's full figures. Saying "orders are down 83% vs March" on day 2 is not a meaningful statement and must not appear.
+- DO NOT compare individual sales performance to their monthly averages. Two days of data tells you nothing about how someone's month is going.
+- DO NOT draw any conclusions about whether the month is on track or behind — it is far too early.
+- DO NOT project or extrapolate from current figures.
+- TSG invoicing in the first few days reflects jobs that happened to complete early — it has no predictive value yet.
+
+WHAT TO WRITE INSTEAD:
+- Briefly note what figures exist so far purely as a factual record, without any comparative judgement.
+- The most useful content at this stage is: what pipeline is coming in to the month? What did last month close at and does that create a good or difficult starting position for production? Are there any known large jobs or events that will shape this month?
+- For the sales team section: conversion rate in the first couple of days is based on a tiny sample and should not be analysed as meaningful. Note order intake volume briefly and leave it at that.
+- Close with what to watch as the month develops — not conclusions about where it currently stands.
+- Keep this update short. Two days in, there is not much to say and that is fine.`,
+
     'mid':   `PERIOD CONTEXT: This is a mid-month check-in. Figures represent roughly half the month. Assess whether the current pace puts each brand on track or off track to hit target. Highlight the gap still to close (or surplus already built) and what that implies for the second half. For TSG, focus on what is in the pipeline that could complete before month-end.`,
+
     'final-week': `PERIOD CONTEXT: This is a final-week update. The shape of the month is now largely set. Flag clearly which brands are on track, which are behind and by how much, and whether the gap is realistically closeable. For TSG specifically, reference any known WIP that is due to complete before month-end. Keep the tone factual — this is where it either comes together or it doesn't.`,
+
     'eom':   `PERIOD CONTEXT: These are end-of-month or final figures. The month is complete (or effectively complete). Write this as a definitive wrap-up. No forward-looking projections needed — just a clear summary of how the month landed against target, what the YoY and MoM trends show, and a brief note on what the result means in context. Confident, conclusive tone.`
   };
 
@@ -248,7 +265,7 @@ function buildUserPrompt(data, currentMonth, isPartialMonth, periodPosition, use
 - Use the 6-month history to give context — a good month after a weak run is a recovery, not a benchmark.
 - Weave in any user context (absences, retirements, upcoming challenges) naturally where it explains the numbers.
 - Note conversion rate differences across the team factually, with the caveat that rates can shift as old quotes confirm.
-- Apply the period context guidance — it shapes the framing and tone of the whole piece.`;
+- Apply the period context guidance strictly — especially for start-of-month where MoM and individual comparisons are explicitly banned.`;
 
   return prompt;
 }
