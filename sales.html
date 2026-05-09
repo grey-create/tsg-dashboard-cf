@@ -673,7 +673,11 @@ async function loadData() {
     });
     for (const emp in grouped) grouped[emp].sort((a,b) => a.date.localeCompare(b.date));
     DATA = grouped;
-    EMPLOYEES = Object.keys(DATA).sort();
+    // Filter to current team only — EMPLOYEE_COLOURS is the source of truth.
+    // Historical migration data brought in records for people who have left or
+    // never were sales reps (e.g. Accounts Dept). We keep the data in the table
+    // but only display people in the current team.
+    EMPLOYEES = Object.keys(DATA).filter(e => EMPLOYEE_COLOURS[e]).sort();
     const monthSet = new Set();
     for (const emp in DATA) DATA[emp].forEach(d => monthSet.add(d.date));
     ALL_MONTHS = [...monthSet].sort();
