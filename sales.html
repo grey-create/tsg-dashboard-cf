@@ -416,8 +416,6 @@
           <div class="chart-card"><h3>Conversion Rate (%)</h3><canvas id="teamChartConv"></canvas></div>
           <div class="chart-card"><h3>Total Sales</h3><canvas id="teamChartSales"></canvas></div>
           <div class="chart-card"><h3>Average Order Value</h3><canvas id="teamChartAOV"></canvas></div>
-          <div class="chart-card"><h3>Gross Profit</h3><canvas id="teamChartGP"></canvas></div>
-          <div class="chart-card"><h3>Profit Margin (%)</h3><canvas id="teamChartMargin"></canvas></div>
         </div>
       </div>
 
@@ -438,8 +436,6 @@
               <option value="convRate">Conversion Rate</option>
               <option value="sales" selected>Total Sales</option>
               <option value="aov">Average Order Value</option>
-              <option value="margin">Profit Margin</option>
-              <option value="gp">Gross Profit</option>
             </select>
           </div>
         </div>
@@ -509,9 +505,8 @@
           <div class="chart-grid">
             <div class="chart-card"><h3>Enquiries &amp; Orders</h3><canvas id="chartEnqOrders"></canvas></div>
             <div class="chart-card"><h3>Conversion Rate (%)</h3><canvas id="chartConvRate"></canvas></div>
-            <div class="chart-card"><h3>Sales &amp; Gross Profit</h3><canvas id="chartSales"></canvas></div>
+            <div class="chart-card"><h3>Sales</h3><canvas id="chartSales"></canvas></div>
             <div class="chart-card"><h3>Average Order Value</h3><canvas id="chartAOV"></canvas></div>
-            <div class="chart-card"><h3>Profit Margin (%)</h3><canvas id="chartMargin"></canvas></div>
             <div class="chart-card"><h3>Pipeline: Rejected &amp; To Follow</h3><canvas id="chartPipeline"></canvas></div>
           </div>
         </div>
@@ -539,8 +534,6 @@
         <div class="chart-card"><h3>Conversion Rate</h3><table class="ranking-table" id="rankConv"></table></div>
         <div class="chart-card"><h3>Total Sales</h3><table class="ranking-table" id="rankSales"></table></div>
         <div class="chart-card"><h3>Average Order Value</h3><table class="ranking-table" id="rankAOV"></table></div>
-        <div class="chart-card"><h3>Gross Profit</h3><table class="ranking-table" id="rankGP"></table></div>
-        <div class="chart-card"><h3>Profit Margin</h3><table class="ranking-table" id="rankMargin"></table></div>
       </div>
     </div>
 
@@ -644,7 +637,7 @@ const EMPLOYEE_COLOURS = {
   "Adam Charlton":  { solid: "#2563eb", light: "rgba(37,99,235,0.12)" },
   "Anthony Lowe":   { solid: "#f97316", light: "rgba(249,115,22,0.12)" },
   "Mick Farrell":   { solid: "#7c3aed", light: "rgba(124,58,237,0.12)" },
-  "Lyam Roche":     { solid: "#0d9488", light: "rgba(13,148,136,0.12)" }
+  "Moesha Tidswell": { solid: "#ec4899", light: "rgba(236,72,153,0.12)" }
 };
 const FALLBACK_COLOURS = [
   { solid: "#e11d48", light: "rgba(225,29,72,0.12)" },
@@ -675,8 +668,7 @@ async function loadData() {
         enq: Number(r.enq)||0, orders: Number(r.orders)||0, convRate: Number(r.convRate)||0,
         rejected: Number(r.rejected)||0, follow: Number(r.follow)||0,
         valueEnq: Number(r.valueEnq)||0, valueOrd: Number(r.valueOrd)||0,
-        ordCost: Number(r.ordCost)||0, gp: Number(r.gp)||0,
-        margin: Number(r.margin)||0, aov: Number(r.aov)||0
+        aov: Number(r.aov)||0
       });
     });
     for (const emp in grouped) grouped[emp].sort((a,b) => a.date.localeCompare(b.date));
@@ -804,13 +796,11 @@ function buildIndividualMetrics(containerId, curr, prev, colour) {
     { label:'Sales', curr:curr.valueOrd, prev:prev?prev.valueOrd:0, format:'currency', key:true },
     { label:'Conversion', curr:curr.convRate, prev:prev?prev.convRate:0, format:'pct', key:true },
     { label:'Avg Order Value', curr:curr.aov, prev:prev?prev.aov:0, format:'currency', key:true },
-    { label:'Profit Margin', curr:Number(curr.margin)*100, prev:prev?Number(prev.margin)*100:0, format:'pctRaw', key:true },
   ];
   const volumeMetrics = [
     { label:'Enquiries', curr:curr.enq, prev:prev?prev.enq:0, format:'num' },
     { label:'Orders', curr:curr.orders, prev:prev?prev.orders:0, format:'num' },
     { label:'Enquiry Value', curr:curr.valueEnq, prev:prev?prev.valueEnq:0, format:'currency' },
-    { label:'Gross Profit', curr:curr.gp, prev:prev?prev.gp:0, format:'currency' },
   ];
 
   function renderCards(metrics) {
@@ -829,7 +819,6 @@ function buildIndividualMetrics(containerId, curr, prev, colour) {
   const rejectRate = curr.enq>0 ? (curr.rejected/curr.enq*100).toFixed(1) : '0';
   const followRate = curr.enq>0 ? (curr.follow/curr.enq*100).toFixed(1) : '0';
   const revenuePerEnq = curr.enq>0 ? fmt(curr.valueOrd/curr.enq) : fmt(0);
-  const costRatio = curr.valueOrd>0 ? ((curr.ordCost/curr.valueOrd)*100).toFixed(1) : '0';
 
   document.getElementById(containerId).innerHTML = `
     <div class="metric-group">
@@ -850,8 +839,6 @@ function buildIndividualMetrics(containerId, curr, prev, colour) {
       <div class="insight-card">
         <h4>Efficiency</h4>
         <div class="insight-item"><span class="insight-label">Revenue per Enquiry</span><span class="insight-value">${revenuePerEnq}</span></div>
-        <div class="insight-item"><span class="insight-label">Cost Ratio</span><span class="insight-value">${costRatio}%</span></div>
-        <div class="insight-item"><span class="insight-label">Order Cost</span><span class="insight-value">${fmt(curr.ordCost)}</span></div>
       </div>
     </div>
   `;
@@ -895,13 +882,12 @@ function updateHistorical() {
   if (data.length===0) {
     document.getElementById('kpiRow').innerHTML='<div class="data-note">No data for this period.</div>';
     document.getElementById('histInsights').innerHTML='';
-    ['chartEnqOrders','chartConvRate','chartSales','chartAOV','chartMargin','chartPipeline'].forEach(destroyChart);
+    ['chartEnqOrders','chartConvRate','chartSales','chartAOV','chartPipeline'].forEach(destroyChart);
     return;
   }
   const tEnq=data.reduce((s,d)=>s+d.enq,0), tOrd=data.reduce((s,d)=>s+d.orders,0);
   const avgConv=tEnq>0?tOrd/tEnq:0, tSales=data.reduce((s,d)=>s+d.valueOrd,0);
-  const tGP=data.reduce((s,d)=>s+d.gp,0), avgAOV=tOrd>0?tSales/tOrd:0;
-  const avgMargin=tSales>0?(tGP/tSales*100):0;
+  const avgAOV=tOrd>0?tSales/tOrd:0;
   const tRej=data.reduce((s,d)=>s+d.rejected,0), tFol=data.reduce((s,d)=>s+d.follow,0);
 
   document.getElementById('kpiRow').innerHTML = `
@@ -909,7 +895,6 @@ function updateHistorical() {
     <div class="kpi-card" style="border-top:3px solid ${colour.solid}"><div class="label">Total Orders</div><div class="value">${tOrd.toLocaleString()}</div><div class="trend">from ${tEnq} enquiries</div></div>
     <div class="kpi-card" style="border-top:3px solid ${colour.solid}"><div class="label">Avg Conversion</div><div class="value">${fmtPct(avgConv)}</div></div>
     <div class="kpi-card" style="border-top:3px solid ${colour.solid}"><div class="label">Total Sales</div><div class="value">${fmt(tSales)}</div></div>
-    <div class="kpi-card" style="border-top:3px solid ${colour.solid}"><div class="label">Total GP</div><div class="value">${fmt(tGP)}</div><div class="trend">Margin: ${avgMargin.toFixed(1)}%</div></div>
   `;
 
   const best=[...data].sort((a,b)=>b.valueOrd-a.valueOrd)[0], worst=[...data].sort((a,b)=>a.valueOrd-b.valueOrd)[0];
@@ -925,7 +910,6 @@ function updateHistorical() {
       <div class="insight-item"><span class="insight-label">Quotes Rejected</span><span class="insight-value">${tRej.toLocaleString()} (${tEnq>0?(tRej/tEnq*100).toFixed(1):'0'}%)</span></div>
       <div class="insight-item"><span class="insight-label">Quotes to Follow</span><span class="insight-value">${tFol.toLocaleString()}</span></div>
       <div class="insight-item"><span class="insight-label">Avg Order Value</span><span class="insight-value">${fmt(avgAOV)}</span></div>
-      <div class="insight-item"><span class="insight-label">Avg Profit Margin</span><span class="insight-value">${avgMargin.toFixed(1)}%</span></div>
     </div>
   `;
 
@@ -936,11 +920,9 @@ function updateHistorical() {
   ]);
   createLineChart('chartConvRate',labels,[{label:'Conversion Rate',data:data.map(d=>d.convRate),borderColor:colour.solid,backgroundColor:colour.light,fill:true,tension:0.3,pointRadius:4,borderWidth:2.5}],'pct',[{label:'Target (30%)',value:0.30,color:'#ef4444'}]);
   createLineChart('chartSales',labels,[
-    {label:'Sales',data:data.map(d=>d.valueOrd),borderColor:colour.solid,backgroundColor:colour.light,fill:true,tension:0.3,borderWidth:2.5},
-    {label:'Gross Profit',data:data.map(d=>d.gp),borderColor:'#22c55e',backgroundColor:'rgba(34,197,94,0.08)',fill:true,tension:0.3,borderWidth:2,borderDash:[6,3]}
+    {label:'Sales',data:data.map(d=>d.valueOrd),borderColor:colour.solid,backgroundColor:colour.light,fill:true,tension:0.3,borderWidth:2.5}
   ],'currency');
   createLineChart('chartAOV',labels,[{label:'Avg Order Value',data:data.map(d=>d.aov),borderColor:colour.solid,backgroundColor:colour.light,fill:true,tension:0.3,pointRadius:4,borderWidth:2.5}],'currency',[{label:'Target (\u00a31,500)',value:1500,color:'#ef4444'}]);
-  createLineChart('chartMargin',labels,[{label:'Profit Margin %',data:data.map(d=>Number(d.margin)*100),borderColor:'#22c55e',backgroundColor:'rgba(34,197,94,0.08)',fill:true,tension:0.3,pointRadius:4,borderWidth:2.5}],'pctRaw');
   createBarChart('chartPipeline',labels,[{label:'Rejected',data:data.map(d=>d.rejected),backgroundColor:'#ef4444',borderRadius:4},{label:'To Follow Up',data:data.map(d=>d.follow),backgroundColor:'#f97316',borderRadius:4}]);
 }
 
@@ -951,17 +933,15 @@ function buildTeamSummary(months) {
   const stats = EMPLOYEES.map(emp => {
     const d = getDataForMonths(emp,months);
     const tEnq=d.reduce((s,r)=>s+r.enq,0), tOrd=d.reduce((s,r)=>s+r.orders,0);
-    const tSales=d.reduce((s,r)=>s+r.valueOrd,0), tGP=d.reduce((s,r)=>s+r.gp,0);
-    return { name:emp, enq:tEnq, orders:tOrd, convRate:tEnq>0?tOrd/tEnq:0, sales:tSales, aov:tOrd>0?tSales/tOrd:0, gp:tGP, margin:tSales>0?tGP/tSales:0 };
+    const tSales=d.reduce((s,r)=>s+r.valueOrd,0);
+    return { name:emp, enq:tEnq, orders:tOrd, convRate:tEnq>0?tOrd/tEnq:0, sales:tSales, aov:tOrd>0?tSales/tOrd:0 };
   });
   const rows = [
     {label:'Enquiries',key:'enq',fmt:v=>v.toLocaleString(),target:null},
     {label:'Orders',key:'orders',fmt:v=>v.toLocaleString(),target:null},
     {label:'Conversion',key:'convRate',fmt:v=>(v*100).toFixed(1)+'%',target:TARGETS.convRate},
     {label:'Total Sales',key:'sales',fmt:v=>fmt(v),target:null},
-    {label:'Avg Order Value',key:'aov',fmt:v=>fmt(v),target:TARGETS.aov},
-    {label:'Gross Profit',key:'gp',fmt:v=>fmt(v),target:null},
-    {label:'Profit Margin',key:'margin',fmt:v=>(v*100).toFixed(1)+'%',target:null}
+    {label:'Avg Order Value',key:'aov',fmt:v=>fmt(v),target:TARGETS.aov}
   ];
   let html = '<table class="team-summary-table"><thead><tr><th>Metric</th>';
   EMPLOYEES.forEach(e => { const c=getEmployeeColour(e); html+=`<th><span class="employee-dot" style="background:${c.solid}"></span>${e.split(' ')[0]}</th>`; });
@@ -1021,12 +1001,6 @@ function buildTeamCharts(months) {
 
   if (isSingle) { createGroupedBarChart('teamChartAOV',empLabels,singleValues('aov'),empColours,'currency',1500,'Target (\u00a31,500)'); }
   else { createLineChart('teamChartAOV',labels,empDatasets('aov'),'currency',[{label:'Target (\u00a31,500)',value:1500,color:'#ef4444'}]); }
-
-  if (isSingle) { createGroupedBarChart('teamChartGP',empLabels,singleValues('gp'),empColours,'currency'); }
-  else { createLineChart('teamChartGP',labels,empDatasets('gp'),'currency'); }
-
-  if (isSingle) { createGroupedBarChart('teamChartMargin',empLabels,singleValues('margin',true),empColours,'pctRaw'); }
-  else { createLineChart('teamChartMargin',labels,empDatasets('margin',true),'pctRaw'); }
 }
 
 // ==================== TEAM PAGE MASTER ====================
@@ -1048,19 +1022,18 @@ function updateTeamDeepDive() {
   const labels = months.map(monthLabel);
   const isSingle = months.length<=1;
 
-  const mc = {enquiries:{key:'enq',label:'Enquiries',fmt:'number'},orders:{key:'orders',label:'Orders',fmt:'number'},convRate:{key:'convRate',label:'Conversion Rate',fmt:'pct'},sales:{key:'valueOrd',label:'Total Sales',fmt:'currency'},aov:{key:'aov',label:'Average Order Value',fmt:'currency'},margin:{key:'margin',label:'Profit Margin',fmt:'pctRaw'},gp:{key:'gp',label:'Gross Profit',fmt:'currency'}}[metric];
-  const isMargin = mc.key==='margin';
+  const mc = {enquiries:{key:'enq',label:'Enquiries',fmt:'number'},orders:{key:'orders',label:'Orders',fmt:'number'},convRate:{key:'convRate',label:'Conversion Rate',fmt:'pct'},sales:{key:'valueOrd',label:'Total Sales',fmt:'currency'},aov:{key:'aov',label:'Average Order Value',fmt:'currency'}}[metric];
 
   document.getElementById('teamChartTitle').textContent = mc.label+' \u2014 All Employees';
   document.getElementById('teamBarTitle').textContent = mc.label+' \u2014 Period Totals';
 
   if (isSingle) {
-    const vals = EMPLOYEES.map(emp=>{const r=(DATA[emp]||[]).find(d=>d.date===months[0]);if(!r)return 0;return isMargin?Number(r[mc.key])*100:r[mc.key];});
+    const vals = EMPLOYEES.map(emp=>{const r=(DATA[emp]||[]).find(d=>d.date===months[0]);if(!r)return 0;return r[mc.key];});
     let tgt=null,tl='';
     if(mc.key==='convRate'){tgt=0.30;tl='Target (30%)';}else if(mc.key==='aov'){tgt=1500;tl='Target (\u00a31,500)';}
     createGroupedBarChart('chartTeamLine',EMPLOYEES.map(n=>n.split(' ')[0]),vals,EMPLOYEES.map(e=>getEmployeeColour(e).solid),mc.fmt,tgt,tl);
   } else {
-    const datasets = EMPLOYEES.map(emp=>{const c=getEmployeeColour(emp);return{label:emp,data:months.map(m=>{const r=(DATA[emp]||[]).find(d=>d.date===m);if(!r)return null;return isMargin?Number(r[mc.key])*100:r[mc.key];}),borderColor:c.solid,backgroundColor:c.light,tension:0.3,spanGaps:true,pointRadius:4,borderWidth:2.5};});
+    const datasets = EMPLOYEES.map(emp=>{const c=getEmployeeColour(emp);return{label:emp,data:months.map(m=>{const r=(DATA[emp]||[]).find(d=>d.date===m);if(!r)return null;return r[mc.key];}),borderColor:c.solid,backgroundColor:c.light,tension:0.3,spanGaps:true,pointRadius:4,borderWidth:2.5};});
     let tl=[];
     if(mc.key==='convRate')tl.push({label:'Target (30%)',value:0.30,color:'#ef4444'});
     else if(mc.key==='aov')tl.push({label:'Target (\u00a31,500)',value:1500,color:'#ef4444'});
@@ -1071,7 +1044,6 @@ function updateTeamDeepDive() {
     const d=getDataForMonths(emp,months);
     if(mc.key==='convRate'){const o=d.reduce((s,r)=>s+r.orders,0),e=d.reduce((s,r)=>s+r.enq,0);return e>0?o/e:0;}
     if(mc.key==='aov'){const s=d.reduce((s,r)=>s+r.valueOrd,0),o=d.reduce((s,r)=>s+r.orders,0);return o>0?s/o:0;}
-    if(mc.key==='margin'){const s=d.reduce((s,r)=>s+r.valueOrd,0),g=d.reduce((s,r)=>s+r.gp,0);return s>0?(g/s*100):0;}
     return d.reduce((s,r)=>s+r[mc.key],0);
   });
   createBarChart('chartTeamBar',EMPLOYEES.map(n=>n.split(' ')[0]),[{data:totals,backgroundColor:EMPLOYEES.map(e=>getEmployeeColour(e).solid),borderRadius:4}],mc.fmt);
@@ -1084,7 +1056,7 @@ function updateTeamDeepDive() {
     EMPLOYEES.forEach(emp=>{
       const r=(DATA[emp]||[]).find(d=>d.date===m);
       let v='\u2014';
-      if(r){if(mc.fmt==='currency')v=fmt(r[mc.key]);else if(mc.fmt==='pct')v=fmtPct(r[mc.key]);else if(mc.fmt==='pctRaw')v=fmtPctRaw(Number(r[mc.key])*100);else v=r[mc.key].toLocaleString();}
+      if(r){if(mc.fmt==='currency')v=fmt(r[mc.key]);else if(mc.fmt==='pct')v=fmtPct(r[mc.key]);else v=r[mc.key].toLocaleString();}
       html+=`<td>${v}</td>`;
     });
     html+='</tr>';
@@ -1104,8 +1076,8 @@ function updateRankings() {
 
   const stats=EMPLOYEES.map(emp=>{
     const d=getDataForMonths(emp,months);
-    const tE=d.reduce((s,r)=>s+r.enq,0),tO=d.reduce((s,r)=>s+r.orders,0),tS=d.reduce((s,r)=>s+r.valueOrd,0),tG=d.reduce((s,r)=>s+r.gp,0);
-    return{name:emp,months:d.length,enq:tE,convRate:tE>0?tO/tE:0,sales:tS,aov:tO>0?tS/tO:0,gp:tG,margin:tS>0?(tG/tS*100):0};
+    const tE=d.reduce((s,r)=>s+r.enq,0),tO=d.reduce((s,r)=>s+r.orders,0),tS=d.reduce((s,r)=>s+r.valueOrd,0);
+    return{name:emp,months:d.length,enq:tE,convRate:tE>0?tO/tE:0,sales:tS,aov:tO>0?tS/tO:0};
   });
   const short=stats.filter(s=>s.months<months.length&&s.months>0);
   document.getElementById('rankNote').textContent=short.length>0?'Note: '+short.map(s=>`${s.name} has ${s.months} month${s.months>1?'s':''} of data`).join('. ')+'.':'';
@@ -1124,7 +1096,7 @@ function updateRankings() {
     document.getElementById(tid).innerHTML=h;
   }
   render('rankEnq','enq','number');render('rankConv','convRate','pct');render('rankSales','sales','currency');
-  render('rankAOV','aov','currency');render('rankGP','gp','currency');render('rankMargin','margin','pctRaw');
+  render('rankAOV','aov','currency');
 }
 
 // ==================== NAVIGATION ====================
@@ -1397,7 +1369,6 @@ function getSalesTeamSummary(targetYM) {
         orders:     curr.orders,
         convRate:   curr.convRate,
         aov:        curr.aov,
-        margin:     curr.margin,
         // Historical context for this individual
         history,
         avgSales,
