@@ -192,12 +192,12 @@
   .brand-card .bc-name{display:flex;align-items:center;gap:10px}
   .brand-card .bc-name strong{font-size:14px;font-weight:700;color:#f1f5f9;letter-spacing:.1px}
   .brand-card.bc-large .bc-name strong{font-size:15px}
-  /* Subtitle directly under the card name — one-line plain-English description
-     of what the metric actually measures. Makes the difference between TSG
-     Invoicing and TSG New Sales obvious to anyone glancing at the dashboard
-     without needing to interpret the figures. */
-  .brand-card .bc-subtitle{font-size:11px;color:#94a3b8;line-height:1.4;margin-top:-6px;font-style:italic}
-  .brand-card.bc-small .bc-subtitle{font-size:10.5px}
+  /* Subtitle directly under the card name — plain-English description of what
+     the metric measures, set bigger and brighter so it actually gets read.
+     Negative margin pulls it tight to the title overriding the parent gap so
+     the subtitle visually belongs to the name. */
+  .brand-card .bc-subtitle{font-size:13px;color:#e2e8f0;line-height:1.4;margin-top:-8px;font-weight:500}
+  .brand-card.bc-small .bc-subtitle{font-size:12px;margin-top:-6px}
   .brand-card .bc-gauge{display:flex;align-items:center;gap:16px}
   .brand-card .bc-gauge-svg{flex-shrink:0;width:130px}
   .brand-card.bc-large .bc-gauge-svg{width:150px}
@@ -213,17 +213,20 @@
   .brand-card .bc-detail .bd-k{color:#64748b;font-weight:600;text-transform:uppercase;font-size:9px;letter-spacing:.5px;margin-bottom:1px}
   .brand-card .bc-detail .bd-v{color:#e2e8f0;font-weight:600;font-size:12px}
 
-  /* New Sales Orders TSG card — same shape as TSG Invoicing for layout
-     symmetry but a deliberately distinct visual treatment so it can never be
-     misread as "the same number as TSG Invoicing". Three layered cues:
-       - amber gradient accent strip (vs solid green)
-       - "ORDER INTAKE" tag pill in the title row
-       - slightly warmer card background + subtle white outline + soft amber
-         inner glow. Together these say "related but different metric" loudly
-         enough to be readable at a glance.  */
-  .brand-card.bc-nsales{background:linear-gradient(180deg,#1e2235 0%,#1a2332 100%);outline:1px solid rgba(255,255,255,.08);outline-offset:-1px;box-shadow:0 2px 10px rgba(0,0,0,.2),inset 0 0 40px rgba(251,191,36,.035)}
-  .brand-card.bc-nsales::before{background:linear-gradient(90deg,#CDE453,#fbbf24)}
-  .brand-card .ns-tag{display:inline-block;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;padding:2px 7px;border-radius:4px;background:rgba(251,191,36,.12);color:#fbbf24;border:1px solid rgba(251,191,36,.25);margin-left:6px;vertical-align:middle}
+  /* New Sales Orders TSG card — deliberately distinct visual treatment so it
+     can never be misread as "the same number as TSG Invoicing". Stacks four
+     loud cues so the eye picks it out instantly:
+       1. Warm amber-tinted gradient background (clearly not the cool slate of
+          the other cards)
+       2. Visible amber border (2px), not just a subtle outline
+       3. Taller, solid-amber accent strip at the top (6px vs the usual 3px)
+       4. Stronger amber inner glow + amber-tinted drop shadow
+     Plus the "ORDER INTAKE" tag pill in the title row remains for explicit
+     labelling.  */
+  .brand-card.bc-nsales{background:linear-gradient(135deg,#2a2418 0%,#221d14 50%,#1f1a10 100%);border:2px solid rgba(251,191,36,.4);box-shadow:0 4px 20px rgba(251,191,36,.15),inset 0 0 80px rgba(251,191,36,.08)}
+  .brand-card.bc-nsales::before{height:6px;background:linear-gradient(90deg,#fbbf24,#f59e0b 50%,#fbbf24)}
+  .brand-card.bc-nsales .bc-name strong{color:#fef3c7}
+  .brand-card .ns-tag{display:inline-block;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;padding:3px 9px;border-radius:5px;background:rgba(251,191,36,.18);color:#fbbf24;border:1px solid rgba(251,191,36,.45);margin-left:8px;vertical-align:middle;box-shadow:0 0 8px rgba(251,191,36,.15)}
 
   /* Pace pills — verbal verdict colour-coded to tone */
   .pace-ahead{color:#4ade80}
