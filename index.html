@@ -9,7 +9,7 @@
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
   body{font-family:'Inter',-apple-system,sans-serif;background:#0c1222;color:#e2e8f0;min-height:100vh;-webkit-font-smoothing:antialiased}
 
-  .wrap{max-width:1200px;margin:0 auto;padding:24px 20px 40px}
+  .wrap{max-width:1680px;margin:0 auto;padding:16px 22px 40px}
   .card{background:#1a2332;border:1px solid #2a3a4e;border-radius:14px;padding:22px 24px;box-shadow:0 2px 8px rgba(0,0,0,.2)}
   .sec-pill{display:inline-block;padding:3px 12px;border-radius:99px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
   .sec-title{font-size:16px;font-weight:700;color:#f1f5f9;line-height:1.3;margin-bottom:2px}
@@ -99,7 +99,60 @@
   .prog-note{display:flex;align-items:flex-start;gap:8px;background:rgba(96,165,250,.06);border:1px solid rgba(96,165,250,.15);border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:12px;color:#94a3b8;line-height:1.5}
   .prog-note .pn-icon{font-size:16px;flex-shrink:0;line-height:1.3}
   .prog-note strong{color:#60a5fa;font-weight:700}
-  @media(max-width:900px){.g4,.g-ns{grid-template-columns:repeat(2,1fr)}.g2{grid-template-columns:1fr}}
+
+  /* ============ DASHBOARD HERO + GAUGES (new) ============ */
+  /* Hero strip — single-row header that holds title, days progress, and the
+     headline Combined number. Sits at the very top so the eye lands on the
+     month total straight away. */
+  .hero-strip{display:grid;grid-template-columns:1.4fr 1fr 1.2fr;gap:16px;background:linear-gradient(135deg,#1a2332 0%,#0c1222 50%,#162033 100%);border:1px solid #2a3a4e;border-radius:14px;padding:18px 22px;margin-bottom:14px;align-items:center}
+  .hero-title h1{font-size:22px;font-weight:900;letter-spacing:-.03em;color:#f1f5f9;line-height:1.05}
+  .hero-title .h-sub{font-size:12px;color:#64748b;margin-top:3px}
+  .hero-days{display:flex;flex-direction:column;gap:6px}
+  .hero-days .hd-row{display:flex;align-items:center;gap:8px}
+  .hero-days .hd-label{font-size:10px;color:#475569;text-transform:uppercase;letter-spacing:.6px;font-weight:700}
+  .hero-days .hd-count{font-size:11px;color:#94a3b8;font-weight:600}
+  .hero-combined{text-align:right}
+  .hero-combined .hc-label{font-size:10px;color:#475569;text-transform:uppercase;letter-spacing:.6px;font-weight:700;margin-bottom:2px}
+  .hero-combined .hc-val{font-size:34px;font-weight:900;color:#f1f5f9;letter-spacing:-.03em;line-height:1}
+  .hero-combined .hc-vs{font-size:12px;margin-top:4px}
+
+  /* Top stats row — four secondary KPIs (Projected, FY, Avg, vs prev). Smaller
+     than hero, denser, all on one row above the fold. */
+  .top-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+  .ts-card{background:#1a2332;border:1px solid #2a3a4e;border-radius:10px;padding:12px 14px;border-top:3px solid var(--accent,#60a5fa)}
+  .ts-label{font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:.5px;font-weight:700;margin-bottom:4px}
+  .ts-val{font-size:20px;font-weight:800;color:#f1f5f9;letter-spacing:-.02em;line-height:1.1}
+  .ts-sub{font-size:11px;color:#64748b;margin-top:3px;line-height:1.3}
+
+  /* Brand gauge cards — the meat of the dashboard. Four wide cards with a
+     radial gauge on the left and the headline figures on the right. Each card
+     surfaces target, pace verdict, and (for WLL/NV) the daily-rate detail. */
+  .brand-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+  .brand-card{background:#1a2332;border:1px solid #2a3a4e;border-radius:14px;padding:16px 18px;display:flex;flex-direction:column;gap:12px;position:relative;overflow:hidden}
+  .brand-card::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:var(--accent,#60a5fa)}
+  .brand-card .bc-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .brand-card .bc-name{display:flex;align-items:center;gap:8px}
+  .brand-card .bc-name strong{font-size:13px;font-weight:700;color:#f1f5f9;letter-spacing:.2px}
+  .brand-card .bc-gauge{display:flex;align-items:flex-end;gap:14px}
+  .brand-card .bc-gauge-svg{flex-shrink:0;width:110px}
+  .brand-card .bc-figures{flex:1;min-width:0}
+  .brand-card .bc-big{font-size:24px;font-weight:800;color:#f1f5f9;letter-spacing:-.02em;line-height:1.05;word-break:break-word}
+  .brand-card .bc-target{font-size:11px;color:#64748b;margin-top:3px;line-height:1.3}
+  .brand-card .bc-target strong{color:#94a3b8;font-weight:600}
+  .brand-card .bc-detail{font-size:11px;color:#94a3b8;line-height:1.45;border-top:1px solid #2a3a4e;padding-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:4px 12px}
+  .brand-card .bc-detail .bd-k{color:#64748b;font-weight:600;text-transform:uppercase;font-size:9px;letter-spacing:.5px}
+  .brand-card .bc-detail .bd-v{color:#e2e8f0;font-weight:600;font-size:12px;margin-bottom:4px}
+  .brand-card .bc-verdict{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:600;margin-top:auto}
+  .brand-card .bc-verdict .vd-icon{font-size:13px}
+
+  /* Pace pills — quick verbal verdict ("Ahead", "On Pace", "Behind") rather
+     than asking the team to mentally compare elapsed-days against % to target. */
+  .pace-ahead{color:#4ade80}
+  .pace-onpace{color:#fbbf24}
+  .pace-behind{color:#f87171}
+
+  @media(max-width:1280px){.brand-row,.top-stats{grid-template-columns:repeat(2,1fr)}.hero-strip{grid-template-columns:1fr;text-align:left}.hero-combined{text-align:left}}
+  @media(max-width:900px){.g4,.g-ns{grid-template-columns:repeat(2,1fr)}.g2{grid-template-columns:1fr}.brand-row,.top-stats{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -125,6 +178,57 @@ function po(a,b){if(!b)return 0;return Math.round(((a-b)/b)*100)}
 function dl(v){var p=v>0;return'<span class="'+(p?"up":"dn")+'">'+(p?"\u25B2":"\u25BC")+" "+(p?"+":"")+v+"%</span>"}
 function pl(s){var c=s==="Ahead"||s==="High"?"pill-g":s==="Behind"||s==="Low"?"pill-r":"pill-y";return'<span class="pill '+c+'">'+s+"</span>"}
 function plb(s,bg,fg){return'<span class="pill" style="background:'+bg+";color:"+fg+";border:1px solid "+bg+'">'+s+"</span>"}
+
+// SVG semicircle gauge — used on each brand card to show % to target at a
+// glance. Fills the arc to `pct` (clamped 0-110% so an over-target reading
+// pushes past the end). Colour follows the brand for the fill arc; the track
+// is muted grey. Centred percentage label sits in the well.
+function gauge(pct,color,size){
+  size=size||130;
+  pct=Math.max(0,Math.min(pct,110));
+  var ringSize=12;
+  var cx=size/2, cy=size/2+4;
+  var r=(size-ringSize)/2 - 4;
+  // Semicircle path from left to right through the top
+  var startX=cx-r, startY=cy, endX=cx+r, endY=cy;
+  var trackPath="M "+startX+" "+startY+" A "+r+" "+r+" 0 0 1 "+endX+" "+endY;
+  // Arc length of a semicircle = π*r. Fill = (pct/100) * π*r.
+  var arcLen=Math.PI*r;
+  var fillLen=Math.min(pct,100)/100*arcLen;
+  // Display colour: red below 50%, amber 50-90%, green at-or-above 90% — but
+  // brand colour overrides when given (keeps cards visually distinct).
+  var fillColor=color||(pct<50?"#dc2626":pct<90?"#fbbf24":"#22c55e");
+  var displayPct=Math.round(pct);
+  return '<svg viewBox="0 0 '+size+' '+(size/2+18)+'" style="width:100%;display:block">'
+    +'<path d="'+trackPath+'" fill="none" stroke="#2a3a4e" stroke-width="'+ringSize+'" stroke-linecap="round"/>'
+    +'<path d="'+trackPath+'" fill="none" stroke="'+fillColor+'" stroke-width="'+ringSize+'" stroke-linecap="round" stroke-dasharray="'+fillLen+' '+(arcLen-fillLen+5)+'" style="transition:stroke-dasharray .6s ease"/>'
+    +'<text x="'+cx+'" y="'+(cy-6)+'" text-anchor="middle" font-family="Inter,sans-serif" font-size="'+Math.round(size*0.22)+'" font-weight="800" fill="#f1f5f9">'+displayPct+'%</text>'
+    +'<text x="'+cx+'" y="'+(cy+8)+'" text-anchor="middle" font-family="Inter,sans-serif" font-size="9" font-weight="600" fill="#64748b" letter-spacing="0.5">OF TARGET</text>'
+    +'</svg>';
+}
+
+// Pace verdict: compares achieved-% against time-elapsed-% to decide whether
+// the figure is Ahead / On Pace / Behind, regardless of the headline % to
+// target. Avoids the team being misled by "60% to target" mid-month when 60%
+// of the month has also elapsed (that's exactly on pace, not bad).
+//
+// Returns { label, cls, icon, tone } where tone is 'g'/'y'/'r' for colouring.
+function paceVerdict(achieved,target,daysDone,daysTotal,monthComplete){
+  if(monthComplete){
+    if(!target)return{label:"Final",cls:"pace-onpace",icon:"\u25CF",tone:"y"};
+    var fp=target>0?achieved/target*100:0;
+    if(fp>=100)return{label:"Hit target",cls:"pace-ahead",icon:"\u2713",tone:"g"};
+    return{label:"Missed target",cls:"pace-behind",icon:"\u2717",tone:"r"};
+  }
+  if(!target||target<=0)return{label:"No target",cls:"pace-onpace",icon:"\u2014",tone:"y"};
+  if(daysTotal<=0)return{label:"On Pace",cls:"pace-onpace",icon:"\u25CF",tone:"y"};
+  var achievedPct=achieved/target*100;
+  var elapsedPct=daysDone/daysTotal*100;
+  // 8pp buffer either side of elapsed = "on pace"; wider gaps trigger ahead/behind
+  if(achievedPct>=elapsedPct+8)return{label:"Ahead",cls:"pace-ahead",icon:"\u25B2",tone:"g"};
+  if(achievedPct<=elapsedPct-8)return{label:"Behind",cls:"pace-behind",icon:"\u25BC",tone:"r"};
+  return{label:"On Pace",cls:"pace-onpace",icon:"\u25CF",tone:"y"};
+}
 function secHdr(pt,pb,pf,t,s){return'<div style="margin-bottom:16px"><span class="sec-pill" style="background:'+pb+";color:"+pf+'">'+pt+"</span><div class=\"sec-title\">"+t+"</div>"+(s?'<div class="sec-sub">'+s+"</div>":"")+"</div>";}
 function mkbar(val,max,color,proj){
   var pI=Math.min(val/max*100,100),pP=proj?Math.min(proj/max*100,100):pI;
@@ -424,43 +528,145 @@ D.combInv=D.tsgInv+D.wllInv+D.nvInv;
 function render(D){
   var h="",med=["\uD83E\uDD47","\uD83E\uDD48","\uD83E\uDD49"];
 
-  // Header
-  h+='<div style="background:linear-gradient(135deg,#1a2332 0%,#0c1222 50%,#162033 100%);border:1px solid #2a3a4e;border-radius:16px;padding:28px 28px 20px;margin-bottom:24px;position:relative;overflow:hidden">';
-  h+='<div class="fx-b" style="flex-wrap:wrap;gap:16px;margin-bottom:16px">';
-  h+='<div><div style="font-size:12px;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px"><span class="live-dot"></span>Live Dashboard</div>';
-  h+='<h1 style="font-size:26px;font-weight:900;letter-spacing:-.04em;color:#f1f5f9">Revenue &amp; Invoicing</h1>';
-  h+='<p style="font-size:13px;color:#64748b;margin-top:4px">'+D.monthName+" "+D.year+" \u00B7 "+D.phase;
+  // ==============================
+  // NEW: DASHBOARD HERO STRIP
+  // Compact band: title + days-progress + headline Combined number on one row.
+  // Replaces the larger old hero so the brand gauges fit above the fold.
+  // ==============================
+  var combVsTgt=D.combTgt?po(D.combInv,D.combTgt):0;
+  h+='<div class="hero-strip">';
+  // Left — title + month
+  h+='<div class="hero-title"><div style="font-size:10px;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:3px"><span class="live-dot"></span>Live Dashboard</div>';
+  h+='<h1>Revenue &amp; Invoicing</h1>';
+  h+='<div class="h-sub">'+D.monthName+' '+D.year+' \u00B7 '+D.phase;
   if(D.monthComplete)h+=' \u00B7 <span class="pill pill-b">Month Complete</span>';
-  else h+=" \u00B7 Day "+D.wdDone+" of "+D.wdTotal;
-  h+="</p></div>";
-  h+='<div style="text-align:right"><div style="font-size:11px;color:#475569;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Combined Invoiced</div>';
-  h+='<div style="font-size:32px;font-weight:900;color:#f1f5f9;letter-spacing:-.03em;line-height:1">'+f(D.combInv)+"</div>";
-  if(D.combTgt)h+='<div style="margin-top:4px"><span class="'+(D.combInv>=D.combTgt?"up":"dn")+'" style="font-size:13px">'+(D.combInv>=D.combTgt?"\u25B2":"\u25BC")+" "+ps(po(D.combInv,D.combTgt))+" vs "+f(D.combTgt)+" target</span></div>";
-  h+="</div></div>";
+  else h+=' \u00B7 Day '+D.wdDone+' of '+D.wdTotal;
+  h+='</div></div>';
+  // Middle — days bar
+  h+='<div class="hero-days"><div class="hd-row"><span class="hd-label">Working Days</span><span class="hd-count">'+(D.monthComplete?'Complete':D.wdLeft+' left')+'</span></div>';
   h+='<div class="wd">';
   for(var i=0;i<D.wdTotal;i++)h+='<div class="wd-d" style="background:'+(i<D.wdDone?"#60a5fa":"#2a3a4e")+'"></div>';
-  h+='<span class="wd-lbl">'+(D.monthComplete?"All days complete":D.wdLeft+" days left")+"</span></div></div>";
+  h+='</div></div>';
+  // Right — Combined headline
+  h+='<div class="hero-combined"><div class="hc-label">Combined (Invoiced + WIP)</div>';
+  h+='<div class="hc-val">'+f(D.combInv)+'</div>';
+  if(D.combTgt)h+='<div class="hc-vs"><span class="'+(D.combInv>=D.combTgt?"up":"dn")+'">'+(D.combInv>=D.combTgt?"\u25B2":"\u25BC")+' '+ps(combVsTgt)+' vs '+f(D.combTgt)+' target</span></div>';
+  h+='</div></div>';
 
+  // ==============================
+  // NEW: TOP STATS ROW
+  // Four secondary KPIs (Projected EoM / FY Running / vs Prev FY / Avg/Mo).
+  // Denser than the old Facts cards — these sit just under the hero.
+  // ==============================
+  var projVsTgt=D.combTgt?D.combProj-D.combTgt:0;
+  var fyVsPrev=D.run.tot[1]?po(D.run.tot[2],D.run.tot[1]):0;
+  h+='<div class="top-stats">';
+  h+='<div class="ts-card" style="--accent:#2d6e0e"><div class="ts-label">'+(D.monthComplete?'Final Month-End':'Projected Month-End')+'</div><div class="ts-val">'+f(D.combProj)+'</div>';
+  h+='<div class="ts-sub">'+(D.combTgt?(projVsTgt>=0?'<span class="up">+'+f(projVsTgt)+'</span>':'<span class="dn">'+f(projVsTgt)+'</span>')+' vs target':'')+(!D.monthComplete&&D.histMonthsUsed?' \u00B7 WLL+NV '+D.histMonthsUsed+'mo avg':'')+'</div></div>';
+  h+='<div class="ts-card" style="--accent:#6BD4EC"><div class="ts-label">FY Running Total</div><div class="ts-val">'+f(D.run.tot[2])+'</div>';
+  h+='<div class="ts-sub">'+(D.run.tot[1]?dl(fyVsPrev)+' vs prev FY ('+D.run.monthsIn+'mo)':D.run.monthsIn+' months in')+'</div></div>';
+  h+='<div class="ts-card" style="--accent:#FF0077"><div class="ts-label">Avg Monthly Revenue</div><div class="ts-val">'+f(D.run.avg[2])+'</div>';
+  h+='<div class="ts-sub">Prev FY avg: '+f(D.run.avg[1])+'</div></div>';
+  h+='<div class="ts-card" style="--accent:#fbbf24"><div class="ts-label">Projected Full FY</div><div class="ts-val">'+f(D.projTot)+'</div>';
+  h+='<div class="ts-sub">'+(D.projGrowth?(D.projGrowth>=0?'<span class="up">+'+D.projGrowth+'%</span>':'<span class="dn">'+D.projGrowth+'%</span>')+' vs prev FY':D.projMethod+'-based projection')+'</div></div>';
+  h+='</div>';
+
+  // Month-in-progress note (kept, but compact)
   if(!D.monthComplete){
-    h+='<div class="prog-note"><span class="pn-icon">\u26A0\uFE0F</span><div><strong>Month in progress</strong> \u2014 '+D.monthName+' has '+D.wdLeft+' working days remaining. TSG figure is invoiced + WIP (no projection). WLL &amp; NV projected from '+D.histMonthsUsed+'-month historical daily average. For finalised figures, see the <a href="/review" style="color:#60a5fa;font-weight:600">Month Review</a>.</div></div>';
+    h+='<div class="prog-note"><span class="pn-icon">\u26A0\uFE0F</span><div><strong>Month in progress</strong> \u2014 '+D.wdLeft+' working days remaining. TSG figure is invoiced + WIP (no projection). WLL &amp; NV projected from '+D.histMonthsUsed+'-month historical daily average. For finalised figures, see the <a href="/review" style="color:#60a5fa;font-weight:600">Month Review</a>.</div></div>';
   }
 
   // ==============================
-  // ZONE: THE FACTS
+  // NEW: BRAND GAUGE ROW (4 cards: TSG, WLL, NV, New Sales)
+  // The most important above-the-fold view. Each card shows a radial gauge,
+  // big number, target, key context, and a Pace verdict. New Sales Orders TSG
+  // gets equal billing with the three brand cards — Grey's specifically asked
+  // for that to be prominent and trackable.
   // ==============================
-  h+='<div style="margin-bottom:16px"><div class="zone-label"><span class="zone-icon">\uD83D\uDCCA</span>Current Month</div><div class="zone-title"><span class="live-dot"></span>The Facts \u2014 '+D.monthName+' '+D.year+'</div></div>';
+  // Working days used for pace on TSG/NS (invoicing rhythm); calendar days for
+  // WLL/NV (e-commerce, sells 7 days a week).
+  var tsgPace=paceVerdict(D.tsgInv,D.tsgTgt,D.wdDone,D.wdTotal,D.monthComplete);
+  var wllPace=paceVerdict(D.wllInv,D.wllTgt,D.calDaysElapsed,D.calDaysTotal,D.monthComplete);
+  var nvPace =paceVerdict(D.nvInv ,D.nvTgt ,D.calDaysElapsed,D.calDaysTotal,D.monthComplete);
+  var nsPace =paceVerdict(D.nsVal ,D.nsTgt ,D.wdDone,D.wdTotal,D.monthComplete);
 
-  h+='<div class="g4 mb-20">';
- h+='<div class="kpi" style="border-top:3px solid #CDE453"><div class="kpi-label">Combined (Invoiced + WIP)</div><div class="kpi-val">'+f(D.combInv)+'</div><div class="kpi-sub">'+(D.combTgt?'<span class="'+(D.combInv>=D.combTgt?"up":"dn")+'">'+(D.combInv>=D.combTgt?"\u25B2":"\u25BC")+" "+ps(po(D.combInv,D.combTgt))+" vs target</span>":"")+(D.hasWip&&D.tsgWipDue?'<div style="font-size:11px;color:#94a3b8;margin-top:4px">Invoiced: '+f(D.combPureInv)+' · TSG WIP: '+f(D.tsgWipDue)+'</div>':"")+"</div></div>";
-  h+='<div class="kpi" style="border-top:3px solid #2d6e0e"><div class="kpi-label">'+(D.monthComplete?"Final Month-End":"Projected Month-End")+'</div><div class="kpi-val">'+f(D.combProj)+"</div><div class=\"kpi-sub\">"+(D.combTgt?f(D.combProj-D.combTgt)+" vs target":"")+(D.histMonthsUsed&&!D.monthComplete?' <span style="font-size:10px;color:#475569">(WLL+NV from '+D.histMonthsUsed+'mo avg)</span>':"")+"</div></div>";
-  h+='<div class="kpi" style="border-top:3px solid #6BD4EC"><div class="kpi-label">FY Running Total</div><div class="kpi-val">'+f(D.run.tot[2])+"</div><div class=\"kpi-sub\">"+dl(po(D.run.tot[2],D.run.tot[1]))+" vs prev FY ("+D.run.monthsIn+"mo)</div></div>";
-  h+='<div class="kpi" style="border-top:3px solid #FF0077"><div class="kpi-label">Avg Monthly Revenue</div><div class="kpi-val">'+f(D.run.avg[2])+"</div><div class=\"kpi-sub\">Prev FY avg: "+f(D.run.avg[1])+"</div></div>";
-  h+="</div>";
+  h+='<div class="brand-row">';
+
+  // ---- TSG card ----
+  var tsgPct=D.tsgTgt?D.tsgInv/D.tsgTgt*100:0;
+  h+='<div class="brand-card" style="--accent:'+C.tsg.color+'">';
+  h+='<div class="bc-head"><div class="bc-name"><img src="'+LOGOS.tsg+'" class="logo"><strong>The Sign Group\u2122</strong></div>';
+  h+='<span class="pill pill-'+tsgPace.tone+'">'+tsgPace.icon+' '+tsgPace.label+'</span></div>';
+  h+='<div class="bc-gauge"><div class="bc-gauge-svg">'+gauge(tsgPct,C.tsg.color)+'</div>';
+  h+='<div class="bc-figures"><div class="bc-big">'+f(D.tsgInv)+'</div>';
+  h+='<div class="bc-target">Target <strong>'+f(D.tsgTgt)+'</strong> \u00B7 '+(D.tsgInv>=D.tsgTgt?'<span class="up">+'+f(D.tsgInv-D.tsgTgt)+'</span>':'<span class="dn">'+f(D.tsgInv-D.tsgTgt)+'</span>')+'</div></div></div>';
+  h+='<div class="bc-detail">';
+  h+='<div><div class="bd-k">Invoiced</div><div class="bd-v" style="color:#4ade80">'+f(D.tsgPureInv)+'</div></div>';
+  h+='<div><div class="bd-k">WIP Due</div><div class="bd-v" style="color:#fbbf24">'+f(D.tsgWipDue||0)+'</div></div>';
+  if(D.tsgWipUndated)h+='<div><div class="bd-k">WIP TBC</div><div class="bd-v">'+f(D.tsgWipUndated)+'</div></div>';
+  if(D.tsgWipNextMonth)h+='<div><div class="bd-k">Next Month WIP</div><div class="bd-v">'+f(D.tsgWipNextMonth)+'</div></div>';
+  h+='</div></div>';
+
+  // ---- WLL card ----
+  var wllPct=D.wllTgt?D.wllInv/D.wllTgt*100:0;
+  var wllDailyTgt=D.wllTgt&&D.calDaysLeft>0?(D.wllTgt-D.wllInv)/D.calDaysLeft:0;
+  h+='<div class="brand-card" style="--accent:'+C.wll.color+'">';
+  h+='<div class="bc-head"><div class="bc-name"><img src="'+LOGOS.wll+'" class="logo"><strong>WeLoveLEDs\u2122</strong></div>';
+  h+='<span class="pill pill-'+wllPace.tone+'">'+wllPace.icon+' '+wllPace.label+'</span></div>';
+  h+='<div class="bc-gauge"><div class="bc-gauge-svg">'+gauge(wllPct,C.wll.color)+'</div>';
+  h+='<div class="bc-figures"><div class="bc-big">'+f(D.wllInv)+'</div>';
+  h+='<div class="bc-target">Target <strong>'+f(D.wllTgt)+'</strong> \u00B7 '+(D.wllInv>=D.wllTgt?'<span class="up">+'+f(D.wllInv-D.wllTgt)+'</span>':'<span class="dn">'+f(D.wllInv-D.wllTgt)+'</span>')+'</div></div></div>';
+  h+='<div class="bc-detail">';
+  h+='<div><div class="bd-k">Current Daily</div><div class="bd-v" style="color:'+C.wll.color+'">'+f(D.wllDaily)+'<span style="font-weight:400;color:#64748b">/d</span></div></div>';
+  h+='<div><div class="bd-k">Daily Needed</div><div class="bd-v" style="color:'+(D.wllDaily>=wllDailyTgt?"#4ade80":"#f87171")+'">'+f(wllDailyTgt)+'<span style="font-weight:400;color:#64748b">/d</span></div></div>';
+  h+='<div><div class="bd-k">Projected</div><div class="bd-v">'+f(D.wllProj)+'</div></div>';
+  h+='<div><div class="bd-k">3mo Avg/d</div><div class="bd-v">'+f(D.wllHistDaily)+'</div></div>';
+  h+='</div></div>';
+
+  // ---- NV card ----
+  var nvPct=D.nvTgt?D.nvInv/D.nvTgt*100:0;
+  var nvDailyTgt=D.nvTgt&&D.calDaysLeft>0?(D.nvTgt-D.nvInv)/D.calDaysLeft:0;
+  h+='<div class="brand-card" style="--accent:'+C.nv.color+'">';
+  h+='<div class="bc-head"><div class="bc-name"><img src="'+LOGOS.nv+'" class="logo"><strong>Neon Vibes\u00AE</strong></div>';
+  h+='<span class="pill pill-'+nvPace.tone+'">'+nvPace.icon+' '+nvPace.label+'</span></div>';
+  h+='<div class="bc-gauge"><div class="bc-gauge-svg">'+gauge(nvPct,C.nv.color)+'</div>';
+  h+='<div class="bc-figures"><div class="bc-big">'+f(D.nvInv)+'</div>';
+  h+='<div class="bc-target">Target <strong>'+f(D.nvTgt)+'</strong> \u00B7 '+(D.nvInv>=D.nvTgt?'<span class="up">+'+f(D.nvInv-D.nvTgt)+'</span>':'<span class="dn">'+f(D.nvInv-D.nvTgt)+'</span>')+'</div></div></div>';
+  h+='<div class="bc-detail">';
+  h+='<div><div class="bd-k">Current Daily</div><div class="bd-v" style="color:'+C.nv.color+'">'+f(D.nvDaily)+'<span style="font-weight:400;color:#64748b">/d</span></div></div>';
+  h+='<div><div class="bd-k">Daily Needed</div><div class="bd-v" style="color:'+(D.nvDaily>=nvDailyTgt?"#4ade80":"#f87171")+'">'+f(nvDailyTgt)+'<span style="font-weight:400;color:#64748b">/d</span></div></div>';
+  h+='<div><div class="bd-k">Projected</div><div class="bd-v">'+f(D.nvProj)+'</div></div>';
+  h+='<div><div class="bd-k">3mo Avg/d</div><div class="bd-v">'+f(D.nvHistDaily)+'</div></div>';
+  h+='</div></div>';
+
+  // ---- New Sales Orders TSG card ----
+  // Promoted from the "Order Intake" section below the fold to equal billing
+  // with the brand cards. This is the headline number the sales team need to
+  // see when they open the page.
+  var nsPct=D.nsTgt?D.nsVal/D.nsTgt*100:0;
+  h+='<div class="brand-card" style="--accent:#CDE453">';
+  h+='<div class="bc-head"><div class="bc-name"><span style="font-size:18px">\uD83D\uDCDD</span><strong>New Sales Orders \u00B7 TSG</strong></div>';
+  if(D.nsTgt)h+='<span class="pill pill-'+nsPace.tone+'">'+nsPace.icon+' '+nsPace.label+'</span>';
+  h+='</div>';
+  h+='<div class="bc-gauge"><div class="bc-gauge-svg">'+gauge(nsPct,"#CDE453")+'</div>';
+  h+='<div class="bc-figures"><div class="bc-big">'+f(D.nsVal)+'</div>';
+  if(D.nsTgt)h+='<div class="bc-target">Target <strong>'+f(D.nsTgt)+'</strong> \u00B7 '+(D.nsVal>=D.nsTgt?'<span class="up">+'+f(D.nsVal-D.nsTgt)+'</span>':'<span class="dn">'+f(D.nsVal-D.nsTgt)+'</span>')+'</div>';
+  else h+='<div class="bc-target" style="color:#64748b">No target set</div>';
+  h+='</div></div>';
+  h+='<div class="bc-detail">';
+  h+='<div><div class="bd-k">Enquiries</div><div class="bd-v">'+(D.nsEnq||0)+'</div></div>';
+  h+='<div><div class="bd-k">Orders</div><div class="bd-v">'+(D.nsOrd||0)+'</div></div>';
+  h+='<div><div class="bd-k">Conv. Rate</div><div class="bd-v" style="color:#6BD4EC">'+(D.nsConv||0)+'%</div></div>';
+  h+='<div><div class="bd-k">Avg Order</div><div class="bd-v">'+f(D.nsAov||0)+'</div></div>';
+  h+='</div></div>';
+
+  h+='</div>';
 
   // ==============================
-  // ZONE: COMPARED TO TARGETS
+  // ZONE: COMPARED TO TARGETS (now below the fold — detailed breakdown for
+  // anyone who wants to drill in past the gauges)
   // ==============================
-  h+='<div class="zone-hdr"><div class="zone-label"><span class="zone-icon">\uD83C\uDFAF</span>Performance</div><div class="zone-title">Compared to Targets</div><div class="zone-sub">How each brand is tracking against this month\u2019s targets</div></div>';
+  h+='<div class="zone-hdr"><div class="zone-label"><span class="zone-icon">\uD83C\uDFAF</span>Performance Detail</div><div class="zone-title">Brand Breakdown</div><div class="zone-sub">Detailed invoicing &amp; WIP figures for each brand \u2014 the gauges above summarise this</div></div>';
 
   // === INVOICING ===
   h+='<div class="card mb-20">';
@@ -644,26 +850,11 @@ h+='<span>Current rate: <strong style="color:#6BD4EC">'+f(D.wllDaily)+'/day</str
   });
   h+="</tbody></table></div></details></div></div>";
 
-  // ==============================
-  // ZONE: NEW SALES ORDERS
-  // ==============================
-  if(D.nsVal>0||D.nsEnq>0||D.nsOrd>0||D.nsHistory.length>0){
-    h+='<div class="zone-hdr"><div class="zone-label"><span class="zone-icon">\uD83D\uDCDD</span>Order Intake</div><div class="zone-title">New Sales Orders \u2014 TSG</div><div class="zone-sub">Summary only \u2014 full detail on the <a href="/sales" style="color:#2563eb;font-weight:600">Sales Performance</a> page</div></div>';
-    h+='<div class="ns mb-20"><div style="display:flex;flex-wrap:wrap;gap:20px;align-items:center">';
-    if(D.nsVal>0){
-      h+='<div><div style="font-size:36px;font-weight:800;color:#CDE453;letter-spacing:-.03em;line-height:1">'+f(D.nsVal)+"</div>";
-      if(D.nsTgt)h+='<div style="font-size:12px;color:#94a3b8;margin-top:4px">Target: '+f(D.nsTgt);
-      if(D.nsTgt&&D.nsVal>=D.nsTgt)h+=' \u00B7 <span style="color:#4ade80;font-weight:700">+'+f(D.nsVal-D.nsTgt)+" above</span>";
-      if(D.nsTgt)h+="</div>";
-      h+="</div>";
-    }
-    h+='<div style="display:flex;gap:24px">';
-    h+='<div class="ns-glass" style="padding:12px 18px"><div style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Enquiries</div><div style="font-size:24px;font-weight:800;color:#fff">'+D.nsEnq+"</div></div>";
-    h+='<div class="ns-glass" style="padding:12px 18px"><div style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Orders</div><div style="font-size:24px;font-weight:800;color:#fff">'+D.nsOrd+"</div></div>";
-    h+='<div class="ns-glass" style="padding:12px 18px"><div style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Conversion</div><div style="font-size:24px;font-weight:800;color:#6BD4EC">'+D.nsConv+"%</div></div>";
-    if(D.nsAov>0)h+='<div class="ns-glass" style="padding:12px 18px"><div style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">AOV</div><div style="font-size:24px;font-weight:800;color:#fff">'+f(D.nsAov)+"</div></div>";
-    h+="</div></div></div>";
-  }
+  // NOTE: the old standalone "New Sales Orders" zone has been promoted up to
+  // the brand-gauge row at the top of the page (alongside TSG/WLL/NV) per the
+  // dashboard redesign — it earned equal billing rather than being buried
+  // below the fold. The card up there already shows £value, target, pace,
+  // enquiries, orders, conversion and AOV.
 
   h+='<div class="g2 mb-20">';
   h+='<div class="card">';
