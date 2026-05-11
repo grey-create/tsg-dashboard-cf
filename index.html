@@ -206,7 +206,13 @@ function processData(raw){
   console.log("Target sources — ov.tsgTarget:",ov?ov.tsgTarget:"(no ov)","ov.wllTarget:",ov?ov.wllTarget:"(no ov)","ov.nvTarget:",ov?ov.nvTarget:"(no ov)");
   console.log("Target sources — curInv.tsgTarget:",curInv.tsgTarget,"curInv.wllTarget:",curInv.wllTarget,"curInv.nvTarget:",curInv.nvTarget);
 
-  D.tsgInv=Number((ov&&ov.tsgInvoicedToDate)||curInv.tsg||0);
+  // TSG headline figure treats WIP Due This Month as money in the bank — due dates are
+  // treated as firm commitments at TSG, so dated WIP counts toward the month's target
+  // alongside actually-invoiced revenue. This propagates to vs Target, the progress bar,
+  // the Facts strip Combined KPI, and Sales Performance automatically. D.tsgPureInv still
+  // exposes pure invoiced for the breakdown row. WLL/NV are invoiced-at-order so their
+  // invoiced figure already represents committed revenue — no WIP layer needed there.
+  D.tsgInv=ov?((Number(ov.tsgInvoicedToDate)||0)+(Number(ov.tsgWipDue)||0)):(Number(curInv.tsg)||0);
   D.wllInv=Number((ov&&ov.wllInvoicedToDate)||curInv.wll||0);
   D.nvInv=Number((ov&&ov.nvInvoicedToDate)||curInv.nv||0);
   
@@ -479,7 +485,7 @@ function render(D){
   if(D.tsgTgt)h+=mkbar(D.tsgInv,D.tsgTgt,C.tsg.color);
   if(D.hasWip||D.tsgConfNote){
     h+='<details class="detail-panel" open><summary>WIP & Notes</summary><div class="detail-content">';
- if(D.hasWip)h+='<div style="display:flex;gap:24px;margin-bottom:6px"><span>Undated WIP: <strong style="color:#f1f5f9">'+f(D.tsgWipUndated)+'</strong></span><span>Next Month WIP: <strong style="color:#f1f5f9">'+f(D.tsgWipNextMonth)+'</strong></span><span>Total Pipeline: <strong style="color:#f1f5f9">'+f((D.tsgWipUndated||0)+(D.tsgWipNextMonth||0))+"</strong></span></div>";
+ if(D.hasWip)h+='<div style="display:flex;gap:24px;margin-bottom:6px"><span>WIP TBC: <strong style="color:#f1f5f9">'+f(D.tsgWipUndated)+'</strong></span><span>Next Month WIP: <strong style="color:#f1f5f9">'+f(D.tsgWipNextMonth)+'</strong></span><span>Total Pipeline: <strong style="color:#f1f5f9">'+f((D.tsgWipUndated||0)+(D.tsgWipNextMonth||0))+"</strong></span></div>";
     if(D.tsgConfNote)h+='<div style="font-style:italic">\uD83D\uDCA1 '+D.tsgConfNote+"</div>";
     h+="</div></details>";
   }
