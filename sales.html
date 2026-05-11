@@ -714,8 +714,12 @@ function getFilteredMonths(periodSelectId, dateFromId, dateToId) {
   if (period==='mtd') return [curYM];
   if (period==='lastMonth') return [lmStr];
   if (period==='custom') { const f=document.getElementById(dateFromId).value, t=document.getElementById(dateToId).value; return (!f||!t)?ALL_MONTHS:ALL_MONTHS.filter(m=>m>=f&&m<=t); }
+  // "Last N Months" and "All Available" mean N closed months — exclude the
+  // current in-progress month so partial data doesn't drag totals/charts down.
+  // If someone wants to see the current month explicitly they pick MTD.
+  const closed = ALL_MONTHS.filter(m => m !== curYM);
   const n = period==='last3'?3:period==='last6'?6:period==='last12'?12:9999;
-  return ALL_MONTHS.slice(-n);
+  return closed.slice(-n);
 }
 function getDataForMonths(emp, months) { return DATA[emp] ? DATA[emp].filter(d => months.includes(d.date)) : []; }
 
@@ -1014,8 +1018,14 @@ function updateTeam() {
   buildTeamSummary(months);
   buildTeamCharts(months);
 
+  // Surface the "current month excluded" rule so it's not silent magic
+  const period = document.getElementById('teamPeriod').value;
+  const exclusionPrefix = ['last3','last6','last12','all'].includes(period)
+    ? 'Current month excluded (closed months only). Pick Month to Date to see in-progress figures. '
+    : '';
   const notes = EMPLOYEES.filter(emp=>{const n=getDataForMonths(emp,months).length;return n<months.length&&n>0;}).map(emp=>`${emp}: ${getDataForMonths(emp,months).length} months of data`);
-  document.getElementById('teamNote').textContent = notes.length>0 ? 'Note: '+notes.join('. ')+'.' : '';
+  const noteText = exclusionPrefix + (notes.length>0 ? 'Note: '+notes.join('. ')+'.' : '');
+  document.getElementById('teamNote').textContent = noteText.trim();
 
   updateTeamDeepDive();
 }
@@ -1077,7 +1087,13 @@ function updateRankings() {
   const lm=new Date(now.getFullYear(),now.getMonth()-1,1), lmStr=lm.getFullYear()+'-'+String(lm.getMonth()+1).padStart(2,'0');
   let months;
   if(period==='mtd')months=[curYM];else if(period==='lastMonth')months=[lmStr];
-  else{const n=period==='last3'?3:period==='last6'?6:period==='last12'?12:9999;months=ALL_MONTHS.slice(-n);}
+  else{
+    // Same rule as getFilteredMonths: rolling windows mean N closed months,
+    // not "N months ending with this partial one". MTD shows current month.
+    const closed = ALL_MONTHS.filter(m => m !== curYM);
+    const n=period==='last3'?3:period==='last6'?6:period==='last12'?12:9999;
+    months=closed.slice(-n);
+  }
 
   const stats=EMPLOYEES.map(emp=>{
     const d=getDataForMonths(emp,months);
@@ -1085,7 +1101,11 @@ function updateRankings() {
     return{name:emp,months:d.length,enq:tE,convRate:tE>0?tO/tE:0,sales:tS,aov:tO>0?tS/tO:0};
   });
   const short=stats.filter(s=>s.months<months.length&&s.months>0);
-  document.getElementById('rankNote').textContent=short.length>0?'Note: '+short.map(s=>`${s.name} has ${s.months} month${s.months>1?'s':''} of data`).join('. ')+'.':'';
+  const exclusionPrefix = ['last3','last6','last12','all'].includes(period)
+    ? 'Current month excluded (closed months only). Pick Month to Date to see in-progress figures. '
+    : '';
+  const noteText = exclusionPrefix + (short.length>0?'Note: '+short.map(s=>`${s.name} has ${s.months} month${s.months>1?'s':''} of data`).join('. ')+'.':'');
+  document.getElementById('rankNote').textContent = noteText.trim();
 
   function render(tid,key,format) {
     const sorted=[...stats].filter(s=>s[key]>0||s.months>0).sort((a,b)=>b[key]-a[key]);
