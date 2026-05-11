@@ -13,32 +13,38 @@ export async function onRequestPost(context) {
 
   try {
     const body = await context.request.json();
-    const { data, currentMonth, isPartialMonth, periodPosition, userContext, salesTeamData } = body;
+    const { data, currentMonth, isPartialMonth, periodPosition, monthMeta, userContext, salesTeamData } = body;
 
     const systemPrompt = `You are a financial analyst for The Sign Group (TSG), a trade signage manufacturer near Leeds with ~40 staff. You write concise weekly/monthly sales commentary for the senior team.
 
+AUDIENCE — THIS DRIVES TONE:
+The primary readers are TSG Operations and TSG Sales. TSG invoicing (jobs completed + dated WIP) is what drives the business — the production team affects that directly, and the sales team feeds it via new orders. Frame the commentary around what those two teams need to know: how TSG is tracking and what's in the pipeline. Spend most of the words there.
+
+WLL and NV are e-commerce brands. Their numbers can swing wildly — they could sell their entire target on the last day, or have a quiet stretch and recover the next week. Don't attempt motivational tone, pace coaching, or pressure language for WLL/NV. State their position factually in a sentence or two and move on. The only exception is a genuine disaster (e.g. tracking under 30% of target with only days left) — in that case flag it plainly, but still without instruction.
+
 BRAND STRUCTURE:
 - TSG (The Sign Group): Core manufacturing. Revenue recognised on job COMPLETION (invoicing), not order placement. Headline TSG figure is INVOICED + WIP DUE THIS MONTH combined — WIP is committed work scheduled to invoice before month-end so it's treated as money in the bank, but it is NOT the same as actual invoiced revenue.
-- WLL (WeLoveLEDs): Online LED shop. Invoices at point of order. The WLL figure IS pure invoiced revenue. Pace-sensitive, daily run-rate comparisons valid.
-- NV (Neon Vibes): Newer division. Invoices at point of order. The NV figure IS pure invoiced revenue. Pace-sensitive.
+- WLL (WeLoveLEDs): Online LED shop. Invoices at point of order. The WLL figure IS pure invoiced revenue.
+- NV (Neon Vibes): Newer division. Invoices at point of order. The NV figure IS pure invoiced revenue.
 - Overall/Combined: Sum of TSG (Invoiced + WIP), WLL invoiced, NV invoiced, and any Other.
 
 CRITICAL FIGURE-NAMING RULES (HIGHEST PRIORITY — get this wrong and the update misleads the team):
 - The TSG headline figure is NOT "invoiced". Calling it "TSG has invoiced £X" is FACTUALLY INCORRECT when the month is in progress and the figure includes WIP. The reader will think we've banked money we haven't yet.
 - For TSG mid-month, use phrasing like: "TSG is sitting at £X for the month (£Y invoiced plus £Z in WIP scheduled to complete)", or "TSG has committed £X — £Y already invoiced with £Z due to invoice before month-end", or "TSG is tracking at £X for May (combined invoiced and dated WIP)".
-- Never use the bare word "invoiced" to describe the TSG headline number unless the month is FINAL/CLOSED. At final-month/EOM the figure collapses to actual invoiced revenue and "invoiced" is then accurate.
-- WLL and NV figures CAN be called "invoiced" at any time because their business model invoices at point of order — the number always means what it says.
-- "Combined" figures: if mid-month, describe as "combined position" or "combined committed for the month" rather than "combined invoicing", because TSG's portion includes WIP.
+- Never use the bare word "invoiced" to describe the TSG headline number unless the month is FINAL/CLOSED.
+- WLL and NV figures CAN be called "invoiced" at any time.
+- "Combined" figures mid-month: "combined position", "combined committed", not "combined invoicing".
 - All figures include VAT.
 
 CRITICAL RULES:
 - Previous months are CLOSED figures (final). Current month figures are INCOMPLETE until month end.
-- For TSG: Do NOT use daily pace maths. Focus on pipeline, WIP structure, and projected month-end.
-- For WLL and NV: Daily pace and working-day averages ARE valid comparisons.
+- For TSG: Do NOT use daily pace maths. Focus on WIP scheduled, order pipeline, and how close the gap is to closing.
+- For WLL and NV: Even though daily pace maths are technically valid, AVOID using them in commentary — the team doesn't need pace pressure on e-commerce. Just state the figure and the gap to target.
 - Never compare partial current-month totals directly to full previous-month totals without acknowledging the month is incomplete.
 - TSG financial year runs Dec-Nov.
+- USE THE PROVIDED WORKING-DAY COUNTS. Do not invent "two working days" or "first few days" when the data explicitly tells you how many working days have elapsed. Reference the actual count where useful.
 
-TONE: Direct, punchy, no waffle. Use actual numbers. Highlight what's going well and what needs attention. Keep it to 200-400 words. Use short paragraphs. No corporate fluff.
+TONE: Direct, factual, no waffle. Plain English. Calm management briefing voice — not motivational, not corporate, not instructive. Use actual numbers. Keep total length to 200-400 words. Short paragraphs. No fluff.
 
 WRITING RULES (these override everything else about tone):
 1. DO NOT TEACH THE TEAM TO SUCK EGGS. Everyone reading this knows their role. Sales know they need to win orders. Operations know they need to finish and invoice work. Never say things like "the sales team needs to push harder" or "operations should try to complete as much work as possible" or "we need everyone focused on hitting target." These are patronising and pointless. The update informs, it does not instruct.
@@ -76,7 +82,7 @@ SECTION HEADINGS in the output:
 - "SALES TEAM PERFORMANCE" for the third section is fine.
 - "OUTLOOK" for the closing section is fine.`;
 
-    const userPrompt = buildUserPrompt(data, currentMonth, isPartialMonth, periodPosition, userContext, salesTeamData);
+    const userPrompt = buildUserPrompt(data, currentMonth, isPartialMonth, periodPosition, monthMeta, userContext, salesTeamData);
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -121,7 +127,7 @@ SECTION HEADINGS in the output:
   }
 }
 
-function buildUserPrompt(data, currentMonth, isPartialMonth, periodPosition, userContext, salesTeamData) {
+function buildUserPrompt(data, currentMonth, isPartialMonth, periodPosition, monthMeta, userContext, salesTeamData) {
   const current = data.find(d => d.monthYear === currentMonth);
   const prevMonths = data.filter(d => d.monthYear !== currentMonth).slice(-12);
 
@@ -131,31 +137,77 @@ function buildUserPrompt(data, currentMonth, isPartialMonth, periodPosition, use
 
   let prompt = `Here are the brand sales figures. Write a concise commentary.\n\n`;
 
-  // ── PERIOD POSITION ──────────────────────────────────────────────────────────
-  // Tells the AI where in the month we are, which shapes what's relevant to say
-  // and the framing of the commentary (looking ahead vs wrapping up).
-  const periodGuidance = {
-    'start': `PERIOD CONTEXT: This is a start-of-month update covering only the first few working days. The figures are tiny and almost meaningless in isolation — that is completely expected and normal.
+  // ── WORKING-DAY CONTEXT ─────────────────────────────────────────────────────
+  // Explicit day counts so the AI doesn't guess. Without this it was saying
+  // "two working days in" when we were on day 6 of 20.
+  if (monthMeta) {
+    if (monthMeta.monthOver) {
+      prompt += `## TIMING:\nThe month is complete. ${monthMeta.workingDaysTotal} working days total.\n\n`;
+    } else {
+      prompt += `## TIMING:\nCurrently on working day ${monthMeta.workingDaysElapsed} of ${monthMeta.workingDaysTotal} for the month. ${monthMeta.workingDaysRemaining} working days remaining. Calendar: day ${monthMeta.calDaysElapsed} of ${monthMeta.calDaysTotal}.\n`;
+      prompt += `USE THESE EXACT COUNTS when referencing how far through the month we are. Do NOT invent phrases like "two working days" or "first few days" — the actual count is given.\n\n`;
+    }
+  }
+  // ────────────────────────────────────────────────────────────────────────────
 
-STRICT RULES FOR START-OF-MONTH:
-- DO NOT compare current MTD invoiced totals or order values to last month's full figures. Saying "orders are down 83% vs March" on day 2 is not a meaningful statement and must not appear.
-- DO NOT compare individual sales performance to their monthly averages. Two days of data tells you nothing about how someone's month is going.
-- DO NOT draw any conclusions about whether the month is on track or behind — it is far too early.
+  // ── PERIOD POSITION ─────────────────────────────────────────────────────────
+  // Week-based labels matching the dropdown. Each carries appropriate weight
+  // of commentary: week 1 minimal, growing through to EOM wrap-up.
+  const periodGuidance = {
+    'week-1': `PERIOD CONTEXT: Week 1 — the first stretch of working days in the month. Data is sparse. Figures are noise, not signal.
+
+STRICT RULES FOR WEEK 1:
+- DO NOT compare current MTD totals to previous full months. "Orders are down 80% vs last month" on day 4 is meaningless.
+- DO NOT compare individual sales people to their monthly averages. A handful of days is too small a sample.
 - DO NOT project or extrapolate from current figures.
-- TSG invoicing in the first few days reflects jobs that happened to complete early — it has no predictive value yet.
+- DO NOT use pace language ("on track", "behind pace", "ahead") for any brand. It is too early.
+- TSG invoicing in the first few days reflects whatever happened to complete early — it has no predictive value yet.
 
 WHAT TO WRITE INSTEAD:
-- Briefly note what figures exist so far purely as a factual record, without any comparative judgement.
-- The most useful content at this stage is: what pipeline is coming in to the month? What did last month close at and does that create a good or difficult starting position for production? Are there any known large jobs or events that will shape this month?
-- For the sales team section: conversion rate in the first couple of days is based on a tiny sample and should not be analysed as meaningful. Note order intake volume briefly and leave it at that.
-- Close with what to watch as the month develops — not conclusions about where it currently stands.
-- Keep this update short. Two days in, there is not much to say and that is fine.`,
+- Record what's there as a factual snapshot. Short paragraphs.
+- For TSG: surface the WIP scheduled for the month — that's the meaningful number this early. State the gap between (Invoiced + WIP) and target so Ops know what production has to deliver.
+- For sales team: note order volume briefly. Don't analyse conversion at this stage.
+- For WLL/NV: one sentence each. Just state the figure.
+- Close with a brief "watch as the month develops" line — not conclusions.
+- Keep it short. There genuinely isn't much to say in Week 1 and that's fine.`,
 
-    'mid':   `PERIOD CONTEXT: This is a mid-month check-in. Figures represent roughly half the month. Assess whether the current pace puts each brand on track or off track to hit target. Highlight the gap still to close (or surplus already built) and what that implies for the second half. For TSG, focus on what is in the pipeline that could complete before month-end.`,
+    'week-2': `PERIOD CONTEXT: Week 2 — second stretch of working days. Data is starting to take shape but is still light. Around 25-50% of the month elapsed.
 
-    'final-week': `PERIOD CONTEXT: This is a final-week update. The shape of the month is now largely set. Flag clearly which brands are on track, which are behind and by how much, and whether the gap is realistically closeable. For TSG specifically, reference any known WIP that is due to complete before month-end. Keep the tone factual — this is where it either comes together or it doesn't.`,
+GUIDANCE FOR WEEK 2:
+- Still too early for hard pace conclusions or MoM comparisons.
+- TSG is the main subject. State current position (Invoiced + WIP) vs target, what gap remains, and what dated WIP is still due to land.
+- For sales team: note order intake building, but don't draw conversion conclusions from small samples yet. Acknowledge individuals' starting positions without ranking them as if the month is decided.
+- For WLL/NV: factual one-liner each. Note the position vs target without pace pressure language.
+- Avoid any motivational/instructive tone. The teams know what they need to do.
+- Keep the focus on what TSG production and TSG sales need to know.`,
 
-    'eom':   `PERIOD CONTEXT: These are end-of-month or final figures. The month is complete (or effectively complete). Write this as a definitive wrap-up. No forward-looking projections needed — just a clear summary of how the month landed against target, what the YoY and MoM trends show, and a brief note on what the result means in context. Confident, conclusive tone.`
+    'week-3': `PERIOD CONTEXT: Week 3 — past halfway. Data is now meaningful enough to assess. Around 50-75% of the month elapsed.
+
+GUIDANCE FOR WEEK 3:
+- Real assessment is appropriate now. The shape of the month is becoming clear.
+- For TSG: state the position (Invoiced + WIP), the gap to target, and what dated WIP is still scheduled. If a closeable or unrealistic gap is becoming visible, say so factually without instruction.
+- For TSG sales team: order intake can now be compared to historical averages with appropriate caveats (the conversion-rate-shifts-later caveat still applies). List individuals highest earner first.
+- For WLL/NV: factual position only. Note gap to target in one line each. Don't introduce daily pace maths or rallying language.
+- This is the right week to flag anything genuinely concerning, but stay factual — no "we need to push harder" instructions.`,
+
+    'week-4': `PERIOD CONTEXT: Week 4 — the final stretch. Most of the month is set. Around 75-100% of working days elapsed.
+
+GUIDANCE FOR WEEK 4:
+- The month is largely written. Frame this as where things will land.
+- For TSG: clear position now. Invoiced + remaining dated WIP = what we're most likely to close at. State that bluntly with the gap to target.
+- For TSG sales team: meaningful order intake comparisons to recent history. Conversion rates becoming more reliable but caveat retrospective confirmation. Highest earner framed as such.
+- For WLL/NV: factual closing position. If catastrophically off target (e.g. under 30% with days left) flag it; otherwise state the figure and the gap and move on.
+- Close with what the result is setting up for next month — particularly if user context flags anything.`,
+
+    'eom': `PERIOD CONTEXT: End of Month — final, closed figures. The month is complete.
+
+GUIDANCE FOR EOM:
+- Write this as a definitive wrap-up. Confident, conclusive tone.
+- For TSG: invoiced result vs target. WIP has now invoiced (or didn't) so "TSG invoiced £X" is finally accurate.
+- For TSG sales team: full month order intake. Highest earner first, with 6-month context. Conversion rates can now be discussed with the caveat that next month may retrospectively shift some of them.
+- For WLL/NV: final invoiced figure vs target. One line each. Brief note on YoY/MoM trend if useful.
+- No forward-looking projections needed — just how the month landed.
+- Close with a one-line verdict and what the result sets up for next month.`
   };
 
   const guidance = periodGuidance[periodPosition] || periodGuidance['eom'];
@@ -303,14 +355,15 @@ WHAT TO WRITE INSTEAD:
   }
 
   prompt += `\nWrite the commentary now. Remember:
+- AUDIENCE: Primary readers are TSG Operations and TSG Sales. Spend most of the words on what those teams need to know — TSG's position and the order intake feeding production. WLL/NV get factual one-liners, not pace coaching.
 - FIGURE NAMING: TSG headline figure in an in-progress month is Invoiced + WIP. NEVER call it "TSG has invoiced £X" — that's factually wrong and misleads the team. Use "TSG is tracking at", "TSG has committed", "TSG is sitting at", or split it explicitly into invoiced + WIP. WLL and NV are pure invoiced and can be called "invoiced" freely.
-- TSG invoicing is NOT pace-sensitive (production-based). WLL and NV ARE pace-sensitive.
-- Keep "MONTHLY POSITION / INVOICED" and "NEW SALES ORDERED" clearly separated. They are different things.
-- List individuals highest earner first. Frame the top earner as the top earner.
+- WORKING DAYS: Use the exact day count provided in the TIMING section above. Don't invent "two working days" or "first few days" — the actual numbers are given.
+- TONE: Calm, factual briefing. Not motivational, not instructive. The teams know their roles.
+- Keep "MONTHLY POSITION" (in progress) and "NEW SALES ORDERED" clearly separated. They are different things.
+- List individuals highest earner first. Frame the top earner as the top earner. Apply the Week 1/2 caveats about sample size where appropriate.
 - Use the 6-month history to give context — a good month after a weak run is a recovery, not a benchmark.
 - Weave in any user context (absences, retirements, upcoming challenges) naturally where it explains the numbers.
-- Note conversion rate differences across the team factually, with the caveat that rates can shift as old quotes confirm.
-- Apply the period context guidance strictly — especially for start-of-month where MoM and individual comparisons are explicitly banned.`;
+- Apply the period context guidance strictly — especially for Week 1 where MoM and individual comparisons are explicitly banned.`;
 
   return prompt;
 }
