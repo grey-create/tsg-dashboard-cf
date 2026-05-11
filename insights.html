@@ -97,7 +97,10 @@ var FY_START_MONTH=12;
 function f(n){return"\u00A3"+Math.round(Number(n)||0).toLocaleString("en-GB")}
 function ps(n){return(n>0?"+":"")+n+"%"}
 function po(a,b){if(!b)return 0;return Math.round(((a-b)/b)*100)}
-function dl(v){var p=v>0;return'<span class="'+(p?"up":"dn")+'">'+(p?"\u25B2":"\u25BC")+" "+(p?"+":"")+v+"%</span>"}
+// See review.html for rationale: poF keeps 1dp precision below 10% so a real
+// +0.3% doesn't display as +0% / "flat".
+function poF(a,b){if(!b)return 0;var p=((a-b)/b)*100;return Math.abs(p)<10?Math.round(p*10)/10:Math.round(p)}
+function dl(v){if(v===0)return'<span style="color:#94a3b8">\u2194 0%</span>';var p=v>0;return'<span class="'+(p?"up":"dn")+'">'+(p?"\u25B2":"\u25BC")+" "+(p?"+":"")+v+"%</span>"}
 function monthShort(m){return["","Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][m]}
 function parseMY(my){
   if(!my)return null;
@@ -193,7 +196,7 @@ function processInsights(raw){
   for(var i=1;i<D.fyList.length;i++){
     var prev=D.fyList[i-1],cur=D.fyList[i];
     if(prev.total>0&&cur.months>=11){
-      D.fyGrowth.push({label:cur.label,pct:po(cur.total,prev.total),abs:cur.total-prev.total});
+      D.fyGrowth.push({label:cur.label,pct:poF(cur.total,prev.total),abs:cur.total-prev.total});
     }
   }
 
@@ -294,9 +297,9 @@ function processInsights(raw){
   var aboveAvg=completedMonths.filter(function(m){return m.total>overallAvg}).length;
   D.nuggets.push({icon:"📊",text:"<strong>"+aboveAvg+" of "+completedMonths.length+" months</strong> ("+Math.round(aboveAvg/completedMonths.length*100)+"%) have beaten the overall average of "+f(overallAvg)});
 
-  // Brand mix context — fixed commentary based on known business history
-  // All-time TSG % drop is due to WLL/NV introduction, not TSG decline
-  // Last 5 FYs: TSG share has grown, NV shrunk, WLL stable
+  // Brand mix context — narrative derived from the actual share deltas across
+  // the last 5 (non-Covid) FYs, so the language always matches what the data
+  // says rather than being hardcoded to a fixed claim.
   var last5FY=D.fyList.filter(function(fy){return fy.total>0&&!fy.isCovid}).slice(-5);
   if(last5FY.length>=2){
     var fx=last5FY[0],fl=last5FY[last5FY.length-1];
@@ -306,7 +309,15 @@ function processInsights(raw){
     var nvTrendFirst=fx.total>0?Math.round(fx.nv/fx.total*100):0;
     var wllTrend=fl.total>0?Math.round(fl.wll/fl.total*100):0;
     var wllTrendFirst=fx.total>0?Math.round(fx.wll/fx.total*100):0;
-    D.nuggets.push({icon:"🔀",text:"Over the last 5 financial years: <strong>TSG's share has grown</strong> ("+tsgTrendFirst+"% → "+tsgTrend+"%), <strong>WLL has been broadly stable</strong> ("+wllTrendFirst+"% → "+wllTrend+"%), and <strong>NV's share has shrunk</strong> ("+nvTrendFirst+"% → "+nvTrend+"%)"});
+    // Anything ≤2pp swing reads as "broadly stable" — sub-2pp shifts in share
+    // are noise rather than a real trend over a 5-year window.
+    function shareTrendPhrase(brand,first,last){
+      var diff=last-first;
+      if(Math.abs(diff)<=2)return "<strong>"+brand+" has been broadly stable</strong>";
+      if(diff>0)return "<strong>"+brand+"'s share has grown</strong>";
+      return "<strong>"+brand+"'s share has shrunk</strong>";
+    }
+    D.nuggets.push({icon:"🔀",text:"Over the last 5 financial years: "+shareTrendPhrase("TSG",tsgTrendFirst,tsgTrend)+" ("+tsgTrendFirst+"% → "+tsgTrend+"%), "+shareTrendPhrase("WLL",wllTrendFirst,wllTrend)+" ("+wllTrendFirst+"% → "+wllTrend+"%), and "+shareTrendPhrase("NV",nvTrendFirst,nvTrend)+" ("+nvTrendFirst+"% → "+nvTrend+"%)"});
     D.nuggets.push({icon:"📌",text:"The all-time TSG % share looks lower because it includes years before WeLoveLEDs and Neon Vibes existed. WLL launched before 2019, <strong>NV launched in 2021</strong>. TSG's share of a growing total is itself a strong result."});
   }
 
@@ -415,7 +426,7 @@ function render(D){
   h+='<table class="tbl"><thead><tr><th>FY</th><th style="color:'+C.tsg.color+'">TSG</th><th style="color:'+C.wll.color+'">WLL</th><th style="color:'+C.nv.color+'">NV</th><th>Total</th><th>Avg/Mo</th><th>YoY</th></tr></thead><tbody>';
   D.fyList.forEach(function(fy,i){
     var prev=i>0?D.fyList[i-1]:null;
-    var yoy=prev&&prev.total&&fy.months>=11?po(fy.total,prev.total):null;
+    var yoy=prev&&prev.total&&fy.months>=11?poF(fy.total,prev.total):null;
     var isBest=D.bestFY&&fy.label===D.bestFY.label;
     var covidFlag=fy.isCovid?' <span style="background:rgba(220,38,38,.15);color:#f87171;border:1px solid rgba(220,38,38,.3);border-radius:4px;padding:1px 6px;font-size:10px;font-weight:700;margin-left:4px">⚠️ Covid</span>':"";
     var postCovidFlag=fy.isPostCovid?' <span style="background:rgba(234,179,8,.12);color:#fbbf24;border:1px solid rgba(234,179,8,.2);border-radius:4px;padding:1px 6px;font-size:10px;font-weight:600;margin-left:4px">Rebound yr</span>':"";
