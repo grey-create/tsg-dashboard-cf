@@ -7,9 +7,34 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:'Inter',-apple-system,sans-serif;background:#0c1222;color:#e2e8f0;min-height:100vh;-webkit-font-smoothing:antialiased}
+  body{font-family:'Inter',-apple-system,sans-serif;background:#0c1222;color:#e2e8f0;min-height:100vh;-webkit-font-smoothing:antialiased;position:relative;overflow-x:hidden}
 
-  .wrap{max-width:1680px;margin:0 auto;padding:16px 22px 40px}
+  /* Subtle drifting starfield — two stacked radial-gradient layers slowly
+     scrolling in opposite directions. Gives the dark background a sense of
+     depth and motion without competing with the data on top. Fixed
+     positioning so it doesn't scroll with the page. */
+  body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.55;background-image:
+    radial-gradient(1px 1px at 17% 21%,rgba(255,255,255,.55) 50%,transparent 51%),
+    radial-gradient(1px 1px at 42% 7%,rgba(96,165,250,.45) 50%,transparent 51%),
+    radial-gradient(1.5px 1.5px at 71% 33%,rgba(255,255,255,.4) 50%,transparent 51%),
+    radial-gradient(1px 1px at 89% 14%,rgba(168,180,255,.5) 50%,transparent 51%),
+    radial-gradient(1px 1px at 12% 64%,rgba(255,255,255,.45) 50%,transparent 51%),
+    radial-gradient(1px 1px at 33% 88%,rgba(96,165,250,.4) 50%,transparent 51%),
+    radial-gradient(1.5px 1.5px at 58% 78%,rgba(255,255,255,.4) 50%,transparent 51%),
+    radial-gradient(1px 1px at 81% 71%,rgba(255,255,255,.35) 50%,transparent 51%),
+    radial-gradient(1px 1px at 96% 92%,rgba(168,180,255,.5) 50%,transparent 51%),
+    radial-gradient(1px 1px at 5% 41%,rgba(96,165,250,.35) 50%,transparent 51%);
+  background-size:520px 520px;background-repeat:repeat;animation:starsDrift 140s linear infinite}
+  body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.35;background-image:
+    radial-gradient(1px 1px at 8% 12%,rgba(255,255,255,.5) 50%,transparent 51%),
+    radial-gradient(2px 2px at 53% 47%,rgba(205,228,83,.3) 50%,transparent 51%),
+    radial-gradient(1px 1px at 27% 76%,rgba(255,255,255,.4) 50%,transparent 51%),
+    radial-gradient(1px 1px at 69% 19%,rgba(255,255,255,.4) 50%,transparent 51%),
+    radial-gradient(1.5px 1.5px at 91% 56%,rgba(96,165,250,.4) 50%,transparent 51%);
+  background-size:780px 780px;background-repeat:repeat;animation:starsDrift 220s linear infinite reverse}
+  @keyframes starsDrift{to{background-position:520px 360px}}
+
+  .wrap{max-width:1680px;margin:0 auto;padding:18px 22px 40px;position:relative;z-index:1}
   .card{background:#1a2332;border:1px solid #2a3a4e;border-radius:14px;padding:22px 24px;box-shadow:0 2px 8px rgba(0,0,0,.2)}
   .sec-pill{display:inline-block;padding:3px 12px;border-radius:99px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
   .sec-title{font-size:16px;font-weight:700;color:#f1f5f9;line-height:1.3;margin-bottom:2px}
@@ -100,59 +125,102 @@
   .prog-note .pn-icon{font-size:16px;flex-shrink:0;line-height:1.3}
   .prog-note strong{color:#60a5fa;font-weight:700}
 
-  /* ============ DASHBOARD HERO + GAUGES (new) ============ */
-  /* Hero strip — single-row header that holds title, days progress, and the
-     headline Combined number. Sits at the very top so the eye lands on the
-     month total straight away. */
-  .hero-strip{display:grid;grid-template-columns:1.4fr 1fr 1.2fr;gap:16px;background:linear-gradient(135deg,#1a2332 0%,#0c1222 50%,#162033 100%);border:1px solid #2a3a4e;border-radius:14px;padding:18px 22px;margin-bottom:14px;align-items:center}
-  .hero-title h1{font-size:22px;font-weight:900;letter-spacing:-.03em;color:#f1f5f9;line-height:1.05}
-  .hero-title .h-sub{font-size:12px;color:#64748b;margin-top:3px}
-  .hero-days{display:flex;flex-direction:column;gap:6px}
-  .hero-days .hd-row{display:flex;align-items:center;gap:8px}
+  /* ============ DASHBOARD HERO + GAUGES (v2) ============ */
+
+  /* Hero strip — bigger and more prominent than v1. Left = title + month
+     context, middle = working-days timeline (now visually substantial),
+     right = headline Combined number with target read. Sits proud at the
+     top because it's the single most important "how are we doing" panel. */
+  .hero-strip{display:grid;grid-template-columns:1.3fr 1.1fr 1.2fr;gap:24px;background:linear-gradient(135deg,#1a2332 0%,#0c1222 50%,#162033 100%);border:1px solid #2a3a4e;border-radius:16px;padding:26px 30px;margin-bottom:22px;align-items:center;position:relative;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.3)}
+  .hero-strip::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#CDE453,#6BD4EC,#ff3399,#CDE453);background-size:300% 100%;animation:hueShift 12s linear infinite}
+  @keyframes hueShift{to{background-position:300% 0}}
+  .hero-title .h-eyebrow{font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:1.3px;margin-bottom:6px}
+  .hero-title h1{font-size:30px;font-weight:900;letter-spacing:-.035em;color:#f1f5f9;line-height:1;margin-bottom:6px}
+  .hero-title .h-sub{font-size:13px;color:#94a3b8;line-height:1.5}
+  .hero-title .h-sub strong{color:#e2e8f0;font-weight:600}
+  .hero-days{display:flex;flex-direction:column;gap:8px}
+  .hero-days .hd-hdr{display:flex;justify-content:space-between;align-items:baseline}
   .hero-days .hd-label{font-size:10px;color:#475569;text-transform:uppercase;letter-spacing:.6px;font-weight:700}
-  .hero-days .hd-count{font-size:11px;color:#94a3b8;font-weight:600}
+  .hero-days .hd-count{font-size:14px;color:#f1f5f9;font-weight:700}
+  .hero-days .hd-count .hd-unit{font-size:11px;color:#64748b;font-weight:500;margin-left:4px}
+  .hero-days .wd-bigger{display:flex;gap:3px;flex-wrap:wrap}
+  .hero-days .wd-bigger .wd-d{width:7px;height:22px;border-radius:3px}
+  .hero-days .hd-meta{font-size:11px;color:#64748b}
   .hero-combined{text-align:right}
-  .hero-combined .hc-label{font-size:10px;color:#475569;text-transform:uppercase;letter-spacing:.6px;font-weight:700;margin-bottom:2px}
-  .hero-combined .hc-val{font-size:34px;font-weight:900;color:#f1f5f9;letter-spacing:-.03em;line-height:1}
-  .hero-combined .hc-vs{font-size:12px;margin-top:4px}
+  .hero-combined .hc-label{font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:.7px;font-weight:700;margin-bottom:4px}
+  .hero-combined .hc-val{font-size:42px;font-weight:900;color:#f1f5f9;letter-spacing:-.035em;line-height:1}
+  .hero-combined .hc-vs{font-size:13px;margin-top:6px;font-weight:600}
+  .hero-combined .hc-target{font-size:11px;color:#64748b;margin-top:2px}
 
-  /* Top stats row — four secondary KPIs (Projected, FY, Avg, vs prev). Smaller
-     than hero, denser, all on one row above the fold. */
-  .top-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
-  .ts-card{background:#1a2332;border:1px solid #2a3a4e;border-radius:10px;padding:12px 14px;border-top:3px solid var(--accent,#60a5fa)}
-  .ts-label{font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:.5px;font-weight:700;margin-bottom:4px}
-  .ts-val{font-size:20px;font-weight:800;color:#f1f5f9;letter-spacing:-.02em;line-height:1.1}
-  .ts-sub{font-size:11px;color:#64748b;margin-top:3px;line-height:1.3}
+  /* Top stats row — unified slate-grey accent so these supporting KPIs don't
+     fight the brand cards for attention. The v1 version coloured each card
+     with a different brand colour which read as branding and confused the
+     eye. Now they're clearly secondary. */
+  .top-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:22px}
+  .ts-card{background:rgba(26,35,50,.85);border:1px solid #2a3a4e;border-radius:10px;padding:14px 16px;border-left:3px solid #475569;backdrop-filter:blur(8px)}
+  .ts-label{font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:.5px;font-weight:700;margin-bottom:5px}
+  .ts-val{font-size:22px;font-weight:800;color:#f1f5f9;letter-spacing:-.02em;line-height:1.1}
+  .ts-sub{font-size:11px;color:#64748b;margin-top:4px;line-height:1.3}
 
-  /* Brand gauge cards — the meat of the dashboard. Four wide cards with a
-     radial gauge on the left and the headline figures on the right. Each card
-     surfaces target, pace verdict, and (for WLL/NV) the daily-rate detail. */
-  .brand-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
-  .brand-card{background:#1a2332;border:1px solid #2a3a4e;border-radius:14px;padding:16px 18px;display:flex;flex-direction:column;gap:12px;position:relative;overflow:hidden}
+  /* Zone container — wraps a group of brand cards with a clear visual frame
+     and section header. TSG and E-com brands live in their own containers so
+     the team can see at a glance which family they're looking at, and the
+     New Sales Orders card lives inside the TSG zone (not lumped in with the
+     other brands) so it's clearly a TSG metric. */
+  .zone-box{background:rgba(17,27,42,.55);border:1px solid #1e2d3d;border-radius:14px;padding:18px 18px 20px;margin-bottom:20px;backdrop-filter:blur(6px)}
+  .zone-box-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding-bottom:12px;border-bottom:1px dashed #1e2d3d;gap:12px;flex-wrap:wrap}
+  .zone-box-hdr .zb-left{display:flex;align-items:center;gap:12px}
+  .zone-box-hdr .zb-pill{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1.2px;padding:4px 10px;border-radius:99px;background:rgba(255,255,255,.04);color:#94a3b8}
+  .zone-box-hdr .zb-title{font-size:14px;font-weight:700;color:#f1f5f9;letter-spacing:-.01em}
+  .zone-box-hdr .zb-sub{font-size:11px;color:#64748b;line-height:1.4;text-align:right}
+  .zone-tsg{border-color:rgba(205,228,83,.18)}
+  .zone-tsg .zb-pill{background:rgba(205,228,83,.1);color:#CDE453;border:1px solid rgba(205,228,83,.2)}
+  .zone-ecom{border-color:rgba(107,212,236,.18)}
+  .zone-ecom .zb-pill{background:rgba(107,212,236,.1);color:#6BD4EC;border:1px solid rgba(107,212,236,.2)}
+
+  /* Brand cards — gauge on left, headline figures on right, detail grid below.
+     v2 puts them inside zone containers so the layout communicates "TSG
+     family" and "E-commerce family" without ambiguity, and supports three
+     sizes (large for TSG row, small for WLL/NV row). */
+  .brand-row-tsg{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .brand-row-ecom{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .brand-card{background:#1a2332;border:1px solid #2a3a4e;border-radius:12px;padding:18px 20px;display:flex;flex-direction:column;gap:14px;position:relative;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.2)}
   .brand-card::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:var(--accent,#60a5fa)}
+  .brand-card.bc-large{padding:22px 24px}
+  .brand-card.bc-small{padding:14px 16px}
   .brand-card .bc-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
-  .brand-card .bc-name{display:flex;align-items:center;gap:8px}
-  .brand-card .bc-name strong{font-size:13px;font-weight:700;color:#f1f5f9;letter-spacing:.2px}
-  .brand-card .bc-gauge{display:flex;align-items:flex-end;gap:14px}
-  .brand-card .bc-gauge-svg{flex-shrink:0;width:110px}
+  .brand-card .bc-name{display:flex;align-items:center;gap:10px}
+  .brand-card .bc-name strong{font-size:14px;font-weight:700;color:#f1f5f9;letter-spacing:.1px}
+  .brand-card.bc-large .bc-name strong{font-size:15px}
+  .brand-card .bc-gauge{display:flex;align-items:center;gap:16px}
+  .brand-card .bc-gauge-svg{flex-shrink:0;width:130px}
+  .brand-card.bc-large .bc-gauge-svg{width:150px}
+  .brand-card.bc-small .bc-gauge-svg{width:100px}
   .brand-card .bc-figures{flex:1;min-width:0}
-  .brand-card .bc-big{font-size:24px;font-weight:800;color:#f1f5f9;letter-spacing:-.02em;line-height:1.05;word-break:break-word}
-  .brand-card .bc-target{font-size:11px;color:#64748b;margin-top:3px;line-height:1.3}
+  .brand-card .bc-big{font-size:26px;font-weight:800;color:#f1f5f9;letter-spacing:-.02em;line-height:1.05;word-break:break-word}
+  .brand-card.bc-large .bc-big{font-size:30px}
+  .brand-card.bc-small .bc-big{font-size:22px}
+  .brand-card .bc-target{font-size:12px;color:#64748b;margin-top:4px;line-height:1.4}
   .brand-card .bc-target strong{color:#94a3b8;font-weight:600}
-  .brand-card .bc-detail{font-size:11px;color:#94a3b8;line-height:1.45;border-top:1px solid #2a3a4e;padding-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:4px 12px}
-  .brand-card .bc-detail .bd-k{color:#64748b;font-weight:600;text-transform:uppercase;font-size:9px;letter-spacing:.5px}
-  .brand-card .bc-detail .bd-v{color:#e2e8f0;font-weight:600;font-size:12px;margin-bottom:4px}
-  .brand-card .bc-verdict{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:600;margin-top:auto}
-  .brand-card .bc-verdict .vd-icon{font-size:13px}
+  .brand-card .bc-detail{font-size:11px;color:#94a3b8;line-height:1.45;border-top:1px solid #2a3a4e;padding-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:6px 14px}
+  .brand-card.bc-small .bc-detail{padding-top:10px}
+  .brand-card .bc-detail .bd-k{color:#64748b;font-weight:600;text-transform:uppercase;font-size:9px;letter-spacing:.5px;margin-bottom:1px}
+  .brand-card .bc-detail .bd-v{color:#e2e8f0;font-weight:600;font-size:12px}
 
-  /* Pace pills — quick verbal verdict ("Ahead", "On Pace", "Behind") rather
-     than asking the team to mentally compare elapsed-days against % to target. */
+  /* New Sales Orders TSG card — same shape as TSG Invoicing for layout
+     symmetry but with a distinct sub-header tag ("ORDER INTAKE") and amber
+     accent so the eye instantly clocks it as a different metric inside the
+     same TSG family. */
+  .brand-card.bc-nsales::before{background:linear-gradient(90deg,#CDE453,#fbbf24)}
+  .brand-card .ns-tag{display:inline-block;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;padding:2px 7px;border-radius:4px;background:rgba(251,191,36,.12);color:#fbbf24;border:1px solid rgba(251,191,36,.25);margin-left:6px;vertical-align:middle}
+
+  /* Pace pills — verbal verdict colour-coded to tone */
   .pace-ahead{color:#4ade80}
   .pace-onpace{color:#fbbf24}
   .pace-behind{color:#f87171}
 
-  @media(max-width:1280px){.brand-row,.top-stats{grid-template-columns:repeat(2,1fr)}.hero-strip{grid-template-columns:1fr;text-align:left}.hero-combined{text-align:left}}
-  @media(max-width:900px){.g4,.g-ns{grid-template-columns:repeat(2,1fr)}.g2{grid-template-columns:1fr}.brand-row,.top-stats{grid-template-columns:1fr}}
+  @media(max-width:1280px){.brand-row-tsg,.brand-row-ecom,.top-stats{grid-template-columns:repeat(2,1fr)}.hero-strip{grid-template-columns:1fr;text-align:left}.hero-combined{text-align:left}}
+  @media(max-width:900px){.g4,.g-ns{grid-template-columns:repeat(2,1fr)}.g2{grid-template-columns:1fr}.brand-row-tsg,.brand-row-ecom,.top-stats{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -207,24 +275,60 @@ function gauge(pct,color,size){
     +'</svg>';
 }
 
-// Pace verdict: compares achieved-% against time-elapsed-% to decide whether
-// the figure is Ahead / On Pace / Behind, regardless of the headline % to
-// target. Avoids the team being misled by "60% to target" mid-month when 60%
-// of the month has also elapsed (that's exactly on pace, not bad).
+// Pace verdicts — three modes, one per brand-type because each accumulates
+// differently and the same logic doesn't fit all of them.
 //
-// Returns { label, cls, icon, tone } where tone is 'g'/'y'/'r' for colouring.
-function paceVerdict(achieved,target,daysDone,daysTotal,monthComplete){
+//   targetDirectPace  → TSG. Figure is invoiced + WIP, which is essentially the
+//                       month-end prediction (WIP commitments roll into invoice
+//                       by month-end). So pace = "hitting target or not", no
+//                       time-elapsed comparison. Until the gauge hits 100% the
+//                       brand is Behind.
+//   projectionPace    → WLL/NV. E-commerce, accumulates daily. Pace = whether
+//                       the run-rate projection (current daily × month days)
+//                       lands at or above target.
+//   timePacedVerdict  → New Sales Orders TSG. Order intake happens lumpy
+//                       throughout the month so time-elapsed comparison is the
+//                       fairest read (achieved-% vs days-elapsed-%).
+//
+// All three return { label, cls, icon, tone } for consistent rendering.
+
+function targetDirectPace(achieved,target,monthComplete){
+  if(!target||target<=0)return{label:"No target",cls:"pace-onpace",icon:"\u2014",tone:"y"};
+  var pct=achieved/target*100;
+  if(monthComplete){
+    if(pct>=100)return{label:"Hit target",cls:"pace-ahead",icon:"\u2713",tone:"g"};
+    return{label:"Missed target",cls:"pace-behind",icon:"\u2717",tone:"r"};
+  }
+  // In progress — TSG figure already includes WIP so this is the prediction.
+  if(pct>=100)return{label:"At target",cls:"pace-ahead",icon:"\u2713",tone:"g"};
+  if(pct>=95)return{label:"Near target",cls:"pace-onpace",icon:"\u25CF",tone:"y"};
+  return{label:"Below target",cls:"pace-behind",icon:"\u25BC",tone:"r"};
+}
+
+function projectionPace(projected,target,monthComplete){
+  if(!target||target<=0)return{label:"No target",cls:"pace-onpace",icon:"\u2014",tone:"y"};
+  var pct=projected/target*100;
+  if(monthComplete){
+    if(pct>=100)return{label:"Hit target",cls:"pace-ahead",icon:"\u2713",tone:"g"};
+    return{label:"Missed target",cls:"pace-behind",icon:"\u2717",tone:"r"};
+  }
+  // 5pp buffer either side of "on pace" so a marginal projection doesn't
+  // flip the pill on every fetch as the daily rate wobbles.
+  if(pct>=105)return{label:"Ahead",cls:"pace-ahead",icon:"\u25B2",tone:"g"};
+  if(pct>=95)return{label:"On Pace",cls:"pace-onpace",icon:"\u25CF",tone:"y"};
+  return{label:"Behind",cls:"pace-behind",icon:"\u25BC",tone:"r"};
+}
+
+function timePacedVerdict(achieved,target,daysDone,daysTotal,monthComplete){
   if(monthComplete){
     if(!target)return{label:"Final",cls:"pace-onpace",icon:"\u25CF",tone:"y"};
-    var fp=target>0?achieved/target*100:0;
-    if(fp>=100)return{label:"Hit target",cls:"pace-ahead",icon:"\u2713",tone:"g"};
+    if(achieved>=target)return{label:"Hit target",cls:"pace-ahead",icon:"\u2713",tone:"g"};
     return{label:"Missed target",cls:"pace-behind",icon:"\u2717",tone:"r"};
   }
   if(!target||target<=0)return{label:"No target",cls:"pace-onpace",icon:"\u2014",tone:"y"};
   if(daysTotal<=0)return{label:"On Pace",cls:"pace-onpace",icon:"\u25CF",tone:"y"};
   var achievedPct=achieved/target*100;
   var elapsedPct=daysDone/daysTotal*100;
-  // 8pp buffer either side of elapsed = "on pace"; wider gaps trigger ahead/behind
   if(achievedPct>=elapsedPct+8)return{label:"Ahead",cls:"pace-ahead",icon:"\u25B2",tone:"g"};
   if(achievedPct<=elapsedPct-8)return{label:"Behind",cls:"pace-behind",icon:"\u25BC",tone:"r"};
   return{label:"On Pace",cls:"pace-onpace",icon:"\u25CF",tone:"y"};
@@ -529,142 +633,161 @@ function render(D){
   var h="",med=["\uD83E\uDD47","\uD83E\uDD48","\uD83E\uDD49"];
 
   // ==============================
-  // NEW: DASHBOARD HERO STRIP
-  // Compact band: title + days-progress + headline Combined number on one row.
-  // Replaces the larger old hero so the brand gauges fit above the fold.
+  // HERO STRIP (v2) — bigger, clearer barometer
   // ==============================
   var combVsTgt=D.combTgt?po(D.combInv,D.combTgt):0;
+  var dayPct=D.wdTotal>0?Math.round(D.wdDone/D.wdTotal*100):0;
   h+='<div class="hero-strip">';
-  // Left — title + month
-  h+='<div class="hero-title"><div style="font-size:10px;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:3px"><span class="live-dot"></span>Live Dashboard</div>';
+  // Left — title block
+  h+='<div class="hero-title"><div class="h-eyebrow"><span class="live-dot"></span>Live Dashboard \u00B7 Updates automatically</div>';
   h+='<h1>Revenue &amp; Invoicing</h1>';
-  h+='<div class="h-sub">'+D.monthName+' '+D.year+' \u00B7 '+D.phase;
+  h+='<div class="h-sub"><strong>'+D.monthName+' '+D.year+'</strong> \u00B7 '+D.phase;
   if(D.monthComplete)h+=' \u00B7 <span class="pill pill-b">Month Complete</span>';
-  else h+=' \u00B7 Day '+D.wdDone+' of '+D.wdTotal;
   h+='</div></div>';
-  // Middle — days bar
-  h+='<div class="hero-days"><div class="hd-row"><span class="hd-label">Working Days</span><span class="hd-count">'+(D.monthComplete?'Complete':D.wdLeft+' left')+'</span></div>';
-  h+='<div class="wd">';
+  // Middle — bigger working-days timeline
+  h+='<div class="hero-days"><div class="hd-hdr"><span class="hd-label">Working Days</span>';
+  if(D.monthComplete)h+='<span class="hd-count">All complete</span>';
+  else h+='<span class="hd-count">Day '+D.wdDone+'<span class="hd-unit">of '+D.wdTotal+'</span></span>';
+  h+='</div>';
+  h+='<div class="wd-bigger">';
   for(var i=0;i<D.wdTotal;i++)h+='<div class="wd-d" style="background:'+(i<D.wdDone?"#60a5fa":"#2a3a4e")+'"></div>';
-  h+='</div></div>';
+  h+='</div>';
+  h+='<div class="hd-meta">'+(D.monthComplete?'Final figures':D.wdLeft+' working days remaining \u00B7 '+dayPct+'% of month elapsed')+'</div></div>';
   // Right — Combined headline
-  h+='<div class="hero-combined"><div class="hc-label">Combined (Invoiced + WIP)</div>';
+  h+='<div class="hero-combined"><div class="hc-label">Combined Total (Invoiced + WIP)</div>';
   h+='<div class="hc-val">'+f(D.combInv)+'</div>';
-  if(D.combTgt)h+='<div class="hc-vs"><span class="'+(D.combInv>=D.combTgt?"up":"dn")+'">'+(D.combInv>=D.combTgt?"\u25B2":"\u25BC")+' '+ps(combVsTgt)+' vs '+f(D.combTgt)+' target</span></div>';
+  if(D.combTgt){
+    h+='<div class="hc-vs"><span class="'+(D.combInv>=D.combTgt?"up":"dn")+'">'+(D.combInv>=D.combTgt?"\u25B2":"\u25BC")+' '+ps(combVsTgt)+' vs target</span></div>';
+    h+='<div class="hc-target">Target '+f(D.combTgt)+' \u00B7 '+(D.combInv>=D.combTgt?'+':'')+f(D.combInv-D.combTgt)+' '+(D.combInv>=D.combTgt?'above':'below')+'</div>';
+  }
   h+='</div></div>';
 
   // ==============================
-  // NEW: TOP STATS ROW
-  // Four secondary KPIs (Projected EoM / FY Running / vs Prev FY / Avg/Mo).
-  // Denser than the old Facts cards — these sit just under the hero.
+  // TOP STATS ROW — unified slate accent, all 4 KPIs
   // ==============================
   var projVsTgt=D.combTgt?D.combProj-D.combTgt:0;
   var fyVsPrev=D.run.tot[1]?po(D.run.tot[2],D.run.tot[1]):0;
   h+='<div class="top-stats">';
-  h+='<div class="ts-card" style="--accent:#2d6e0e"><div class="ts-label">'+(D.monthComplete?'Final Month-End':'Projected Month-End')+'</div><div class="ts-val">'+f(D.combProj)+'</div>';
+  h+='<div class="ts-card"><div class="ts-label">'+(D.monthComplete?'Final Month-End':'Projected Month-End')+'</div><div class="ts-val">'+f(D.combProj)+'</div>';
   h+='<div class="ts-sub">'+(D.combTgt?(projVsTgt>=0?'<span class="up">+'+f(projVsTgt)+'</span>':'<span class="dn">'+f(projVsTgt)+'</span>')+' vs target':'')+(!D.monthComplete&&D.histMonthsUsed?' \u00B7 WLL+NV '+D.histMonthsUsed+'mo avg':'')+'</div></div>';
-  h+='<div class="ts-card" style="--accent:#6BD4EC"><div class="ts-label">FY Running Total</div><div class="ts-val">'+f(D.run.tot[2])+'</div>';
+  h+='<div class="ts-card"><div class="ts-label">FY Running Total</div><div class="ts-val">'+f(D.run.tot[2])+'</div>';
   h+='<div class="ts-sub">'+(D.run.tot[1]?dl(fyVsPrev)+' vs prev FY ('+D.run.monthsIn+'mo)':D.run.monthsIn+' months in')+'</div></div>';
-  h+='<div class="ts-card" style="--accent:#FF0077"><div class="ts-label">Avg Monthly Revenue</div><div class="ts-val">'+f(D.run.avg[2])+'</div>';
+  h+='<div class="ts-card"><div class="ts-label">Avg Monthly Revenue</div><div class="ts-val">'+f(D.run.avg[2])+'</div>';
   h+='<div class="ts-sub">Prev FY avg: '+f(D.run.avg[1])+'</div></div>';
-  h+='<div class="ts-card" style="--accent:#fbbf24"><div class="ts-label">Projected Full FY</div><div class="ts-val">'+f(D.projTot)+'</div>';
+  h+='<div class="ts-card"><div class="ts-label">Projected Full FY</div><div class="ts-val">'+f(D.projTot)+'</div>';
   h+='<div class="ts-sub">'+(D.projGrowth?(D.projGrowth>=0?'<span class="up">+'+D.projGrowth+'%</span>':'<span class="dn">'+D.projGrowth+'%</span>')+' vs prev FY':D.projMethod+'-based projection')+'</div></div>';
   h+='</div>';
 
-  // Month-in-progress note (kept, but compact)
   if(!D.monthComplete){
     h+='<div class="prog-note"><span class="pn-icon">\u26A0\uFE0F</span><div><strong>Month in progress</strong> \u2014 '+D.wdLeft+' working days remaining. TSG figure is invoiced + WIP (no projection). WLL &amp; NV projected from '+D.histMonthsUsed+'-month historical daily average. For finalised figures, see the <a href="/review" style="color:#60a5fa;font-weight:600">Month Review</a>.</div></div>';
   }
 
   // ==============================
-  // NEW: BRAND GAUGE ROW (4 cards: TSG, WLL, NV, New Sales)
-  // The most important above-the-fold view. Each card shows a radial gauge,
-  // big number, target, key context, and a Pace verdict. New Sales Orders TSG
-  // gets equal billing with the three brand cards — Grey's specifically asked
-  // for that to be prominent and trackable.
+  // ZONE: THE SIGN GROUP — Invoicing + New Sales Orders side by side
+  // TSG pace uses targetDirectPace because the figure already includes WIP
+  // (i.e. it's the month-end prediction). New Sales uses time-paced because
+  // order intake happens lumpily throughout the month.
   // ==============================
-  // Working days used for pace on TSG/NS (invoicing rhythm); calendar days for
-  // WLL/NV (e-commerce, sells 7 days a week).
-  var tsgPace=paceVerdict(D.tsgInv,D.tsgTgt,D.wdDone,D.wdTotal,D.monthComplete);
-  var wllPace=paceVerdict(D.wllInv,D.wllTgt,D.calDaysElapsed,D.calDaysTotal,D.monthComplete);
-  var nvPace =paceVerdict(D.nvInv ,D.nvTgt ,D.calDaysElapsed,D.calDaysTotal,D.monthComplete);
-  var nsPace =paceVerdict(D.nsVal ,D.nsTgt ,D.wdDone,D.wdTotal,D.monthComplete);
-
-  h+='<div class="brand-row">';
-
-  // ---- TSG card ----
+  var tsgPace=targetDirectPace(D.tsgInv,D.tsgTgt,D.monthComplete);
+  var nsPace=timePacedVerdict(D.nsVal,D.nsTgt,D.wdDone,D.wdTotal,D.monthComplete);
   var tsgPct=D.tsgTgt?D.tsgInv/D.tsgTgt*100:0;
-  h+='<div class="brand-card" style="--accent:'+C.tsg.color+'">';
-  h+='<div class="bc-head"><div class="bc-name"><img src="'+LOGOS.tsg+'" class="logo"><strong>The Sign Group\u2122</strong></div>';
+  var nsPct=D.nsTgt?D.nsVal/D.nsTgt*100:0;
+
+  h+='<div class="zone-box zone-tsg">';
+  h+='<div class="zone-box-hdr">';
+  h+='<div class="zb-left"><img src="'+LOGOS.tsg+'" class="logo logo-lg"><div><div class="zb-title">The Sign Group\u2122</div><div class="zb-sub" style="text-align:left">Invoicing &amp; Order Intake \u2014 the headline brand</div></div></div>';
+  h+='<div class="zb-pill">TSG Brand</div>';
+  h+='</div>';
+
+  h+='<div class="brand-row-tsg">';
+
+  // TSG Invoicing card
+  h+='<div class="brand-card bc-large" style="--accent:'+C.tsg.color+'">';
+  h+='<div class="bc-head"><div class="bc-name"><span style="font-size:18px">\uD83D\uDCB0</span><strong>TSG Invoicing</strong></div>';
   h+='<span class="pill pill-'+tsgPace.tone+'">'+tsgPace.icon+' '+tsgPace.label+'</span></div>';
-  h+='<div class="bc-gauge"><div class="bc-gauge-svg">'+gauge(tsgPct,C.tsg.color)+'</div>';
+  h+='<div class="bc-gauge"><div class="bc-gauge-svg">'+gauge(tsgPct,C.tsg.color,150)+'</div>';
   h+='<div class="bc-figures"><div class="bc-big">'+f(D.tsgInv)+'</div>';
   h+='<div class="bc-target">Target <strong>'+f(D.tsgTgt)+'</strong> \u00B7 '+(D.tsgInv>=D.tsgTgt?'<span class="up">+'+f(D.tsgInv-D.tsgTgt)+'</span>':'<span class="dn">'+f(D.tsgInv-D.tsgTgt)+'</span>')+'</div></div></div>';
   h+='<div class="bc-detail">';
   h+='<div><div class="bd-k">Invoiced</div><div class="bd-v" style="color:#4ade80">'+f(D.tsgPureInv)+'</div></div>';
-  h+='<div><div class="bd-k">WIP Due</div><div class="bd-v" style="color:#fbbf24">'+f(D.tsgWipDue||0)+'</div></div>';
-  if(D.tsgWipUndated)h+='<div><div class="bd-k">WIP TBC</div><div class="bd-v">'+f(D.tsgWipUndated)+'</div></div>';
-  if(D.tsgWipNextMonth)h+='<div><div class="bd-k">Next Month WIP</div><div class="bd-v">'+f(D.tsgWipNextMonth)+'</div></div>';
+  h+='<div><div class="bd-k">WIP Due This Month</div><div class="bd-v" style="color:#fbbf24">'+f(D.tsgWipDue||0)+'</div></div>';
+  h+='<div><div class="bd-k">WIP TBC</div><div class="bd-v">'+f(D.tsgWipUndated||0)+'</div></div>';
+  h+='<div><div class="bd-k">Next Month WIP</div><div class="bd-v">'+f(D.tsgWipNextMonth||0)+'</div></div>';
   h+='</div></div>';
 
-  // ---- WLL card ----
+  // TSG New Sales Orders card — distinct styling but in the same zone
+  h+='<div class="brand-card bc-large bc-nsales" style="--accent:#CDE453">';
+  h+='<div class="bc-head"><div class="bc-name"><span style="font-size:18px">\uD83D\uDCDD</span><strong>New Sales Orders</strong><span class="ns-tag">Order Intake</span></div>';
+  if(D.nsTgt)h+='<span class="pill pill-'+nsPace.tone+'">'+nsPace.icon+' '+nsPace.label+'</span>';
+  h+='</div>';
+  h+='<div class="bc-gauge"><div class="bc-gauge-svg">'+gauge(nsPct,"#fbbf24",150)+'</div>';
+  h+='<div class="bc-figures"><div class="bc-big">'+f(D.nsVal)+'</div>';
+  if(D.nsTgt)h+='<div class="bc-target">Target <strong>'+f(D.nsTgt)+'</strong> \u00B7 '+(D.nsVal>=D.nsTgt?'<span class="up">+'+f(D.nsVal-D.nsTgt)+'</span>':'<span class="dn">'+f(D.nsVal-D.nsTgt)+'</span>')+'</div>';
+  else h+='<div class="bc-target" style="color:#64748b">No target set for this month</div>';
+  h+='</div></div>';
+  h+='<div class="bc-detail">';
+  h+='<div><div class="bd-k">Enquiries</div><div class="bd-v">'+(D.nsEnq||0)+'</div></div>';
+  h+='<div><div class="bd-k">Orders Placed</div><div class="bd-v">'+(D.nsOrd||0)+'</div></div>';
+  h+='<div><div class="bd-k">Conversion Rate</div><div class="bd-v" style="color:#6BD4EC">'+(D.nsConv||0)+'%</div></div>';
+  h+='<div><div class="bd-k">Avg Order Value</div><div class="bd-v">'+f(D.nsAov||0)+'</div></div>';
+  h+='</div></div>';
+
+  h+='</div></div>'; // close brand-row-tsg + zone-box
+
+  // ==============================
+  // ZONE: E-COMMERCE — WLL + NV
+  // WLL/NV pace uses projectionPace: does current daily-rate × month-days hit
+  // the target? They invoice at point of order so the gauge fill reflects
+  // actual money banked, but the pace verdict tells the team whether the
+  // current rhythm will get them there.
+  // ==============================
+  var wllPace=projectionPace(D.wllProj,D.wllTgt,D.monthComplete);
+  var nvPace =projectionPace(D.nvProj ,D.nvTgt ,D.monthComplete);
   var wllPct=D.wllTgt?D.wllInv/D.wllTgt*100:0;
+  var nvPct =D.nvTgt ?D.nvInv /D.nvTgt *100:0;
   var wllDailyTgt=D.wllTgt&&D.calDaysLeft>0?(D.wllTgt-D.wllInv)/D.calDaysLeft:0;
-  h+='<div class="brand-card" style="--accent:'+C.wll.color+'">';
+  var nvDailyTgt =D.nvTgt &&D.calDaysLeft>0?(D.nvTgt -D.nvInv )/D.calDaysLeft:0;
+
+  h+='<div class="zone-box zone-ecom">';
+  h+='<div class="zone-box-hdr">';
+  h+='<div class="zb-left"><div style="display:flex;gap:6px"><img src="'+LOGOS.wll+'" class="logo"><img src="'+LOGOS.nv+'" class="logo"></div><div><div class="zb-title">E-commerce Brands</div><div class="zb-sub" style="text-align:left">WeLoveLEDs &amp; Neon Vibes \u2014 daily-rate driven</div></div></div>';
+  h+='<div class="zb-pill">E-com Pair</div>';
+  h+='</div>';
+
+  h+='<div class="brand-row-ecom">';
+
+  // WLL card
+  h+='<div class="brand-card bc-small" style="--accent:'+C.wll.color+'">';
   h+='<div class="bc-head"><div class="bc-name"><img src="'+LOGOS.wll+'" class="logo"><strong>WeLoveLEDs\u2122</strong></div>';
   h+='<span class="pill pill-'+wllPace.tone+'">'+wllPace.icon+' '+wllPace.label+'</span></div>';
-  h+='<div class="bc-gauge"><div class="bc-gauge-svg">'+gauge(wllPct,C.wll.color)+'</div>';
+  h+='<div class="bc-gauge"><div class="bc-gauge-svg">'+gauge(wllPct,C.wll.color,110)+'</div>';
   h+='<div class="bc-figures"><div class="bc-big">'+f(D.wllInv)+'</div>';
   h+='<div class="bc-target">Target <strong>'+f(D.wllTgt)+'</strong> \u00B7 '+(D.wllInv>=D.wllTgt?'<span class="up">+'+f(D.wllInv-D.wllTgt)+'</span>':'<span class="dn">'+f(D.wllInv-D.wllTgt)+'</span>')+'</div></div></div>';
   h+='<div class="bc-detail">';
   h+='<div><div class="bd-k">Current Daily</div><div class="bd-v" style="color:'+C.wll.color+'">'+f(D.wllDaily)+'<span style="font-weight:400;color:#64748b">/d</span></div></div>';
   h+='<div><div class="bd-k">Daily Needed</div><div class="bd-v" style="color:'+(D.wllDaily>=wllDailyTgt?"#4ade80":"#f87171")+'">'+f(wllDailyTgt)+'<span style="font-weight:400;color:#64748b">/d</span></div></div>';
-  h+='<div><div class="bd-k">Projected</div><div class="bd-v">'+f(D.wllProj)+'</div></div>';
+  h+='<div><div class="bd-k">Projected EoM</div><div class="bd-v">'+f(D.wllProj)+'</div></div>';
   h+='<div><div class="bd-k">3mo Avg/d</div><div class="bd-v">'+f(D.wllHistDaily)+'</div></div>';
   h+='</div></div>';
 
-  // ---- NV card ----
-  var nvPct=D.nvTgt?D.nvInv/D.nvTgt*100:0;
-  var nvDailyTgt=D.nvTgt&&D.calDaysLeft>0?(D.nvTgt-D.nvInv)/D.calDaysLeft:0;
-  h+='<div class="brand-card" style="--accent:'+C.nv.color+'">';
+  // NV card
+  h+='<div class="brand-card bc-small" style="--accent:'+C.nv.color+'">';
   h+='<div class="bc-head"><div class="bc-name"><img src="'+LOGOS.nv+'" class="logo"><strong>Neon Vibes\u00AE</strong></div>';
   h+='<span class="pill pill-'+nvPace.tone+'">'+nvPace.icon+' '+nvPace.label+'</span></div>';
-  h+='<div class="bc-gauge"><div class="bc-gauge-svg">'+gauge(nvPct,C.nv.color)+'</div>';
+  h+='<div class="bc-gauge"><div class="bc-gauge-svg">'+gauge(nvPct,C.nv.color,110)+'</div>';
   h+='<div class="bc-figures"><div class="bc-big">'+f(D.nvInv)+'</div>';
   h+='<div class="bc-target">Target <strong>'+f(D.nvTgt)+'</strong> \u00B7 '+(D.nvInv>=D.nvTgt?'<span class="up">+'+f(D.nvInv-D.nvTgt)+'</span>':'<span class="dn">'+f(D.nvInv-D.nvTgt)+'</span>')+'</div></div></div>';
   h+='<div class="bc-detail">';
   h+='<div><div class="bd-k">Current Daily</div><div class="bd-v" style="color:'+C.nv.color+'">'+f(D.nvDaily)+'<span style="font-weight:400;color:#64748b">/d</span></div></div>';
   h+='<div><div class="bd-k">Daily Needed</div><div class="bd-v" style="color:'+(D.nvDaily>=nvDailyTgt?"#4ade80":"#f87171")+'">'+f(nvDailyTgt)+'<span style="font-weight:400;color:#64748b">/d</span></div></div>';
-  h+='<div><div class="bd-k">Projected</div><div class="bd-v">'+f(D.nvProj)+'</div></div>';
+  h+='<div><div class="bd-k">Projected EoM</div><div class="bd-v">'+f(D.nvProj)+'</div></div>';
   h+='<div><div class="bd-k">3mo Avg/d</div><div class="bd-v">'+f(D.nvHistDaily)+'</div></div>';
   h+='</div></div>';
 
-  // ---- New Sales Orders TSG card ----
-  // Promoted from the "Order Intake" section below the fold to equal billing
-  // with the brand cards. This is the headline number the sales team need to
-  // see when they open the page.
-  var nsPct=D.nsTgt?D.nsVal/D.nsTgt*100:0;
-  h+='<div class="brand-card" style="--accent:#CDE453">';
-  h+='<div class="bc-head"><div class="bc-name"><span style="font-size:18px">\uD83D\uDCDD</span><strong>New Sales Orders \u00B7 TSG</strong></div>';
-  if(D.nsTgt)h+='<span class="pill pill-'+nsPace.tone+'">'+nsPace.icon+' '+nsPace.label+'</span>';
-  h+='</div>';
-  h+='<div class="bc-gauge"><div class="bc-gauge-svg">'+gauge(nsPct,"#CDE453")+'</div>';
-  h+='<div class="bc-figures"><div class="bc-big">'+f(D.nsVal)+'</div>';
-  if(D.nsTgt)h+='<div class="bc-target">Target <strong>'+f(D.nsTgt)+'</strong> \u00B7 '+(D.nsVal>=D.nsTgt?'<span class="up">+'+f(D.nsVal-D.nsTgt)+'</span>':'<span class="dn">'+f(D.nsVal-D.nsTgt)+'</span>')+'</div>';
-  else h+='<div class="bc-target" style="color:#64748b">No target set</div>';
-  h+='</div></div>';
-  h+='<div class="bc-detail">';
-  h+='<div><div class="bd-k">Enquiries</div><div class="bd-v">'+(D.nsEnq||0)+'</div></div>';
-  h+='<div><div class="bd-k">Orders</div><div class="bd-v">'+(D.nsOrd||0)+'</div></div>';
-  h+='<div><div class="bd-k">Conv. Rate</div><div class="bd-v" style="color:#6BD4EC">'+(D.nsConv||0)+'%</div></div>';
-  h+='<div><div class="bd-k">Avg Order</div><div class="bd-v">'+f(D.nsAov||0)+'</div></div>';
-  h+='</div></div>';
-
-  h+='</div>';
+  h+='</div></div>'; // close brand-row-ecom + zone-box
 
   // ==============================
-  // ZONE: COMPARED TO TARGETS (now below the fold — detailed breakdown for
-  // anyone who wants to drill in past the gauges)
+  // ZONE: COMPARED TO TARGETS (below the fold — full detail breakdown)
   // ==============================
   h+='<div class="zone-hdr"><div class="zone-label"><span class="zone-icon">\uD83C\uDFAF</span>Performance Detail</div><div class="zone-title">Brand Breakdown</div><div class="zone-sub">Detailed invoicing &amp; WIP figures for each brand \u2014 the gauges above summarise this</div></div>';
 
