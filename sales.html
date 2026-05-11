@@ -566,12 +566,13 @@
             </select>
           </div>
           <div class="sel-group">
-            <label>Position in Month</label>
+            <label>Week in Month</label>
             <select id="commentaryPeriod" onchange="updateEmailSubject()">
-              <option value="start">Start of Month &mdash; early figures, cautious tone</option>
-              <option value="mid">Mid-Month &mdash; halfway check-in</option>
-              <option value="final-week">Final Week &mdash; last push tone</option>
-              <option value="eom" selected>End of Month &mdash; final results</option>
+              <option value="week-1">Week 1 &mdash; early signal, light commentary</option>
+              <option value="week-2">Week 2 &mdash; building up, still light</option>
+              <option value="week-3">Week 3 &mdash; mid-month, real assessment</option>
+              <option value="week-4">Week 4 &mdash; final push, setting up the close</option>
+              <option value="eom" selected>End of Month &mdash; final figures</option>
             </select>
           </div>
           <div class="sel-note" id="commentaryMonthNote"></div>
@@ -1301,10 +1302,15 @@ function updateEmailSubject() {
   const monthLabel = selectedOption ? selectedOption.text.replace(' (in progress)', '').trim() : '';
 
   const periodLabels = {
-    'start':       'Start of Month Update',
-    'mid':         'Mid-Month Update',
-    'final-week':  'Final Week Update',
-    'eom':         'End of Month Results'
+    'week-1':     'Week 1 Update',
+    'week-2':     'Week 2 Update',
+    'week-3':     'Week 3 Update',
+    'week-4':     'Week 4 Update',
+    'eom':        'End of Month Results',
+    // Legacy keys for backwards compat
+    'start':      'Start of Month Update',
+    'mid':        'Mid-Month Update',
+    'final-week': 'Final Week Update'
   };
   const periodLabel = periodLabels[periodSel.value] || 'Sales Update';
 
@@ -1410,6 +1416,41 @@ function getSalesTeamSummary(targetYM) {
   return summary;
 }
 
+// Compute working-day metadata for a given month. Returns total/elapsed/
+// remaining working days (Mon-Fri) and the same for calendar days. For past
+// months everything reads as "complete". For the current month, "elapsed" is
+// counted up to and including today. Passed to the commentary endpoint so the
+// AI can say "we're on day 6 of 20" rather than guessing "early month".
+function workingDayMeta(dateStr, isPartial) {
+  if (!dateStr) return null;
+  const parts = dateStr.split('-');
+  const year  = parseInt(parts[0]);
+  const month = parseInt(parts[1]) - 1; // JS month 0-indexed
+
+  const lastDay = new Date(year, month + 1, 0).getDate();
+  const now = new Date();
+  const today = (now.getFullYear() === year && now.getMonth() === month) ? now.getDate() : lastDay;
+  const monthOver = !isPartial; // past month or month already final
+
+  let workingTotal = 0, workingElapsed = 0;
+  for (let d = 1; d <= lastDay; d++) {
+    const dow = new Date(year, month, d).getDay();
+    if (dow === 0 || dow === 6) continue; // skip Sat/Sun
+    workingTotal++;
+    if (monthOver || d <= today) workingElapsed++;
+  }
+
+  return {
+    workingDaysTotal:     workingTotal,
+    workingDaysElapsed:   monthOver ? workingTotal : workingElapsed,
+    workingDaysRemaining: monthOver ? 0 : Math.max(0, workingTotal - workingElapsed),
+    calDaysTotal:         lastDay,
+    calDaysElapsed:       monthOver ? lastDay : today,
+    calDaysRemaining:     monthOver ? 0 : Math.max(0, lastDay - today),
+    monthOver:            monthOver,
+  };
+}
+
 async function generateCommentary() {
   if (BRAND_DATA.length === 0) return;
 
@@ -1432,6 +1473,11 @@ async function generateCommentary() {
   const selected = BRAND_DATA.find(d => d.date === selectedDate) || BRAND_DATA[BRAND_DATA.length - 1];
   const isPartial = selected.date && selected.date.startsWith(curYM);
 
+  // Compute working-day context for the selected month so the AI knows where
+  // in the month we actually are. Without this it was guessing ("two working
+  // days") even when we were on day 6. Working day = Monday-Friday.
+  const monthMeta = workingDayMeta(selected.date, isPartial);
+
   try {
     const userContext = document.getElementById('reportContext').value.trim();
     const res = await fetch('/commentary', {
@@ -1441,9 +1487,10 @@ async function generateCommentary() {
         data: BRAND_DATA.slice(-24),
         currentMonth: selected.monthYear,
         isPartialMonth: isPartial,
-        periodPosition: periodPosition,   // NEW: tells the AI where we are in the month
+        periodPosition: periodPosition,
+        monthMeta: monthMeta,             // working day counts for accurate framing
         userContext: userContext || null,
-        salesTeamData: getSalesTeamSummary(selected.date)  // pass selected month, not always current
+        salesTeamData: getSalesTeamSummary(selected.date)
       })
     });
 
