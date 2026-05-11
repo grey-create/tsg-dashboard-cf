@@ -38,9 +38,10 @@ CRITICAL FIGURE-NAMING RULES (HIGHEST PRIORITY — get this wrong and the update
 
 CRITICAL RULES:
 - Previous months are CLOSED figures (final). Current month figures are INCOMPLETE until month end.
+- ABSOLUTE BAN ON PARTIAL-VS-FULL PERCENTAGE MATHS. While the current month is in progress, NEVER state a percentage growth or decline between the current MTD figure and any full historical month. Sentences like "down 65% from April's £147k", "tracking 40% below last month", "60% behind the 3-month average" are FORBIDDEN — they compare an incomplete period to a complete one and produce false alarm. This applies to invoicing, new sales orders, conversion rates, individual performance — everything. State current MTD and historical figures as separate raw facts; do not subtract one from the other and do not pro-rate either.
+- The same ban applies to individual sales people. "Adam is £80k below his £105k monthly average" is wrong when we're 6 days into the month. Mention his average as background only ("Adam typically closes around £105k across a full month"), not as a yardstick against partial progress.
 - For TSG: Do NOT use daily pace maths. Focus on WIP scheduled, order pipeline, and how close the gap is to closing.
 - For WLL and NV: Even though daily pace maths are technically valid, AVOID using them in commentary — the team doesn't need pace pressure on e-commerce. Just state the figure and the gap to target.
-- Never compare partial current-month totals directly to full previous-month totals without acknowledging the month is incomplete.
 - TSG financial year runs Dec-Nov.
 - USE THE PROVIDED WORKING-DAY COUNTS. Do not invent "two working days" or "first few days" when the data explicitly tells you how many working days have elapsed. Reference the actual count where useful.
 
@@ -173,10 +174,14 @@ WHAT TO WRITE INSTEAD:
 
     'week-2': `PERIOD CONTEXT: Week 2 — second stretch of working days. Data is starting to take shape but is still light. Around 25-50% of the month elapsed.
 
-GUIDANCE FOR WEEK 2:
-- Still too early for hard pace conclusions or MoM comparisons.
+STRICT RULES FOR WEEK 2:
+- FORBIDDEN: percentage comparisons between current MTD and any full historical month. "Down 65% from April" is meaningless when April was 20 working days and we're 6-10 days in. Do not state such percentages anywhere — not for team totals, not for individuals, not for invoicing.
+- FORBIDDEN: characterising current MTD intake as "slowed", "dropped", "down", "behind" relative to a previous full month. The sample isn't comparable yet.
+- Still too early for hard pace conclusions for any brand.
+
+WHAT TO WRITE:
 - TSG is the main subject. State current position (Invoiced + WIP) vs target, what gap remains, and what dated WIP is still due to land.
-- For sales team: note order intake building, but don't draw conversion conclusions from small samples yet. Acknowledge individuals' starting positions without ranking them as if the month is decided.
+- For sales team: state each person's current order intake and conversion as raw figures. You may briefly mention their typical full-month range as background ("Adam typically lands around £105k in a full month") but do not derive a percentage delta against it.
 - For WLL/NV: factual one-liner each. Note the position vs target without pace pressure language.
 - Avoid any motivational/instructive tone. The teams know what they need to do.
 - Keep the focus on what TSG production and TSG sales need to know.`,
@@ -272,20 +277,28 @@ GUIDANCE FOR EOM:
   if (salesTeamData && (salesTeamData.totalNewSales > 0 || salesTeamData.totalOrders > 0)) {
     prompt += `## NEW SALES ORDERED THIS MONTH (orders placed, NOT invoiced):\n`;
     prompt += `IMPORTANT: New Sales are orders confirmed this month. This is order intake, completely separate from invoiced revenue above.\n`;
+    if (isPartialMonth) {
+      prompt += `WARNING: The current month is INCOMPLETE. All historical figures below are FULL CLOSED MONTHS. Do NOT compute or state any percentage change between the current MTD figure and a full historical month — that is mathematically meaningless and creates false alarm. State current MTD and historical figures separately as raw facts; do not subtract one from the other.\n`;
+    }
+    prompt += `\n`;
 
-    prompt += `Team Total: £${fmt(salesTeamData.totalNewSales)}`;
-    if (salesTeamData.prevMonthNewSales > 0) {
+    prompt += `Team Total this month: £${fmt(salesTeamData.totalNewSales)} (${isPartialMonth ? 'MTD, partial' : 'full month'})`;
+    // Only compute the MoM delta when the current month is FULL — otherwise
+    // we're comparing partial MTD to a full prior month, which produces things
+    // like "down 65% vs April" that are nonsense.
+    if (!isPartialMonth && salesTeamData.prevMonthNewSales > 0) {
       const pct = ((salesTeamData.totalNewSales - salesTeamData.prevMonthNewSales) / salesTeamData.prevMonthNewSales * 100);
       prompt += ` (${pct >= 0 ? '+' : ''}${pct.toFixed(0)}% vs previous month's £${fmt(salesTeamData.prevMonthNewSales)})`;
     }
     prompt += `\n`;
     prompt += `Total Enquiries: ${salesTeamData.totalEnquiries} | Total Orders: ${salesTeamData.totalOrders}\n\n`;
 
-    // Team history (prior 3 months totals)
+    // Team history (prior 3 months totals) — label as full closed months so
+    // the AI doesn't naively compare current MTD to them.
     if (salesTeamData.teamHistory && salesTeamData.teamHistory.length > 0) {
-      prompt += `Team new sales — recent months:\n`;
+      prompt += `Team new sales — recent FULL CLOSED months (for context only, not for percentage comparison with partial current month):\n`;
       salesTeamData.teamHistory.forEach(h => {
-        prompt += `  ${h.month}: £${fmt(h.newSales)} from ${h.orders} orders (${h.enquiries} enquiries)\n`;
+        prompt += `  ${h.month}: £${fmt(h.newSales)} from ${h.orders} orders (${h.enquiries} enquiries) — full month\n`;
       });
       prompt += `\n`;
     }
@@ -293,26 +306,34 @@ GUIDANCE FOR EOM:
     // Individual breakdown — sorted by this month's sales, highest first
     if (salesTeamData.employees && salesTeamData.employees.length > 0) {
       const sorted = [...salesTeamData.employees].sort((a, b) => b.newSales - a.newSales);
-      prompt += `Individual performance this month vs their own 6-month average (list in this order — highest earner first):\n`;
+      if (isPartialMonth) {
+        prompt += `Individual performance THIS MONTH SO FAR (partial). Their 6-month averages are full-month figures — do NOT state any percentage delta between this MTD figure and the full-month average; that comparison is meaningless mid-month. Use averages only as background colour ("Adam typically closes around £X across a full month") not as a yardstick to measure partial progress against.\n`;
+      } else {
+        prompt += `Individual performance this month vs their own 6-month average (list in this order — highest earner first):\n`;
+      }
       sorted.forEach(e => {
-        const salesVsAvg = e.avgSales > 0 ? ((e.newSales - e.avgSales) / e.avgSales * 100) : null;
-        const convVsAvg  = e.avgConv  > 0 ? ((e.convRate - e.avgConv)  / e.avgConv  * 100) : null;
-
         prompt += `\n${e.name}:\n`;
-        prompt += `  This month: £${fmt(e.newSales)} | ${e.orders} orders from ${e.enquiries} enquiries | ${(e.convRate * 100).toFixed(0)}% conversion | AOV £${fmt(e.aov)}\n`;
+        prompt += `  This month: £${fmt(e.newSales)} | ${e.orders} orders from ${e.enquiries} enquiries | ${(e.convRate * 100).toFixed(0)}% conversion | AOV £${fmt(e.aov)}${isPartialMonth ? ' (partial month)' : ''}\n`;
 
         if (e.histMonthsCount > 0) {
-          prompt += `  ${e.histMonthsCount}-month avg: £${fmt(e.avgSales)} sales | ${e.avgOrders.toFixed(1)} orders avg | ${(e.avgConv * 100).toFixed(0)}% conversion avg | AOV £${fmt(e.avgAOV)}\n`;
-          if (salesVsAvg !== null) {
-            const dir = salesVsAvg >= 0 ? 'ABOVE' : 'BELOW';
-            prompt += `  vs own avg: ${dir} by ${Math.abs(salesVsAvg).toFixed(0)}% on new sales`;
-            if (convVsAvg !== null) prompt += `, ${convVsAvg >= 0 ? 'ABOVE' : 'BELOW'} by ${Math.abs(convVsAvg).toFixed(0)}% on conversion`;
-            prompt += `\n`;
+          prompt += `  ${e.histMonthsCount}-month avg (full months): £${fmt(e.avgSales)} sales | ${e.avgOrders.toFixed(1)} orders avg | ${(e.avgConv * 100).toFixed(0)}% conversion avg | AOV £${fmt(e.avgAOV)}\n`;
+
+          // Only show the pre-computed delta when the current month is FULL.
+          // Mid-month this comparison is misleading.
+          if (!isPartialMonth) {
+            const salesVsAvg = e.avgSales > 0 ? ((e.newSales - e.avgSales) / e.avgSales * 100) : null;
+            const convVsAvg  = e.avgConv  > 0 ? ((e.convRate - e.avgConv)  / e.avgConv  * 100) : null;
+            if (salesVsAvg !== null) {
+              const dir = salesVsAvg >= 0 ? 'ABOVE' : 'BELOW';
+              prompt += `  vs own avg: ${dir} by ${Math.abs(salesVsAvg).toFixed(0)}% on new sales`;
+              if (convVsAvg !== null) prompt += `, ${convVsAvg >= 0 ? 'ABOVE' : 'BELOW'} by ${Math.abs(convVsAvg).toFixed(0)}% on conversion`;
+              prompt += `\n`;
+            }
           }
 
-          // Month-by-month breakdown for context
+          // Month-by-month breakdown for context — label as full closed months
           if (e.history && e.history.length > 0) {
-            prompt += `  Recent months: `;
+            prompt += `  Recent months (full closed): `;
             prompt += e.history.map(h => `${h.month}: £${fmt(h.newSales)} (${h.orders} orders, ${(h.convRate*100).toFixed(0)}% conv)`).join(' | ');
             prompt += `\n`;
           }
@@ -321,14 +342,17 @@ GUIDANCE FOR EOM:
 
       // Team conversion rate comparison — flag meaningful gaps
       const convRates = sorted.map(e => ({ name: e.name, conv: (e.convRate * 100).toFixed(0) }));
-      prompt += `\nTeam conversion rates this month: ${convRates.map(c => `${c.name}: ${c.conv}%`).join(' | ')}\n`;
-      prompt += `NOTE: Conversion rates can shift in subsequent months as previously quoted work gets confirmed. A lower rate this month may not be the final picture. Flag persistent gaps across the team, but with that caveat.\n`;
+      prompt += `\nTeam conversion rates this month${isPartialMonth ? ' (MTD, small samples)' : ''}: ${convRates.map(c => `${c.name}: ${c.conv}%`).join(' | ')}\n`;
+      prompt += `NOTE: Conversion rates can shift in subsequent months as previously quoted work gets confirmed. ${isPartialMonth ? 'Early in a month the sample is also tiny so the rate is noise more than signal.' : 'Flag persistent gaps across the team, with that caveat.'}\n`;
       prompt += `\n`;
     }
   }
 
   if (prevMonths.length > 0) {
-    prompt += `## RECENT INVOICING HISTORY (last ${prevMonths.length} months):\n`;
+    prompt += `## RECENT INVOICING HISTORY (last ${prevMonths.length} months — ALL FULL CLOSED MONTHS):\n`;
+    if (isPartialMonth) {
+      prompt += `These are FULL CLOSED months. The current month is incomplete. Do NOT state percentage growth or decline between the current partial month and any of these full historical months — that comparison is meaningless mid-month.\n`;
+    }
     prompt += `Month | TSG | WLL | NV | Overall\n`;
     prevMonths.forEach(m => {
       prompt += `${m.monthYear} | £${fmt(m.tsg)} | £${fmt(m.wll)} | £${fmt(m.nv)} | £${fmt(calcOverall(m))}\n`;
@@ -339,7 +363,7 @@ GUIDANCE FOR EOM:
     const avgTSG = last3.reduce((s, m) => s + m.tsg, 0) / last3.length;
     const avgWLL = last3.reduce((s, m) => s + m.wll, 0) / last3.length;
     const avgNV  = last3.reduce((s, m) => s + m.nv,  0) / last3.length;
-    prompt += `3-month invoicing averages: TSG £${fmt(avgTSG)}, WLL £${fmt(avgWLL)}, NV £${fmt(avgNV)}\n`;
+    prompt += `3-month invoicing averages (full-month basis): TSG £${fmt(avgTSG)}, WLL £${fmt(avgWLL)}, NV £${fmt(avgNV)}\n`;
 
     // Same month last year
     if (current) {
@@ -357,11 +381,11 @@ GUIDANCE FOR EOM:
   prompt += `\nWrite the commentary now. Remember:
 - AUDIENCE: Primary readers are TSG Operations and TSG Sales. Spend most of the words on what those teams need to know — TSG's position and the order intake feeding production. WLL/NV get factual one-liners, not pace coaching.
 - FIGURE NAMING: TSG headline figure in an in-progress month is Invoiced + WIP. NEVER call it "TSG has invoiced £X" — that's factually wrong and misleads the team. Use "TSG is tracking at", "TSG has committed", "TSG is sitting at", or split it explicitly into invoiced + WIP. WLL and NV are pure invoiced and can be called "invoiced" freely.
+- NO PARTIAL-VS-FULL PERCENTAGE MATHS: While the month is in progress, NEVER state "down X% vs last month", "X% below average", "tracking at X% of April's figure", etc. The current period is incomplete; the historical period was complete. The percentage is meaningless and creates false alarm. State both figures separately as raw facts if context matters, but do not derive a delta between them.
 - WORKING DAYS: Use the exact day count provided in the TIMING section above. Don't invent "two working days" or "first few days" — the actual numbers are given.
 - TONE: Calm, factual briefing. Not motivational, not instructive. The teams know their roles.
 - Keep "MONTHLY POSITION" (in progress) and "NEW SALES ORDERED" clearly separated. They are different things.
 - List individuals highest earner first. Frame the top earner as the top earner. Apply the Week 1/2 caveats about sample size where appropriate.
-- Use the 6-month history to give context — a good month after a weak run is a recovery, not a benchmark.
 - Weave in any user context (absences, retirements, upcoming challenges) naturally where it explains the numbers.
 - Apply the period context guidance strictly — especially for Week 1 where MoM and individual comparisons are explicitly banned.`;
 
