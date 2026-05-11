@@ -192,6 +192,12 @@
   .brand-card .bc-name{display:flex;align-items:center;gap:10px}
   .brand-card .bc-name strong{font-size:14px;font-weight:700;color:#f1f5f9;letter-spacing:.1px}
   .brand-card.bc-large .bc-name strong{font-size:15px}
+  /* Subtitle directly under the card name — one-line plain-English description
+     of what the metric actually measures. Makes the difference between TSG
+     Invoicing and TSG New Sales obvious to anyone glancing at the dashboard
+     without needing to interpret the figures. */
+  .brand-card .bc-subtitle{font-size:11px;color:#94a3b8;line-height:1.4;margin-top:-6px;font-style:italic}
+  .brand-card.bc-small .bc-subtitle{font-size:10.5px}
   .brand-card .bc-gauge{display:flex;align-items:center;gap:16px}
   .brand-card .bc-gauge-svg{flex-shrink:0;width:130px}
   .brand-card.bc-large .bc-gauge-svg{width:150px}
@@ -208,9 +214,14 @@
   .brand-card .bc-detail .bd-v{color:#e2e8f0;font-weight:600;font-size:12px}
 
   /* New Sales Orders TSG card — same shape as TSG Invoicing for layout
-     symmetry but with a distinct sub-header tag ("ORDER INTAKE") and amber
-     accent so the eye instantly clocks it as a different metric inside the
-     same TSG family. */
+     symmetry but a deliberately distinct visual treatment so it can never be
+     misread as "the same number as TSG Invoicing". Three layered cues:
+       - amber gradient accent strip (vs solid green)
+       - "ORDER INTAKE" tag pill in the title row
+       - slightly warmer card background + subtle white outline + soft amber
+         inner glow. Together these say "related but different metric" loudly
+         enough to be readable at a glance.  */
+  .brand-card.bc-nsales{background:linear-gradient(180deg,#1e2235 0%,#1a2332 100%);outline:1px solid rgba(255,255,255,.08);outline-offset:-1px;box-shadow:0 2px 10px rgba(0,0,0,.2),inset 0 0 40px rgba(251,191,36,.035)}
   .brand-card.bc-nsales::before{background:linear-gradient(90deg,#CDE453,#fbbf24)}
   .brand-card .ns-tag{display:inline-block;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;padding:2px 7px;border-radius:4px;background:rgba(251,191,36,.12);color:#fbbf24;border:1px solid rgba(251,191,36,.25);margin-left:6px;vertical-align:middle}
 
@@ -705,6 +716,7 @@ function render(D){
   h+='<div class="brand-card bc-large" style="--accent:'+C.tsg.color+'">';
   h+='<div class="bc-head"><div class="bc-name"><span style="font-size:18px">\uD83D\uDCB0</span><strong>TSG Invoicing</strong></div>';
   h+='<span class="pill pill-'+tsgPace.tone+'">'+tsgPace.icon+' '+tsgPace.label+'</span></div>';
+  h+='<div class="bc-subtitle">Jobs completed or due to be completed this month</div>';
   h+='<div class="bc-gauge"><div class="bc-gauge-svg">'+gauge(tsgPct,C.tsg.color,150)+'</div>';
   h+='<div class="bc-figures"><div class="bc-big">'+f(D.tsgInv)+'</div>';
   h+='<div class="bc-target">Target <strong>'+f(D.tsgTgt)+'</strong> \u00B7 '+(D.tsgInv>=D.tsgTgt?'<span class="up">+'+f(D.tsgInv-D.tsgTgt)+'</span>':'<span class="dn">'+f(D.tsgInv-D.tsgTgt)+'</span>')+'</div></div></div>';
@@ -717,9 +729,10 @@ function render(D){
 
   // TSG New Sales Orders card — distinct styling but in the same zone
   h+='<div class="brand-card bc-large bc-nsales" style="--accent:#CDE453">';
-  h+='<div class="bc-head"><div class="bc-name"><span style="font-size:18px">\uD83D\uDCDD</span><strong>New Sales Orders</strong><span class="ns-tag">Order Intake</span></div>';
+  h+='<div class="bc-head"><div class="bc-name"><span style="font-size:18px">\uD83D\uDCDD</span><strong>TSG New Sales</strong><span class="ns-tag">Order Intake</span></div>';
   if(D.nsTgt)h+='<span class="pill pill-'+nsPace.tone+'">'+nsPace.icon+' '+nsPace.label+'</span>';
   h+='</div>';
+  h+='<div class="bc-subtitle">New orders confirmed this month \u2014 the pipeline that becomes invoicing</div>';
   h+='<div class="bc-gauge"><div class="bc-gauge-svg">'+gauge(nsPct,"#fbbf24",150)+'</div>';
   h+='<div class="bc-figures"><div class="bc-big">'+f(D.nsVal)+'</div>';
   if(D.nsTgt)h+='<div class="bc-target">Target <strong>'+f(D.nsTgt)+'</strong> \u00B7 '+(D.nsVal>=D.nsTgt?'<span class="up">+'+f(D.nsVal-D.nsTgt)+'</span>':'<span class="dn">'+f(D.nsVal-D.nsTgt)+'</span>')+'</div>';
@@ -760,6 +773,7 @@ function render(D){
   h+='<div class="brand-card bc-small" style="--accent:'+C.wll.color+'">';
   h+='<div class="bc-head"><div class="bc-name"><img src="'+LOGOS.wll+'" class="logo"><strong>WeLoveLEDs\u2122</strong></div>';
   h+='<span class="pill pill-'+wllPace.tone+'">'+wllPace.icon+' '+wllPace.label+'</span></div>';
+  h+='<div class="bc-subtitle">E-commerce sales \u2014 invoiced at point of order</div>';
   h+='<div class="bc-gauge"><div class="bc-gauge-svg">'+gauge(wllPct,C.wll.color,110)+'</div>';
   h+='<div class="bc-figures"><div class="bc-big">'+f(D.wllInv)+'</div>';
   h+='<div class="bc-target">Target <strong>'+f(D.wllTgt)+'</strong> \u00B7 '+(D.wllInv>=D.wllTgt?'<span class="up">+'+f(D.wllInv-D.wllTgt)+'</span>':'<span class="dn">'+f(D.wllInv-D.wllTgt)+'</span>')+'</div></div></div>';
@@ -774,6 +788,7 @@ function render(D){
   h+='<div class="brand-card bc-small" style="--accent:'+C.nv.color+'">';
   h+='<div class="bc-head"><div class="bc-name"><img src="'+LOGOS.nv+'" class="logo"><strong>Neon Vibes\u00AE</strong></div>';
   h+='<span class="pill pill-'+nvPace.tone+'">'+nvPace.icon+' '+nvPace.label+'</span></div>';
+  h+='<div class="bc-subtitle">E-commerce sales \u2014 invoiced at point of order</div>';
   h+='<div class="bc-gauge"><div class="bc-gauge-svg">'+gauge(nvPct,C.nv.color,110)+'</div>';
   h+='<div class="bc-figures"><div class="bc-big">'+f(D.nvInv)+'</div>';
   h+='<div class="bc-target">Target <strong>'+f(D.nvTgt)+'</strong> \u00B7 '+(D.nvInv>=D.nvTgt?'<span class="up">+'+f(D.nvInv-D.nvTgt)+'</span>':'<span class="dn">'+f(D.nvInv-D.nvTgt)+'</span>')+'</div></div></div>';
