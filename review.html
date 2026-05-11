@@ -129,7 +129,13 @@ function f(n){return"\u00A3"+Math.round(Number(n)||0).toLocaleString("en-GB")}
 function fk(n){n=Number(n)||0;return n>=1000?"\u00A3"+Math.round(n/1000)+"k":"\u00A3"+Math.round(n)}
 function ps(n){return(n>0?"+":"")+n+"%"}
 function po(a,b){if(!b)return 0;return Math.round(((a-b)/b)*100)}
-function dl(v){var p=v>0;return'<span class="'+(p?"up":"dn")+'">'+(p?"\u25B2":"\u25BC")+" "+(p?"+":"")+v+"%</span>"}
+// poF: percent change with smarter precision. Returns 1dp when the magnitude is
+// under 10% (so a real +0.3% reads as "+0.3%" instead of being rounded to 0%
+// and printing as a misleading flat reading), and a whole integer otherwise.
+// Used wherever a small YoY or vs-target gap matters.
+function poF(a,b){if(!b)return 0;var p=((a-b)/b)*100;return Math.abs(p)<10?Math.round(p*10)/10:Math.round(p)}
+function psF(n){return(n>0?"+":"")+n+"%"}
+function dl(v){if(v===0)return'<span style="color:#94a3b8">\u2194 0%</span>';var p=v>0;return'<span class="'+(p?"up":"dn")+'">'+(p?"\u25B2":"\u25BC")+" "+(p?"+":"")+v+"%</span>"}
 function pl(s){var c=s==="Above"||s==="Ahead"?"pill-g":"pill-r";return'<span class="pill '+c+'">'+s+"</span>"}
 function mkbar(val,tgt,color){
   var pct=tgt>0?Math.min(val/tgt*100,100):0;
@@ -291,7 +297,7 @@ function processData(raw){
   D.prevFYTotal=prevFYFull;
   if(seasonalPct>0&&seasonalPct<1){D.projTot=Math.round(fy0.tot/seasonalPct);D.projMethod="seasonal";D.projSeasonalPct=Math.round(seasonalPct*100);}
   else{D.projTot=fyMonthsIn>0?Math.round(fy0.tot/fyMonthsIn*12):0;D.projMethod="run-rate";D.projSeasonalPct=0;}
-  D.projGrowth=D.prevFYTotal>0?po(D.projTot,D.prevFYTotal):0;
+  D.projGrowth=D.prevFYTotal>0?poF(D.projTot,D.prevFYTotal):0;
 
   D.hasData=D.combVal>0||D.nsVal>0||D.nsEnq>0;
   return D;
@@ -358,11 +364,25 @@ function render(D){
     if(worst.pct<0)insights.push({icon:"\u26A0\uFE0F",text:"<strong>"+worst.n+" fell short</strong> \u2014 "+ps(worst.pct)+" vs target, "+f(Math.abs(worst.val-worst.tgt))+" under the "+f(worst.tgt)+" target."});
   }
 
-  // YoY comparison
+  // YoY comparison — tiered language. The old version rounded to integer and
+  // tacked "showing healthy growth" / "Targets may have been adjusted" onto
+  // every result, which read absurdly when the YoY rounded to 0 (e.g. a real
+  // +0.3% printing as "Revenue is up 0% year-on-year, showing healthy growth").
+  // Now: anything within ±1% is "broadly flat", and the trailing descriptor
+  // only fires when the move is meaningful (≥5%).
   if(D.prevYr&&D.prevYr.tot>0){
-    var yoyPct=po(D.combVal,D.prevYr.tot);
-    if(yoyPct>=0)insights.push({icon:"\uD83D\uDCC8",text:"Revenue is <strong>up "+yoyPct+"%</strong> year-on-year ("+f(D.prevYr.tot)+" in "+D.month+" "+(D.year-1)+"), showing healthy growth."});
-    else insights.push({icon:"\uD83D\uDCC9",text:"Revenue is <strong>down "+Math.abs(yoyPct)+"%</strong> year-on-year ("+f(D.prevYr.tot)+" in "+D.month+" "+(D.year-1)+"). Targets may have been adjusted to reflect current strategy."});
+    var yoyPct=poF(D.combVal,D.prevYr.tot);
+    var yoyAbs=Math.abs(yoyPct);
+    var prevCtx=f(D.prevYr.tot)+" in "+D.month+" "+(D.year-1);
+    if(yoyAbs<1){
+      insights.push({icon:"\u2194\uFE0F",text:"Revenue is <strong>broadly flat year-on-year</strong> ("+prevCtx+") \u2014 within 1% of last year's level."});
+    } else if(yoyPct>0){
+      var growthDesc=yoyAbs>=10?", solid growth":yoyAbs>=5?", a clear lift":"";
+      insights.push({icon:"\uD83D\uDCC8",text:"Revenue is <strong>up "+yoyAbs+"%</strong> year-on-year ("+prevCtx+")"+growthDesc+"."});
+    } else {
+      var dropDesc=yoyAbs>=10?", a notable drop":yoyAbs>=5?", a clear dip":"";
+      insights.push({icon:"\uD83D\uDCC9",text:"Revenue is <strong>down "+yoyAbs+"%</strong> year-on-year ("+prevCtx+")"+dropDesc+"."});
+    }
   }
 
   // FY projection
@@ -403,7 +423,7 @@ function render(D){
     h+="</div><div class=\"g3 mb-8\">";
     h+='<div><div class="st-label">Final Total</div><div class="st-val">'+f(b.val)+"</div></div>";
     if(b.tgt)h+='<div><div class="st-label">vs Target</div><div class="st-val" style="color:'+(b.val>=b.tgt?"#4ade80":"#f87171")+'">'+ps(po(b.val,b.tgt))+"</div></div>";
-    if(b.prev)h+='<div><div class="st-label">vs '+D.month+" "+(D.year-1)+'</div><div class="st-val" style="color:'+(b.val>=b.prev?"#4ade80":"#f87171")+'">'+ps(po(b.val,b.prev))+"</div></div>";
+    if(b.prev)h+='<div><div class="st-label">vs '+D.month+" "+(D.year-1)+'</div><div class="st-val" style="color:'+(b.val>=b.prev?"#4ade80":"#f87171")+'">'+ps(poF(b.val,b.prev))+"</div></div>";
     h+="</div>";if(b.tgt)h+=mkbar(b.val,b.tgt,b.c.accent);
     h+="</div>";
   });
