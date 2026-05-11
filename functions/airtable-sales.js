@@ -109,27 +109,42 @@ export async function onRequestGet(context) {
           overallTarget: 0, tsgTarget: 0, wllTarget: 0, nvTarget: 0, tsgNewSalesTarget: 0
         };
 
-        // TSG total = invoiced + WIP buckets (matches legacy "TSG Sales" combined value)
+        // TSG figure for Brand Sales: Invoiced + Dated WIP (this month's due-but-
+        // not-yet-invoiced). Matches the "money in the bank" convention used on
+        // the Revenue & Invoicing page so TSG is comparable to WLL/NV. Does NOT
+        // include TBC WIP (no due date set yet) or NM WIP (next month's pipeline)
+        // because those aren't this-month money. The breakdown fields below
+        // still expose every bucket if a consumer needs it.
         const tsgInvoiced   = Number(f[MS.tsgInvoiced])   || 0;
         const tsgDatedWip   = Number(f[MS.tsgDatedWip])   || 0;
         const tsgDateTbcWip = Number(f[MS.tsgDateTbcWip]) || 0;
         const tsgNmWip      = Number(f[MS.tsgNmWip])      || 0;
-        const tsgTotal = tsgInvoiced + tsgDatedWip + tsgDateTbcWip + tsgNmWip;
+        const tsg           = tsgInvoiced + tsgDatedWip;
+
+        const wll   = Number(f[MS.wllInvoiced])   || 0;
+        const nv    = Number(f[MS.nvInvoiced])    || 0;
+        const other = Number(f[MS.otherInvoiced]) || 0;
+
+        // Overall = TSG (incl. Dated WIP) + WLL + NV + Other. We recompute here
+        // rather than using MS.overallInvoiced because that field is invoiced-
+        // only and would understate Overall when TSG has Dated WIP, breaking
+        // the parity with the per-brand cards.
+        const overall = tsg + wll + nv + other;
 
         return {
           date:      ms,
           month:     f[MS.monthLabel] || '',
           monthYear: f[MS.monthLabel] || '',
           // Brand totals
-          overall:      Number(f[MS.overallInvoiced]) || 0,
-          tsg:          tsgTotal,
-          tsgInvoiced:  tsgInvoiced,
+          overall,
+          tsg,
+          tsgInvoiced,
           tsgWip:       tsgDatedWip,
           tsgUndated:   tsgDateTbcWip,
           tsgNextMonth: tsgNmWip,
-          wll:          Number(f[MS.wllInvoiced])   || 0,
-          nv:           Number(f[MS.nvInvoiced])    || 0,
-          other:        Number(f[MS.otherInvoiced]) || 0,
+          wll,
+          nv,
+          other,
           // Targets (from Month Plan)
           overallTarget:     tgt.overallTarget,
           tsgTarget:         tgt.tsgTarget,
