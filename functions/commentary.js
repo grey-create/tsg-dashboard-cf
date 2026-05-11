@@ -18,13 +18,20 @@ export async function onRequestPost(context) {
     const systemPrompt = `You are a financial analyst for The Sign Group (TSG), a trade signage manufacturer near Leeds with ~40 staff. You write concise weekly/monthly sales commentary for the senior team.
 
 BRAND STRUCTURE:
-- TSG (The Sign Group): Core manufacturing. Revenue recognised on job COMPLETION (invoicing), not order placement. NOT pace-sensitive.
-- WLL (WeLoveLEDs): Online LED shop. Invoices at point of order. Pace-sensitive. Daily run rate comparisons valid.
-- NV (Neon Vibes): Newer division. Invoices at point of order. Pace-sensitive. Daily run rate comparisons valid.
-- Overall/Combined: Sum of all brands.
+- TSG (The Sign Group): Core manufacturing. Revenue recognised on job COMPLETION (invoicing), not order placement. Headline TSG figure is INVOICED + WIP DUE THIS MONTH combined — WIP is committed work scheduled to invoice before month-end so it's treated as money in the bank, but it is NOT the same as actual invoiced revenue.
+- WLL (WeLoveLEDs): Online LED shop. Invoices at point of order. The WLL figure IS pure invoiced revenue. Pace-sensitive, daily run-rate comparisons valid.
+- NV (Neon Vibes): Newer division. Invoices at point of order. The NV figure IS pure invoiced revenue. Pace-sensitive.
+- Overall/Combined: Sum of TSG (Invoiced + WIP), WLL invoiced, NV invoiced, and any Other.
+
+CRITICAL FIGURE-NAMING RULES (HIGHEST PRIORITY — get this wrong and the update misleads the team):
+- The TSG headline figure is NOT "invoiced". Calling it "TSG has invoiced £X" is FACTUALLY INCORRECT when the month is in progress and the figure includes WIP. The reader will think we've banked money we haven't yet.
+- For TSG mid-month, use phrasing like: "TSG is sitting at £X for the month (£Y invoiced plus £Z in WIP scheduled to complete)", or "TSG has committed £X — £Y already invoiced with £Z due to invoice before month-end", or "TSG is tracking at £X for May (combined invoiced and dated WIP)".
+- Never use the bare word "invoiced" to describe the TSG headline number unless the month is FINAL/CLOSED. At final-month/EOM the figure collapses to actual invoiced revenue and "invoiced" is then accurate.
+- WLL and NV figures CAN be called "invoiced" at any time because their business model invoices at point of order — the number always means what it says.
+- "Combined" figures: if mid-month, describe as "combined position" or "combined committed for the month" rather than "combined invoicing", because TSG's portion includes WIP.
+- All figures include VAT.
 
 CRITICAL RULES:
-- All figures include VAT.
 - Previous months are CLOSED figures (final). Current month figures are INCOMPLETE until month end.
 - For TSG: Do NOT use daily pace maths. Focus on pipeline, WIP structure, and projected month-end.
 - For WLL and NV: Daily pace and working-day averages ARE valid comparisons.
@@ -57,11 +64,17 @@ WRITING RULES (these override everything else about tone):
 11. HISTORICAL CONTEXT MATTERS. You have up to 6 months of individual history. Use it. A result that looks exceptional against a 3-month low baseline may be less impressive against a 6-month view — acknowledge this where relevant. A good month following several weak months is a recovery, not a new benchmark. Say so. Conversely, a strong result that holds up even across the longer window deserves to be called out clearly.
 
 STRUCTURE (follow this order):
-1. Brand-by-brand breakdown (invoiced): TSG, WLL, NV and Overall. Each brand's position against target with actual figures.
+1. Brand-by-brand breakdown: TSG, WLL, NV and Overall. For TSG, use the figure-naming rules above — never call its in-progress headline "invoiced". For WLL and NV "invoiced" is fine. Each brand's position against target with actual figures.
 2. New sales orders: Total new orders confirmed this month and how that compares to recent months.
 3. Sales team performance: List individuals by this month's sales value, highest first. For each: what they won, how that compares to their 6-month average, and any relevant context (absences, patterns). Note meaningful conversion rate differences across the team factually and with the caveat about retrospective confirmation.
 4. Trends and growth: Direction of travel vs previous months and same month last year where data exists.
-5. Close with the one or two things that will most likely determine how the month finishes (or, for EOM, a brief one-line verdict and what the result sets up for next month — particularly if the user context mentions upcoming challenges).`;
+5. Close with the one or two things that will most likely determine how the month finishes (or, for EOM, a brief one-line verdict and what the result sets up for next month — particularly if the user context mentions upcoming challenges).
+
+SECTION HEADINGS in the output:
+- Use "BRAND POSITION" or "MONTHLY POSITION" rather than "INVOICED SALES" as the first section heading when the month is in progress (because TSG's figure includes WIP, not just invoiced). Use "INVOICED SALES" only when the month is FINAL/CLOSED.
+- "NEW SALES ORDERS" for the second section is fine in all cases.
+- "SALES TEAM PERFORMANCE" for the third section is fine.
+- "OUTLOOK" for the closing section is fine.`;
 
     const userPrompt = buildUserPrompt(data, currentMonth, isPartialMonth, periodPosition, userContext, salesTeamData);
 
@@ -156,20 +169,51 @@ WHAT TO WRITE INSTEAD:
 
   if (current) {
     const overall = calcOverall(current);
-    prompt += `## CURRENT MONTH INVOICED SALES: ${currentMonth}${isPartialMonth ? ' (INCOMPLETE - month still in progress)' : ' (FINAL FIGURES)'}\n`;
-    prompt += `These are INVOICED figures (completed work). This is separate from new orders placed.\n`;
-    prompt += `TSG Invoiced: £${fmt(current.tsg)}`;
-    if (current.tsgTarget) prompt += ` (Target: £${fmt(current.tsgTarget)}, ${current.tsg >= current.tsgTarget ? 'ABOVE' : 'BELOW'} by £${fmt(Math.abs(current.tsg - current.tsgTarget))})`;
-    prompt += `\n`;
-    prompt += `WLL Invoiced: £${fmt(current.wll)}`;
-    if (current.wllTarget) prompt += ` (Target: £${fmt(current.wllTarget)}, ${current.wll >= current.wllTarget ? 'ABOVE' : 'BELOW'} by £${fmt(Math.abs(current.wll - current.wllTarget))})`;
-    prompt += `\n`;
-    prompt += `NV Invoiced: £${fmt(current.nv)}`;
-    if (current.nvTarget) prompt += ` (Target: £${fmt(current.nvTarget)}, ${current.nv >= current.nvTarget ? 'ABOVE' : 'BELOW'} by £${fmt(Math.abs(current.nv - current.nvTarget))})`;
-    prompt += `\n`;
-    prompt += `Combined Invoiced: £${fmt(overall)}`;
-    if (current.overallTarget) prompt += ` (Target: £${fmt(current.overallTarget)})`;
-    prompt += `\n\n`;
+    const tsgInvoicedOnly = Number(current.tsgInvoiced) || 0;
+    const tsgWipDated     = Number(current.tsgWip)      || 0;
+    // Combined figure that the dashboard exposes for TSG is invoiced + dated
+    // WIP. Mid-month this is the "money in the bank" prediction; at month-end
+    // WIP will have invoiced and the two converge.
+    if (isPartialMonth) {
+      prompt += `## CURRENT MONTH POSITION: ${currentMonth} (INCOMPLETE — month still in progress)\n`;
+      prompt += `IMPORTANT FIGURE DEFINITIONS — read these carefully and use them correctly in your writing:\n`;
+      prompt += `  - TSG headline figure = invoiced revenue + WIP scheduled to invoice this month. Do NOT call this "invoiced". Use phrasing like "TSG is tracking at £X", "TSG has committed £X", "TSG is sitting at £X for the month", or split it: "£Y invoiced plus £Z in dated WIP".\n`;
+      prompt += `  - WLL and NV headline figures = pure invoiced revenue (their business model invoices at order). "WLL invoiced £X" is correct.\n`;
+      prompt += `  - Combined position = sum of TSG (Inv+WIP) + WLL invoiced + NV invoiced + Other. Describe as "combined position", "combined total for the month", or "tracking combined at £X" — NOT "combined invoicing".\n\n`;
+
+      prompt += `TSG position: £${fmt(current.tsg)} total for the month`;
+      if (current.tsgTarget) prompt += ` (Target: £${fmt(current.tsgTarget)}, ${current.tsg >= current.tsgTarget ? 'ABOVE' : 'BELOW'} by £${fmt(Math.abs(current.tsg - current.tsgTarget))})`;
+      prompt += `\n  Breakdown: £${fmt(tsgInvoicedOnly)} already invoiced + £${fmt(tsgWipDated)} in WIP scheduled to invoice before month-end\n`;
+      if (current.tsgUndated) prompt += `  Additional WIP with no firm due date yet: £${fmt(current.tsgUndated)} (not included in the headline figure)\n`;
+      if (current.tsgNextMonth) prompt += `  WIP already dated into next month: £${fmt(current.tsgNextMonth)}\n`;
+
+      prompt += `WLL invoiced: £${fmt(current.wll)}`;
+      if (current.wllTarget) prompt += ` (Target: £${fmt(current.wllTarget)}, ${current.wll >= current.wllTarget ? 'ABOVE' : 'BELOW'} by £${fmt(Math.abs(current.wll - current.wllTarget))})`;
+      prompt += `\n`;
+      prompt += `NV invoiced: £${fmt(current.nv)}`;
+      if (current.nvTarget) prompt += ` (Target: £${fmt(current.nvTarget)}, ${current.nv >= current.nvTarget ? 'ABOVE' : 'BELOW'} by £${fmt(Math.abs(current.nv - current.nvTarget))})`;
+      prompt += `\n`;
+      prompt += `Combined position for the month: £${fmt(overall)}`;
+      if (current.overallTarget) prompt += ` (Target: £${fmt(current.overallTarget)})`;
+      prompt += `\n\n`;
+    } else {
+      // Month is final/closed — WIP has invoiced, "invoiced" is now accurate
+      // across all brands.
+      prompt += `## CURRENT MONTH INVOICED SALES: ${currentMonth} (FINAL FIGURES)\n`;
+      prompt += `These are final invoiced figures. Month is closed.\n`;
+      prompt += `TSG Invoiced: £${fmt(current.tsg)}`;
+      if (current.tsgTarget) prompt += ` (Target: £${fmt(current.tsgTarget)}, ${current.tsg >= current.tsgTarget ? 'ABOVE' : 'BELOW'} by £${fmt(Math.abs(current.tsg - current.tsgTarget))})`;
+      prompt += `\n`;
+      prompt += `WLL Invoiced: £${fmt(current.wll)}`;
+      if (current.wllTarget) prompt += ` (Target: £${fmt(current.wllTarget)}, ${current.wll >= current.wllTarget ? 'ABOVE' : 'BELOW'} by £${fmt(Math.abs(current.wll - current.wllTarget))})`;
+      prompt += `\n`;
+      prompt += `NV Invoiced: £${fmt(current.nv)}`;
+      if (current.nvTarget) prompt += ` (Target: £${fmt(current.nvTarget)}, ${current.nv >= current.nvTarget ? 'ABOVE' : 'BELOW'} by £${fmt(Math.abs(current.nv - current.nvTarget))})`;
+      prompt += `\n`;
+      prompt += `Combined Invoiced: £${fmt(overall)}`;
+      if (current.overallTarget) prompt += ` (Target: £${fmt(current.overallTarget)})`;
+      prompt += `\n\n`;
+    }
   }
 
   // NEW SALES ORDERED — team total + individual breakdown with historical context
@@ -259,8 +303,9 @@ WHAT TO WRITE INSTEAD:
   }
 
   prompt += `\nWrite the commentary now. Remember:
+- FIGURE NAMING: TSG headline figure in an in-progress month is Invoiced + WIP. NEVER call it "TSG has invoiced £X" — that's factually wrong and misleads the team. Use "TSG is tracking at", "TSG has committed", "TSG is sitting at", or split it explicitly into invoiced + WIP. WLL and NV are pure invoiced and can be called "invoiced" freely.
 - TSG invoicing is NOT pace-sensitive (production-based). WLL and NV ARE pace-sensitive.
-- Keep INVOICED sales and NEW SALES ORDERED clearly separated. They are different things.
+- Keep "MONTHLY POSITION / INVOICED" and "NEW SALES ORDERED" clearly separated. They are different things.
 - List individuals highest earner first. Frame the top earner as the top earner.
 - Use the 6-month history to give context — a good month after a weak run is a recovery, not a benchmark.
 - Weave in any user context (absences, retirements, upcoming challenges) naturally where it explains the numbers.
