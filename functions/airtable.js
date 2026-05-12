@@ -87,8 +87,41 @@ export async function onRequest(context) {
       if (t && (!lastAgg || t > lastAgg)) lastAgg = t;
     });
 
-    const records = allRecords
+    // ── DEDUPE ────────────────────────────────────────────────────────────
+    // The Monthly Summary by Rep table is supposed to contain ONE row per
+    // (employee, monthStart). It's maintained by the aggregator using an
+    // Airtable upsert with composite merge keys [monthStart, employee].
+    //
+    // Historically the upsert URL was missing `?returnFieldsByFieldId=true`
+    // which caused Airtable to interpret the merge key field IDs as field
+    // NAMES, fail every match, and create fresh duplicates on every run. The
+    // aggregator has been patched, but this layer dedupes defensively so the
+    // dashboard never sums duplicate rows again. Without this, the team page
+    // shows £97k × 4 instead of £24k for Adam, etc.
+    //
+    // For each (employee, monthStart) pair we keep ONLY the row with the
+    // latest `lastAggregated` timestamp. Older rows are dropped from the
+    // response (not deleted from Airtable — that's a cleanup task).
+    const dedupeMap = new Map();
+    allRecords
       .filter(r => r.fields[F.employee] && r.fields[F.monthStart])
+      .forEach(r => {
+        const key = selName(r.fields[F.employee]) + "||" + r.fields[F.monthStart];
+        const existing = dedupeMap.get(key);
+        const myTs = r.fields[F.lastAggregated] || "";
+        const existingTs = existing ? (existing.fields[F.lastAggregated] || "") : "";
+        if (!existing || myTs > existingTs) {
+          dedupeMap.set(key, r);
+        }
+      });
+    const dedupedRecords = Array.from(dedupeMap.values());
+    const droppedCount = allRecords.length - dedupedRecords.length;
+    if (droppedCount > 0) {
+      console.warn(`/airtable: dropped ${droppedCount} duplicate (employee,monthStart) rows out of ${allRecords.length}. Check shopvox-aggregator upsert config.`);
+    }
+    // ────────────────────────────────────────────────────────────────────────
+
+    const records = dedupedRecords
       .map(r => {
         const f = r.fields;
         return {
