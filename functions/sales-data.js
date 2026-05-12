@@ -19,9 +19,11 @@
 // retired in May 2026 once auto-compute was proven. Those fields can be
 // deleted from Airtable without affecting this endpoint.
 //
-// PHASE / WEEK LABEL — Also auto-derived. "Week N" is computed from the
-// working-day count: ceil(day / 5). Day 1-5 = Week 1, 6-10 = Week 2, etc.
-// The Phase field in Month Plan can also be deleted.
+// PHASE / WEEK LABEL — Also auto-derived. "Week N" is the calendar week
+// within the month, anchored to the first weekday (Mon-Fri). If the 1st
+// falls on a Sat or Sun, Week 1 starts on the following Monday. Each
+// Monday after that starts a new week. The Phase field in Month Plan
+// can also be deleted.
 
 // Hardcoded UK bank holidays (England & Wales division). Source: gov.uk,
 // confirmed through end of 2028. Each year typically holds 8 bank holidays.
@@ -117,18 +119,53 @@ function todayLondon() {
   }).format(new Date());
 }
 
-// Derive the "Week N" phase label from the count of working days completed
-// in the month. Five working days per week, rounded up. Examples:
-//   day  1-5  → "Week 1"
-//   day  6-10 → "Week 2"
-//   day 11-15 → "Week 3"
-//   day 16-20 → "Week 4"
-//   day 21+   → "Week 5"  (long months like March)
-// Returns empty string for future months (wdCompleted = 0) so the dashboard
-// shows nothing rather than "Week 0".
-function getWorkingWeek(wdCompleted) {
-  if (!wdCompleted || wdCompleted <= 0) return "";
-  return `Week ${Math.ceil(wdCompleted / 5)}`;
+// Derive the "Week N" phase label from calendar weeks within the month.
+// Week 1 starts on the first weekday (Mon-Fri) of the month. If the 1st
+// falls on a Saturday or Sunday, Week 1 starts on the following Monday —
+// the weekend before is unlabelled because no working day has happened yet.
+// Each subsequent Monday starts a new week.
+//
+// Examples:
+//   May 2026 (starts Fri 1):
+//     May 1 (Fri)    → Week 1   (first weekday)
+//     May 4 (Mon)    → Week 2
+//     May 11-15      → Week 3
+//     May 25-29      → Week 5
+//
+//   Feb 2026 (starts Sun 1):
+//     Feb 1 (Sun)    → ""       (before Week 1)
+//     Feb 2 (Mon)    → Week 1   (first weekday)
+//     Feb 9-13       → Week 2
+//     Feb 23-28      → Week 4
+//
+//   Jun 2026 (starts Mon 1):
+//     Jun 1 (Mon)    → Week 1
+//     Jun 8-12       → Week 2
+//
+// Returns empty string if referenceDate is missing, before monthStart, or
+// before the first weekday of the month.
+function getCalendarWeek(monthStart, referenceDate) {
+  if (!referenceDate) return "";
+  const start = new Date(monthStart + "T00:00:00Z");
+  const ref   = new Date(referenceDate + "T00:00:00Z");
+  if (ref < start) return "";
+
+  // Find the first weekday (Mon-Fri) — that's the anchor for Week 1.
+  const firstWeekday = new Date(start);
+  while (firstWeekday.getUTCDay() === 0 || firstWeekday.getUTCDay() === 6) {
+    firstWeekday.setUTCDate(firstWeekday.getUTCDate() + 1);
+  }
+  // If the reference date is still before Week 1 has started, no label yet.
+  if (ref < firstWeekday) return "";
+
+  let weekCount = 1; // first weekday is Week 1
+  const cursor = new Date(firstWeekday);
+  cursor.setUTCDate(cursor.getUTCDate() + 1); // scan from day after first weekday
+  while (cursor <= ref) {
+    if (cursor.getUTCDay() === 1) weekCount++; // Monday
+    cursor.setUTCDate(cursor.getUTCDate() + 1);
+  }
+  return `Week ${weekCount}`;
 }
 
 export async function onRequest(context) {
@@ -266,13 +303,27 @@ export async function onRequest(context) {
         // The Working Days Total / Completed fields can therefore be deleted
         // from the Month Plan table without affecting this endpoint.
 
+        // Phase reference date: today for the current month (so the week
+        // label reflects where we are right now), last day of the month for
+        // past months (so they show their final week), null for future
+        // months (so they show no week label at all).
+        let phaseRefDate = null;
+        if (monthYM === todayYM) {
+          phaseRefDate = todayStr;
+        } else if (monthYM < todayYM) {
+          const [py, pm] = ms.split("-").map(Number);
+          const lastDay = new Date(py, pm, 0).getDate();
+          phaseRefDate = `${py}-${String(pm).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
+        }
+
         return {
           monthYear: f[MP.monthLabel] || "",
           month:     f[MP.monthLabel] || "",
           dateEntered: ms,
-          // Phase is auto-derived from working days completed (Week N).
+          // Phase is auto-derived from calendar weeks within the month.
+          // Day 1 = Week 1, then each Monday increments the week count.
           // The old Airtable Phase field is now ignored and can be deleted.
-          phase: getWorkingWeek(wdCompleted),
+          phase: getCalendarWeek(ms, phaseRefDate),
           workingDaysTotal:     wdTotal,
           workingDaysCompleted: wdCompleted,
           tsgTarget: Number(f[MP.tsgInvoicedTarget]) || 0,
