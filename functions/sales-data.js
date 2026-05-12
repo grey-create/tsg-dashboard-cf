@@ -7,80 +7,105 @@
 //   - Month Plan      (tbljzQ6pV1o8yOWw1) -- drives `overview` (with WIP/invoiced
 //                                            from Monthly Summary merged in by month)
 //
-// Migrated from old base (appbx9KaWpz9q1qpE) in May 2026 — was reading from three
-// tables: Monthly Overview, Invoiced Sales by Mth, Conversions by Mth. The new
-// architecture consolidates conversions + invoiced into Monthly Summary, and the
-// previous Monthly Overview is replaced by Month Plan plus to-date figures merged
-// from Monthly Summary.
+// WORKING DAYS — Fully auto-computed from real calendar dates and UK bank
+// holidays. Two sources, in priority order:
+//   1. Hardcoded list (HARDCODED_HOLIDAYS) — confirmed dates through 2028.
+//      Always present, never stale, no network dependency.
+//   2. Live gov.uk fetch — overrides the hardcoded list if reachable. Picks
+//      up any future-year additions or rare changes (e.g. coronation
+//      bank holidays) without code changes.
 //
-// WORKING DAYS — Auto-computed from real calendar dates + UK bank holidays
-// pulled from gov.uk. Overrides the manually-set Working Days Total / Completed
-// values in Month Plan, so those Airtable fields become advisory only. If the
-// gov.uk fetch fails for any reason, we fall back to the Airtable values.
-//
-// Response shape:
-//   { overview: [...], invoiced: [...], conversions: [...], lastFetched }
+// The Month Plan table's Working Days Total / Completed fields were
+// retired in May 2026 once auto-compute was proven. Those fields can be
+// deleted from Airtable without affecting this endpoint.
 
-// In-memory cache for the UK bank holidays list. Cloudflare Workers keep this
-// hot across requests on the same isolate, so we fetch gov.uk's JSON ~once per
-// isolate-lifetime rather than every page load.
-let BANK_HOLIDAYS_CACHE = null;
-let BANK_HOLIDAYS_FETCHED_AT = 0;
-const BANK_HOLIDAYS_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+// Hardcoded UK bank holidays (England & Wales division). Source: gov.uk,
+// confirmed through end of 2028. Each year typically holds 8 bank holidays.
+// Extend this list every couple of years (or let the live gov.uk fetch
+// handle newer years automatically).
+const HARDCODED_HOLIDAYS = new Set([
+  // 2026
+  "2026-01-01", // New Year's Day
+  "2026-04-03", // Good Friday
+  "2026-04-06", // Easter Monday
+  "2026-05-04", // Early May bank holiday
+  "2026-05-25", // Spring bank holiday
+  "2026-08-31", // Summer bank holiday
+  "2026-12-25", // Christmas Day
+  "2026-12-28", // Boxing Day (substitute — 26 Dec falls on Saturday)
+  // 2027
+  "2027-01-01", // New Year's Day
+  "2027-03-26", // Good Friday
+  "2027-03-29", // Easter Monday
+  "2027-05-03", // Early May bank holiday
+  "2027-05-31", // Spring bank holiday
+  "2027-08-30", // Summer bank holiday
+  "2027-12-27", // Christmas Day (substitute — 25 Dec falls on Saturday)
+  "2027-12-28", // Boxing Day (substitute — 26 Dec falls on Sunday)
+  // 2028
+  "2028-01-03", // New Year's Day (substitute — 1 Jan falls on Saturday)
+  "2028-04-14", // Good Friday
+  "2028-04-17", // Easter Monday
+  "2028-05-01", // Early May bank holiday
+  "2028-05-29", // Spring bank holiday
+  "2028-08-28", // Summer bank holiday
+  "2028-12-25", // Christmas Day
+  "2028-12-26", // Boxing Day
+]);
 
-// Fetch the official England & Wales bank holiday list (Scotland and N. Ireland
-// are separate divisions in the gov.uk JSON — TSG is in Leeds so England & Wales
-// is what matters). Returns a Set of "YYYY-MM-DD" strings.
-async function getBankHolidays() {
+// In-memory cache for the live gov.uk fetch. Cloudflare Workers keep this
+// hot across requests on the same isolate, so we fetch gov.uk's JSON ~once
+// per isolate-lifetime rather than every page load.
+let HOLIDAYS_CACHE = null;
+let HOLIDAYS_FETCHED_AT = 0;
+const HOLIDAYS_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+
+// Build the active holiday set. Strategy: start from the hardcoded list,
+// then layer the live gov.uk fetch on top if it succeeds. The hardcoded
+// list guarantees this NEVER fails — even if gov.uk is down, every date
+// through 2028 is covered.
+async function getHolidays() {
   const now = Date.now();
-  if (BANK_HOLIDAYS_CACHE && (now - BANK_HOLIDAYS_FETCHED_AT) < BANK_HOLIDAYS_TTL_MS) {
-    return BANK_HOLIDAYS_CACHE;
+  if (HOLIDAYS_CACHE && (now - HOLIDAYS_FETCHED_AT) < HOLIDAYS_TTL_MS) {
+    return HOLIDAYS_CACHE;
   }
+  const combined = new Set(HARDCODED_HOLIDAYS);
   try {
     const res = await fetch("https://www.gov.uk/bank-holidays.json", {
       cf: { cacheTtl: 86400, cacheEverything: true }, // edge-cache 24h too
     });
-    if (!res.ok) throw new Error(`gov.uk returned ${res.status}`);
-    const data = await res.json();
-    const events = data["england-and-wales"]?.events || [];
-    const set = new Set(events.map(e => e.date)); // dates are already "YYYY-MM-DD"
-    BANK_HOLIDAYS_CACHE = set;
-    BANK_HOLIDAYS_FETCHED_AT = now;
-    return set;
+    if (res.ok) {
+      const data = await res.json();
+      const events = data["england-and-wales"]?.events || [];
+      for (const e of events) combined.add(e.date); // dates are already "YYYY-MM-DD"
+    }
   } catch (err) {
-    console.warn(`Bank holiday fetch failed: ${err.message}. Using empty set — Mon-Fri only.`);
-    // Cache an empty set briefly so we don't hammer gov.uk on repeated failures.
-    BANK_HOLIDAYS_CACHE = new Set();
-    BANK_HOLIDAYS_FETCHED_AT = now - BANK_HOLIDAYS_TTL_MS + 60000; // retry in 1min
-    return BANK_HOLIDAYS_CACHE;
+    console.warn(`gov.uk holiday fetch failed: ${err.message}. Using hardcoded list (${HARDCODED_HOLIDAYS.size} entries).`);
   }
+  HOLIDAYS_CACHE = combined;
+  HOLIDAYS_FETCHED_AT = now;
+  return combined;
 }
 
-// Count working days in a month, optionally up to and including a given date.
-// monthStart: "YYYY-MM-DD" string for the 1st of the target month.
-// upToDate:   "YYYY-MM-DD" or null. If provided, only counts days <= this date.
-// holidays:   Set of "YYYY-MM-DD" bank holiday strings.
-// Returns: integer count of weekdays (Mon-Fri) that are NOT bank holidays.
+// Count working days in a month, optionally up to (and including) a given
+// date. Returns count of weekdays (Mon-Fri) that are NOT bank holidays.
 function countWorkingDays(monthStart, upToDate, holidays) {
   const [year, month] = monthStart.split("-").map(Number);
-  // Last day of this month — using day 0 of the NEXT month gives us that.
   const daysInMonth = new Date(year, month, 0).getDate();
   let count = 0;
   for (let d = 1; d <= daysInMonth; d++) {
     const iso = `${year}-${String(month).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
     if (upToDate && iso > upToDate) break;
-    // getDay() returns 0=Sun, 6=Sat. Skip weekends.
     const dow = new Date(Date.UTC(year, month - 1, d)).getUTCDay();
-    if (dow === 0 || dow === 6) continue;
+    if (dow === 0 || dow === 6) continue; // 0 = Sun, 6 = Sat
     if (holidays.has(iso)) continue;
     count++;
   }
   return count;
 }
 
-// Today's date in London time, as "YYYY-MM-DD". The working-day count uses
-// London time because the team works in London time. A working day "ticks
-// over" at midnight London, not midnight UTC.
+// Today's date in London time, as "YYYY-MM-DD". Working days "tick over" at
+// midnight London (when the team's working day starts), not midnight UTC.
 function todayLondon() {
   return new Intl.DateTimeFormat("en-CA", {
     timeZone: "Europe/London",
@@ -118,8 +143,8 @@ export async function onRequest(context) {
   const MP = {
     monthStart:            "fldJkE6W7uCMNfnNA",
     monthLabel:            "fld4cRl8HeUwj09ZA",
-    workingDaysTotal:      "fldtZMDuRbjYCxlcX",
-    workingDaysCompleted:  "fldS6nOlt7ZZr9wWG",
+    // workingDaysTotal / workingDaysCompleted fields removed May 2026 —
+    // values are now auto-computed from real calendar + UK bank holidays.
     phase:                 "fldVGgkMJovmJEH5g",
     tsgInvoicedTarget:     "fld9OSyOijwLNIdDU",
     tsgNewSalesTarget:     "fld1ZohxvmjVHmV7G",
@@ -193,7 +218,7 @@ export async function onRequest(context) {
     // calendar maths + UK bank holidays. The Airtable Working Days Total /
     // Completed fields remain (as advisory / manual-override fallback) but the
     // values we return are always the computed ones unless gov.uk is down.
-    const holidays = await getBankHolidays();
+    const holidays = await getHolidays();
     const todayStr = todayLondon();
 
     // ---- overview: Month Plan + to-date figures from Monthly Summary ----
@@ -217,31 +242,18 @@ export async function onRequest(context) {
         else if (monthYM > todayYM) wdCompleted = 0;                                    // future month
         else                        wdCompleted = countWorkingDays(ms, todayStr, holidays); // current month
 
-        // Fallback to Airtable values only when compute is undefined (gov.uk
-        // catastrophically failed AND we had no cache). For future months,
-        // wdCompleted is *intentionally* 0 — that should NOT fall back to a
-        // possibly-stale Airtable value. Hence nullish coalescing not ||.
-        const airtableTotal = Number(f[MP.workingDaysTotal]) || 0;
-        const airtableDone  = Number(f[MP.workingDaysCompleted]) || 0;
+        // No Airtable fallback needed — the hardcoded HARDCODED_HOLIDAYS set
+        // guarantees we always have a working list, even if gov.uk is down.
+        // The Working Days Total / Completed fields can therefore be deleted
+        // from the Month Plan table without affecting this endpoint.
 
         return {
           monthYear: f[MP.monthLabel] || "",
           month:     f[MP.monthLabel] || "",
           dateEntered: ms,
           phase: f[MP.phase] || "",
-          workingDaysTotal:     (wdTotal     > 0 ? wdTotal     : airtableTotal),
-          workingDaysCompleted: (wdCompleted != null ? wdCompleted : airtableDone),
-          // DIAGNOSTIC — remove once verified. Helps confirm whether the
-          // auto-compute path is actually running vs falling back to Airtable.
-          _wdDebug: {
-            computedTotal: wdTotal,
-            computedDone:  wdCompleted,
-            airtableTotal: airtableTotal,
-            airtableDone:  airtableDone,
-            todayStr:      todayStr,
-            monthYM:       monthYM,
-            holidayCount:  holidays.size,
-          },
+          workingDaysTotal:     wdTotal,
+          workingDaysCompleted: wdCompleted,
           tsgTarget: Number(f[MP.tsgInvoicedTarget]) || 0,
           wllTarget: Number(f[MP.wllInvoicedTarget]) || 0,
           nvTarget:  Number(f[MP.nvInvoicedTarget])  || 0,
@@ -325,7 +337,6 @@ export async function onRequest(context) {
     });
 
     return new Response(JSON.stringify({
-      _version: "auto-working-days-v2-with-debug",
       overview,
       invoiced,
       conversions,
@@ -334,8 +345,7 @@ export async function onRequest(context) {
       status: 200,
       headers: {
         "Content-Type": "application/json",
-        // Short cache while debugging the auto-compute path.
-        "Cache-Control": "public, max-age=60",
+        "Cache-Control": "public, max-age=300",
         "Access-Control-Allow-Origin": "*"
       },
     });
