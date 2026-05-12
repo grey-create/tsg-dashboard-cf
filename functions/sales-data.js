@@ -13,8 +13,80 @@
 // previous Monthly Overview is replaced by Month Plan plus to-date figures merged
 // from Monthly Summary.
 //
+// WORKING DAYS — Auto-computed from real calendar dates + UK bank holidays
+// pulled from gov.uk. Overrides the manually-set Working Days Total / Completed
+// values in Month Plan, so those Airtable fields become advisory only. If the
+// gov.uk fetch fails for any reason, we fall back to the Airtable values.
+//
 // Response shape:
 //   { overview: [...], invoiced: [...], conversions: [...], lastFetched }
+
+// In-memory cache for the UK bank holidays list. Cloudflare Workers keep this
+// hot across requests on the same isolate, so we fetch gov.uk's JSON ~once per
+// isolate-lifetime rather than every page load.
+let BANK_HOLIDAYS_CACHE = null;
+let BANK_HOLIDAYS_FETCHED_AT = 0;
+const BANK_HOLIDAYS_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+
+// Fetch the official England & Wales bank holiday list (Scotland and N. Ireland
+// are separate divisions in the gov.uk JSON — TSG is in Leeds so England & Wales
+// is what matters). Returns a Set of "YYYY-MM-DD" strings.
+async function getBankHolidays() {
+  const now = Date.now();
+  if (BANK_HOLIDAYS_CACHE && (now - BANK_HOLIDAYS_FETCHED_AT) < BANK_HOLIDAYS_TTL_MS) {
+    return BANK_HOLIDAYS_CACHE;
+  }
+  try {
+    const res = await fetch("https://www.gov.uk/bank-holidays.json", {
+      cf: { cacheTtl: 86400, cacheEverything: true }, // edge-cache 24h too
+    });
+    if (!res.ok) throw new Error(`gov.uk returned ${res.status}`);
+    const data = await res.json();
+    const events = data["england-and-wales"]?.events || [];
+    const set = new Set(events.map(e => e.date)); // dates are already "YYYY-MM-DD"
+    BANK_HOLIDAYS_CACHE = set;
+    BANK_HOLIDAYS_FETCHED_AT = now;
+    return set;
+  } catch (err) {
+    console.warn(`Bank holiday fetch failed: ${err.message}. Using empty set — Mon-Fri only.`);
+    // Cache an empty set briefly so we don't hammer gov.uk on repeated failures.
+    BANK_HOLIDAYS_CACHE = new Set();
+    BANK_HOLIDAYS_FETCHED_AT = now - BANK_HOLIDAYS_TTL_MS + 60000; // retry in 1min
+    return BANK_HOLIDAYS_CACHE;
+  }
+}
+
+// Count working days in a month, optionally up to and including a given date.
+// monthStart: "YYYY-MM-DD" string for the 1st of the target month.
+// upToDate:   "YYYY-MM-DD" or null. If provided, only counts days <= this date.
+// holidays:   Set of "YYYY-MM-DD" bank holiday strings.
+// Returns: integer count of weekdays (Mon-Fri) that are NOT bank holidays.
+function countWorkingDays(monthStart, upToDate, holidays) {
+  const [year, month] = monthStart.split("-").map(Number);
+  // Last day of this month — using day 0 of the NEXT month gives us that.
+  const daysInMonth = new Date(year, month, 0).getDate();
+  let count = 0;
+  for (let d = 1; d <= daysInMonth; d++) {
+    const iso = `${year}-${String(month).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+    if (upToDate && iso > upToDate) break;
+    // getDay() returns 0=Sun, 6=Sat. Skip weekends.
+    const dow = new Date(Date.UTC(year, month - 1, d)).getUTCDay();
+    if (dow === 0 || dow === 6) continue;
+    if (holidays.has(iso)) continue;
+    count++;
+  }
+  return count;
+}
+
+// Today's date in London time, as "YYYY-MM-DD". The working-day count uses
+// London time because the team works in London time. A working day "ticks
+// over" at midnight London, not midnight UTC.
+function todayLondon() {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/London",
+    year: "numeric", month: "2-digit", day: "2-digit",
+  }).format(new Date());
+}
 
 export async function onRequest(context) {
   const TOKEN = context.env.AIRTABLE_TOKEN;
@@ -117,6 +189,13 @@ export async function onRequest(context) {
       if (ms) mpByMonth[ms] = r.fields;
     });
 
+    // Auto-compute working days for every month in the overview using actual
+    // calendar maths + UK bank holidays. The Airtable Working Days Total /
+    // Completed fields remain (as advisory / manual-override fallback) but the
+    // values we return are always the computed ones unless gov.uk is down.
+    const holidays = await getBankHolidays();
+    const todayStr = todayLondon();
+
     // ---- overview: Month Plan + to-date figures from Monthly Summary ----
     const overview = mpRecords
       .filter(r => r.fields[MP.monthStart])
@@ -124,13 +203,45 @@ export async function onRequest(context) {
         const f  = r.fields;
         const ms = f[MP.monthStart];
         const sf = msByMonth[ms] || {};
+
+        // Working days: compute from real dates. For past months, "completed"
+        // = total (the month is done). For the current month, "completed" =
+        // working days up to and including today. For future months, "completed"
+        // = 0. The maths handles all three cases via the upToDate parameter.
+        const wdTotal = countWorkingDays(ms, null, holidays);
+        // Is this month in the past, present, or future?
+        const monthYM = ms.slice(0, 7);   // "YYYY-MM"
+        const todayYM = todayStr.slice(0, 7);
+        let wdCompleted;
+        if (monthYM < todayYM)      wdCompleted = wdTotal;                              // past month
+        else if (monthYM > todayYM) wdCompleted = 0;                                    // future month
+        else                        wdCompleted = countWorkingDays(ms, todayStr, holidays); // current month
+
+        // Fallback to Airtable values only when compute is undefined (gov.uk
+        // catastrophically failed AND we had no cache). For future months,
+        // wdCompleted is *intentionally* 0 — that should NOT fall back to a
+        // possibly-stale Airtable value. Hence nullish coalescing not ||.
+        const airtableTotal = Number(f[MP.workingDaysTotal]) || 0;
+        const airtableDone  = Number(f[MP.workingDaysCompleted]) || 0;
+
         return {
           monthYear: f[MP.monthLabel] || "",
           month:     f[MP.monthLabel] || "",
           dateEntered: ms,
           phase: f[MP.phase] || "",
-          workingDaysTotal:     Number(f[MP.workingDaysTotal]) || 0,
-          workingDaysCompleted: Number(f[MP.workingDaysCompleted]) || 0,
+          workingDaysTotal:     (wdTotal     > 0 ? wdTotal     : airtableTotal),
+          workingDaysCompleted: (wdCompleted != null ? wdCompleted : airtableDone),
+          // DIAGNOSTIC — remove once verified. Helps confirm whether the
+          // auto-compute path is actually running vs falling back to Airtable.
+          _wdDebug: {
+            computedTotal: wdTotal,
+            computedDone:  wdCompleted,
+            airtableTotal: airtableTotal,
+            airtableDone:  airtableDone,
+            todayStr:      todayStr,
+            monthYM:       monthYM,
+            holidayCount:  holidays.size,
+          },
           tsgTarget: Number(f[MP.tsgInvoicedTarget]) || 0,
           wllTarget: Number(f[MP.wllInvoicedTarget]) || 0,
           nvTarget:  Number(f[MP.nvInvoicedTarget])  || 0,
@@ -214,6 +325,7 @@ export async function onRequest(context) {
     });
 
     return new Response(JSON.stringify({
+      _version: "auto-working-days-v2-with-debug",
       overview,
       invoiced,
       conversions,
@@ -222,7 +334,8 @@ export async function onRequest(context) {
       status: 200,
       headers: {
         "Content-Type": "application/json",
-        "Cache-Control": "public, max-age=300",
+        // Short cache while debugging the auto-compute path.
+        "Cache-Control": "public, max-age=60",
         "Access-Control-Allow-Origin": "*"
       },
     });
