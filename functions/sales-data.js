@@ -18,6 +18,10 @@
 // The Month Plan table's Working Days Total / Completed fields were
 // retired in May 2026 once auto-compute was proven. Those fields can be
 // deleted from Airtable without affecting this endpoint.
+//
+// PHASE / WEEK LABEL — Also auto-derived. "Week N" is computed from the
+// working-day count: ceil(day / 5). Day 1-5 = Week 1, 6-10 = Week 2, etc.
+// The Phase field in Month Plan can also be deleted.
 
 // Hardcoded UK bank holidays (England & Wales division). Source: gov.uk,
 // confirmed through end of 2028. Each year typically holds 8 bank holidays.
@@ -113,6 +117,20 @@ function todayLondon() {
   }).format(new Date());
 }
 
+// Derive the "Week N" phase label from the count of working days completed
+// in the month. Five working days per week, rounded up. Examples:
+//   day  1-5  → "Week 1"
+//   day  6-10 → "Week 2"
+//   day 11-15 → "Week 3"
+//   day 16-20 → "Week 4"
+//   day 21+   → "Week 5"  (long months like March)
+// Returns empty string for future months (wdCompleted = 0) so the dashboard
+// shows nothing rather than "Week 0".
+function getWorkingWeek(wdCompleted) {
+  if (!wdCompleted || wdCompleted <= 0) return "";
+  return `Week ${Math.ceil(wdCompleted / 5)}`;
+}
+
 export async function onRequest(context) {
   const TOKEN = context.env.AIRTABLE_TOKEN;
   const BASE  = "appiOWhszaVriPxDw";
@@ -145,7 +163,8 @@ export async function onRequest(context) {
     monthLabel:            "fld4cRl8HeUwj09ZA",
     // workingDaysTotal / workingDaysCompleted fields removed May 2026 —
     // values are now auto-computed from real calendar + UK bank holidays.
-    phase:                 "fldVGgkMJovmJEH5g",
+    // Phase / Week label was retired in May 2026 — value is now auto-derived
+    // from working days completed (Week 1-5, ceil(day / 5)).
     tsgInvoicedTarget:     "fld9OSyOijwLNIdDU",
     tsgNewSalesTarget:     "fld1ZohxvmjVHmV7G",
     wllInvoicedTarget:     "fldcqFo0hLWZlZngs",
@@ -251,7 +270,9 @@ export async function onRequest(context) {
           monthYear: f[MP.monthLabel] || "",
           month:     f[MP.monthLabel] || "",
           dateEntered: ms,
-          phase: f[MP.phase] || "",
+          // Phase is auto-derived from working days completed (Week N).
+          // The old Airtable Phase field is now ignored and can be deleted.
+          phase: getWorkingWeek(wdCompleted),
           workingDaysTotal:     wdTotal,
           workingDaysCompleted: wdCompleted,
           tsgTarget: Number(f[MP.tsgInvoicedTarget]) || 0,
