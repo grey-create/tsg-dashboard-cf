@@ -1222,7 +1222,10 @@ var REFRESH_TRIGGERS=[
   "https://shopvox-aggregator.the-sign-group-account.workers.dev/?key=tsg-manual-trigger-374yfndkei4ifmuru4hn5",
   "https://shopvox-wllnv-sync.the-sign-group-account.workers.dev/?key=tsg-manual-trigger-374yfndkei4ifmuru4hn5",
 ];
-var REFRESH_WAIT_SECONDS=12;
+// Workers complete in ~3-4s in practice (aggregator scans monthly SOs/quotes/
+// invoices, WLL/NV sync hits two source bases). 5s gives them headroom without
+// making the user wait. If we shorten further we risk reading stale data.
+var REFRESH_WAIT_SECONDS=5;
 
 async function manualRefresh(){
   var btn=document.getElementById("refreshBtn");
