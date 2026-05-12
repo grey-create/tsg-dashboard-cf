@@ -1203,8 +1203,43 @@ async function loadSnapshotDeltas(){
 
 // Renders a "+X today" chip. For money keys, formats as currency; for counts,
 // integer. Hides itself entirely if delta is null/undefined (no baseline yet).
+//
+// SPECIAL CASE: ordersPlaced renders the ordered/cancelled breakdown using
+// the two cumulative counters (which only go up). This way a day with
+// "3 new SOs, 1 cancelled" shows "+3 ordered, 1 cancelled" rather than "+2".
+// On clean days with only orders OR only cancellations, the chip simplifies.
 function deltaChip(key, format){
-  if(!SNAP_DELTAS||SNAP_DELTAS[key]==null)return"";
+  if(!SNAP_DELTAS)return"";
+
+  // Special case: orders breakdown chip
+  if(key==="ordersPlaced"){
+    var created=SNAP_DELTAS.ordersCreatedCumul;
+    var cancelled=SNAP_DELTAS.ordersCancelledCumul;
+    // Fall back to net delta if cumulative counters aren't populated yet
+    // (e.g. baseline row from before the new fields existed).
+    if(created==null||cancelled==null){
+      if(SNAP_DELTAS.ordersPlaced==null)return"";
+      var nv=SNAP_DELTAS.ordersPlaced;
+      if(nv===0)return'<span class="delta-chip dc-zero">\u00B10 today</span>';
+      var nsign=nv>0?"+":"\u2212";
+      var ncls=nv>0?"dc-pos":"dc-neg";
+      return '<span class="delta-chip '+ncls+'">'+nsign+Math.abs(Math.round(nv))+' today</span>';
+    }
+    created=Math.round(created);
+    cancelled=Math.round(cancelled);
+    if(created===0&&cancelled===0)return'<span class="delta-chip dc-zero">\u00B10 today</span>';
+    // Build the breakdown text
+    var parts=[];
+    if(created>0)parts.push('+'+created+' ordered');
+    if(cancelled>0)parts.push(cancelled+' cancelled');
+    // Tone: green if more orders than cancels, red if more cancels, amber if equal
+    var net=created-cancelled;
+    var cls=net>0?"dc-pos":(net<0?"dc-neg":"dc-zero");
+    return '<span class="delta-chip '+cls+'">'+parts.join(', ')+' today</span>';
+  }
+
+  // Standard chip for all other keys
+  if(SNAP_DELTAS[key]==null)return"";
   var v=SNAP_DELTAS[key];
   if(v===0)return'<span class="delta-chip dc-zero">\u00B10 today</span>';
   var fmt=format==="money"?f(Math.abs(v)):Math.abs(Math.round(v));
