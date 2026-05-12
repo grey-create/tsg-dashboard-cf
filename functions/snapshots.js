@@ -31,6 +31,10 @@ const F = {
   enquiries:    "fldrc51PxpGOegwYO",
   quotesTotal:  "fldNmAGA3Ep9RRyif",
   lastUpdated:  "fldHYnjz7j7Iwisls",
+  // Cumulative counters for the ordered/cancelled breakdown chips.
+  // Both go up only; the daily delta on each captures today's gross activity.
+  ordersCreatedCumul:   "fldlcXUWjajSVF500",   // number, only-goes-up counter (all SOs created this month)
+  ordersCancelledCumul: "fld6AUiOq2m6rLsas", // number, only-goes-up counter (voided SOs created this month)
 };
 
 export async function onRequest(context) {
@@ -88,25 +92,28 @@ export async function onRequest(context) {
 function mapRow(r) {
   const f = r.fields || {};
   return {
-    id:            r.id,
-    date:          f[F.snapshotDate]  || null,
-    monthStart:    f[F.monthStart]    || null,
-    tsgInvoiced:   num(f[F.tsgInvoiced]),
-    tsgWipDue:     num(f[F.tsgWipDue]),
-    tsgTotal:      num(f[F.tsgTotal]),
-    wllInvoiced:   num(f[F.wllInvoiced]),
-    nvInvoiced:    num(f[F.nvInvoiced]),
-    newSalesVal:   num(f[F.newSalesVal]),
-    ordersPlaced:  num(f[F.ordersPlaced]),
-    enquiries:     num(f[F.enquiries]),
-    quotesTotal:   num(f[F.quotesTotal]),
-    lastUpdated:   f[F.lastUpdated]   || null,
+    id:                   r.id,
+    date:                 f[F.snapshotDate]  || null,
+    monthStart:           f[F.monthStart]    || null,
+    tsgInvoiced:          num(f[F.tsgInvoiced]),
+    tsgWipDue:            num(f[F.tsgWipDue]),
+    tsgTotal:             num(f[F.tsgTotal]),
+    wllInvoiced:          num(f[F.wllInvoiced]),
+    nvInvoiced:           num(f[F.nvInvoiced]),
+    newSalesVal:          num(f[F.newSalesVal]),
+    ordersPlaced:         num(f[F.ordersPlaced]),
+    enquiries:            num(f[F.enquiries]),
+    quotesTotal:          num(f[F.quotesTotal]),
+    ordersCreatedCumul:   num(f[F.ordersCreatedCumul]),
+    ordersCancelledCumul: num(f[F.ordersCancelledCumul]),
+    lastUpdated:          f[F.lastUpdated]   || null,
   };
 }
 
 function computeDeltas(today, baseline) {
   const keys = ["tsgInvoiced","tsgWipDue","tsgTotal","wllInvoiced","nvInvoiced",
-                "newSalesVal","ordersPlaced","enquiries","quotesTotal"];
+                "newSalesVal","ordersPlaced","enquiries","quotesTotal",
+                "ordersCreatedCumul","ordersCancelledCumul"];
   const d = {};
   for (const k of keys) d[k] = +(today[k] - baseline[k]).toFixed(2);
   return d;
