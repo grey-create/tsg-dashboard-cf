@@ -15,19 +15,12 @@
     return Math.floor(diff/86400) + 'd ago';
   };
 
-  // Populate timestamp — called by each page after data loads
-  window.setNavTimestamp = function(dateObj) {
-    var el = document.getElementById('navUpdated');
-    if (!el) return;
-    var abs = dateObj.toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
-    var rel = window.relativeTime(dateObj);
-    el.innerHTML = '<span class="tn-upd-rel">' + rel + '</span><span class="tn-upd-abs">' + abs + '</span>';
-    // Re-run every minute
-    clearInterval(window._navTsInterval);
-    window._navTsInterval = setInterval(function(){
-      el.innerHTML = '<span class="tn-upd-rel">' + window.relativeTime(dateObj) + '</span><span class="tn-upd-abs">' + abs + '</span>';
-    }, 60000);
-  };
+  // Populate timestamp — kept as a no-op for backwards-compat. The nav
+  // timestamp pill was removed because it reflected /sales-data response
+  // time rather than actual Airtable freshness. Existing page code still
+  // calls this; the function now does nothing. Refresh Now's status line
+  // is the authoritative freshness signal.
+  window.setNavTimestamp = function(_dateObj) { /* no-op */ };
 
   var style = document.createElement('style');
   style.textContent = [
@@ -74,7 +67,10 @@
     '<a href="/review" class="tn-review' + (isReview ? ' active' : '') + '"><span class="tn-rv-dot"></span>' + prevMonthName + ' Review</a>',
     '<a href="/insights" class="tn-insights' + (isInsights ? ' active' : '') + '">\uD83D\uDCA1 Insights</a>',
     '<div class="tn-spacer"></div>',
-    '<span class="tn-updated" id="navUpdated">\u23F3 Loading\u2026</span>',
+    // Nav timestamp pill removed — it was based on /sales-data response time,
+    // not actual Airtable freshness, and didn't reflect when the aggregator
+    // last ran. The Refresh Now button now carries this responsibility — its
+    // success status text shows the genuine "data refreshed at HH:MM".
   ].join('');
 
   document.body.insertBefore(nav, document.body.firstChild);
