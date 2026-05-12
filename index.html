@@ -35,6 +35,26 @@
   @keyframes starsDrift{to{background-position:520px 360px}}
 
   .wrap{max-width:1680px;margin:0 auto;padding:18px 22px 40px;position:relative;z-index:1}
+
+  /* Refresh bar — sits at the very top, right-aligned. Subtle so it doesn't
+     fight the hero strip for attention but always accessible. */
+  .refresh-bar{display:flex;justify-content:flex-end;align-items:center;gap:14px;margin-bottom:14px;min-height:36px}
+  .refresh-btn{display:inline-flex;align-items:center;gap:8px;background:#1a2332;color:#e2e8f0;border:1px solid #2a3a4e;border-radius:8px;padding:8px 14px;font:600 13px/1 Inter,system-ui,sans-serif;letter-spacing:.2px;cursor:pointer;transition:all .15s ease}
+  .refresh-btn:hover:not(:disabled){background:#243349;border-color:#3a4a5e;color:#f1f5f9}
+  .refresh-btn:disabled{background:#1a2332;color:#64748b;cursor:wait;opacity:.7}
+  .refresh-btn .rb-icon{font-size:16px;line-height:1;display:inline-block;transition:transform .3s ease}
+  .refresh-btn.refreshing .rb-icon{animation:rb-spin 1.2s linear infinite}
+  @keyframes rb-spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+  .rb-status{font:500 12px/1.4 Inter,sans-serif;color:#94a3b8;font-feature-settings:"tnum"}
+  .rb-status.rb-success{color:#4ade80}
+  .rb-status.rb-error{color:#f87171}
+
+  /* Daily delta chip — shows "+X today" next to a counter. Three flavours:
+     positive (green), negative (red, rare for counters), zero (muted). */
+  .delta-chip{display:inline-block;font:700 10px/1 Inter,sans-serif;padding:3px 7px;border-radius:4px;margin-left:6px;letter-spacing:.2px;vertical-align:middle;white-space:nowrap}
+  .delta-chip.dc-pos{background:rgba(74,222,128,.13);color:#4ade80;border:1px solid rgba(74,222,128,.25)}
+  .delta-chip.dc-neg{background:rgba(248,113,113,.13);color:#f87171;border:1px solid rgba(248,113,113,.25)}
+  .delta-chip.dc-zero{background:rgba(148,163,184,.08);color:#64748b;border:1px solid rgba(148,163,184,.15)}
   .card{background:#1a2332;border:1px solid #2a3a4e;border-radius:14px;padding:22px 24px;box-shadow:0 2px 8px rgba(0,0,0,.2)}
   .sec-pill{display:inline-block;padding:3px 12px;border-radius:99px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
   .sec-title{font-size:16px;font-weight:700;color:#f1f5f9;line-height:1.3;margin-bottom:2px}
@@ -243,6 +263,13 @@
 <script src="/nav.js"></script>
 
 <div class="wrap">
+  <div class="refresh-bar">
+    <button id="refreshBtn" class="refresh-btn" onclick="manualRefresh()">
+      <span class="rb-icon">&#x21bb;</span>
+      <span class="rb-label">Refresh Now</span>
+    </button>
+    <span id="refreshStatus" class="rb-status"></span>
+  </div>
   <div id="loading" class="loading"><div class="spinner"></div>Loading from Airtable&hellip;</div>
   <div id="error"></div>
   <div id="app"></div>
@@ -265,7 +292,13 @@ function plb(s,bg,fg){return'<span class="pill" style="background:'+bg+";color:"
 // glance. Fills the arc to `pct` (clamped 0-110% so an over-target reading
 // pushes past the end). Colour follows the brand for the fill arc; the track
 // is muted grey. Centred percentage label sits in the well.
-function gauge(pct,color,size){
+//
+// Optional `pacePct` draws a thin tick marker on the arc at that position —
+// used to show "where you should be by now" alongside actual progress. For
+// TSG it's typically left undefined (no pace marker, target is target). For
+// WLL/NV it's the days-elapsed-% so the gap between fill and marker visually
+// reads as ahead-or-behind pace.
+function gauge(pct,color,size,pacePct){
   size=size||130;
   pct=Math.max(0,Math.min(pct,110));
   var ringSize=12;
@@ -281,9 +314,27 @@ function gauge(pct,color,size){
   // brand colour overrides when given (keeps cards visually distinct).
   var fillColor=color||(pct<50?"#dc2626":pct<90?"#fbbf24":"#22c55e");
   var displayPct=Math.round(pct);
+
+  // Pace marker — small tick on the arc showing where the brand SHOULD be
+  // based on time elapsed. Position computed by mapping the percentage onto
+  // the semicircle: angle = π - (pct/100)*π (left-to-right sweep).
+  var paceTick="";
+  if(pacePct!=null && pacePct>0 && pacePct<=100){
+    var paceAngle=Math.PI - (pacePct/100)*Math.PI;
+    var inner=r - ringSize/2 - 2;
+    var outer=r + ringSize/2 + 2;
+    var tx1=cx + inner*Math.cos(paceAngle);
+    var ty1=cy - inner*Math.sin(paceAngle);
+    var tx2=cx + outer*Math.cos(paceAngle);
+    var ty2=cy - outer*Math.sin(paceAngle);
+    paceTick='<line x1="'+tx1+'" y1="'+ty1+'" x2="'+tx2+'" y2="'+ty2+'" stroke="#f1f5f9" stroke-width="2.5" stroke-linecap="round" opacity="0.9"/>'
+            +'<line x1="'+tx1+'" y1="'+ty1+'" x2="'+tx2+'" y2="'+ty2+'" stroke="#0f172a" stroke-width="0.8" stroke-linecap="round"/>';
+  }
+
   return '<svg viewBox="0 0 '+size+' '+(size/2+18)+'" style="width:100%;display:block">'
     +'<path d="'+trackPath+'" fill="none" stroke="#2a3a4e" stroke-width="'+ringSize+'" stroke-linecap="round"/>'
     +'<path d="'+trackPath+'" fill="none" stroke="'+fillColor+'" stroke-width="'+ringSize+'" stroke-linecap="round" stroke-dasharray="'+fillLen+' '+(arcLen-fillLen+5)+'" style="transition:stroke-dasharray .6s ease"/>'
+    +paceTick
     +'<text x="'+cx+'" y="'+(cy-6)+'" text-anchor="middle" font-family="Inter,sans-serif" font-size="'+Math.round(size*0.22)+'" font-weight="800" fill="#f1f5f9">'+displayPct+'%</text>'
     +'<text x="'+cx+'" y="'+(cy+8)+'" text-anchor="middle" font-family="Inter,sans-serif" font-size="9" font-weight="600" fill="#64748b" letter-spacing="0.5">OF TARGET</text>'
     +'</svg>';
@@ -715,17 +766,29 @@ function render(D){
 
   h+='<div class="brand-row-tsg">';
 
+  // TSG pace marker: where SHOULD we be by now if invoicing built linearly
+  // from working day 1 to target on the last working day. dayPct gives us that
+  // percentage. So the marker on the gauge sits at dayPct, and the fill arc
+  // sits at actual achieved %. Gap between the two visually reads as ahead /
+  // behind pace. When monthComplete, we suppress the marker — the target line
+  // (100%) is the only meaningful reference at that point.
+  var tsgPacePct=D.monthComplete?null:(D.wdTotal>0?(D.wdDone/D.wdTotal)*100:null);
+  var tsgPaceTarget=D.tsgTgt&&D.wdTotal>0?D.tsgTgt*(D.wdDone/D.wdTotal):0;
+
   // TSG Invoicing card
   h+='<div class="brand-card bc-large" style="--accent:'+C.tsg.color+'">';
   h+='<div class="bc-head"><div class="bc-name"><span style="font-size:18px">\uD83D\uDCB0</span><strong>TSG Invoicing</strong></div>';
   h+='<span class="pill pill-'+tsgPace.tone+'">'+tsgPace.icon+' '+tsgPace.label+'</span></div>';
   h+='<div class="bc-subtitle">Jobs completed or due to be completed this month</div>';
-  h+='<div class="bc-gauge"><div class="bc-gauge-svg">'+gauge(tsgPct,C.tsg.color,150)+'</div>';
+  h+='<div class="bc-gauge"><div class="bc-gauge-svg">'+gauge(tsgPct,C.tsg.color,150,tsgPacePct)+'</div>';
   h+='<div class="bc-figures"><div class="bc-big">'+f(D.tsgInv)+'</div>';
-  h+='<div class="bc-target">Target <strong>'+f(D.tsgTgt)+'</strong> \u00B7 '+(D.tsgInv>=D.tsgTgt?'<span class="up">+'+f(D.tsgInv-D.tsgTgt)+'</span>':'<span class="dn">'+f(D.tsgInv-D.tsgTgt)+'</span>')+'</div></div></div>';
+  h+='<div class="bc-target">Target <strong>'+f(D.tsgTgt)+'</strong> \u00B7 '+(D.tsgInv>=D.tsgTgt?'<span class="up">+'+f(D.tsgInv-D.tsgTgt)+'</span>':'<span class="dn">'+f(D.tsgInv-D.tsgTgt)+'</span>')+'</div>';
+  // Show the linear-pace position so the team can see what "on pace" means in £
+  if(!D.monthComplete&&tsgPaceTarget>0)h+='<div class="bc-target" style="margin-top:2px;color:#64748b">Pace target today: <strong style="color:#94a3b8">'+f(tsgPaceTarget)+'</strong> (day '+D.wdDone+' of '+D.wdTotal+')</div>';
+  h+='</div></div>';
   h+='<div class="bc-detail">';
-  h+='<div><div class="bd-k">Invoiced</div><div class="bd-v" style="color:#4ade80">'+f(D.tsgPureInv)+'</div></div>';
-  h+='<div><div class="bd-k">WIP Due This Month</div><div class="bd-v" style="color:#fbbf24">'+f(D.tsgWipDue||0)+'</div></div>';
+  h+='<div><div class="bd-k">Invoiced</div><div class="bd-v" style="color:#4ade80">'+f(D.tsgPureInv)+deltaChip("tsgInvoiced","money")+'</div></div>';
+  h+='<div><div class="bd-k">WIP Due This Month</div><div class="bd-v" style="color:#fbbf24">'+f(D.tsgWipDue||0)+deltaChip("tsgWipDue","money")+'</div></div>';
   h+='<div><div class="bd-k">WIP TBC</div><div class="bd-v">'+f(D.tsgWipUndated||0)+'</div></div>';
   h+='<div><div class="bd-k">Next Month WIP</div><div class="bd-v">'+f(D.tsgWipNextMonth||0)+'</div></div>';
   h+='</div></div>';
@@ -736,14 +799,14 @@ function render(D){
   if(D.nsTgt)h+='<span class="pill pill-'+nsPace.tone+'">'+nsPace.icon+' '+nsPace.label+'</span>';
   h+='</div>';
   h+='<div class="bc-subtitle">New orders confirmed this month \u2014 the pipeline that becomes invoicing</div>';
-  h+='<div class="bc-gauge"><div class="bc-gauge-svg">'+gauge(nsPct,"#fbbf24",150)+'</div>';
-  h+='<div class="bc-figures"><div class="bc-big">'+f(D.nsVal)+'</div>';
+  h+='<div class="bc-gauge"><div class="bc-gauge-svg">'+gauge(nsPct,"#fbbf24",150,tsgPacePct)+'</div>';
+  h+='<div class="bc-figures"><div class="bc-big">'+f(D.nsVal)+deltaChip("newSalesVal","money")+'</div>';
   if(D.nsTgt)h+='<div class="bc-target">Target <strong>'+f(D.nsTgt)+'</strong> \u00B7 '+(D.nsVal>=D.nsTgt?'<span class="up">+'+f(D.nsVal-D.nsTgt)+'</span>':'<span class="dn">'+f(D.nsVal-D.nsTgt)+'</span>')+'</div>';
   else h+='<div class="bc-target" style="color:#64748b">No target set for this month</div>';
   h+='</div></div>';
   h+='<div class="bc-detail">';
-  h+='<div><div class="bd-k">Enquiries</div><div class="bd-v">'+(D.nsEnq||0)+'</div></div>';
-  h+='<div><div class="bd-k">Orders Placed</div><div class="bd-v">'+(D.nsOrd||0)+'</div></div>';
+  h+='<div><div class="bd-k">Enquiries</div><div class="bd-v">'+(D.nsEnq||0)+deltaChip("enquiries","count")+'</div></div>';
+  h+='<div><div class="bd-k">Orders Placed</div><div class="bd-v">'+(D.nsOrd||0)+deltaChip("ordersPlaced","count")+'</div></div>';
   h+='<div><div class="bd-k">Conversion Rate</div><div class="bd-v" style="color:#6BD4EC">'+(D.nsConv||0)+'%</div></div>';
   h+='<div><div class="bd-k">Avg Order Value</div><div class="bd-v">'+f(D.nsAov||0)+'</div></div>';
   h+='</div></div>';
@@ -772,13 +835,17 @@ function render(D){
 
   h+='<div class="brand-row-ecom">';
 
+  // E-commerce pace marker uses CALENDAR days (WLL/NV trade weekends), not
+  // working days. dayCalPct = where the linear pace target sits today.
+  var ecomDayPct=D.monthComplete?null:(D.calDaysTotal>0?(D.calDaysElapsed/D.calDaysTotal)*100:null);
+
   // WLL card
   h+='<div class="brand-card bc-small" style="--accent:'+C.wll.color+'">';
   h+='<div class="bc-head"><div class="bc-name"><img src="'+LOGOS.wll+'" class="logo"><strong>WeLoveLEDs\u2122</strong></div>';
   h+='<span class="pill pill-'+wllPace.tone+'">'+wllPace.icon+' '+wllPace.label+'</span></div>';
   h+='<div class="bc-subtitle">E-commerce sales \u2014 invoiced at point of order</div>';
-  h+='<div class="bc-gauge"><div class="bc-gauge-svg">'+gauge(wllPct,C.wll.color,110)+'</div>';
-  h+='<div class="bc-figures"><div class="bc-big">'+f(D.wllInv)+'</div>';
+  h+='<div class="bc-gauge"><div class="bc-gauge-svg">'+gauge(wllPct,C.wll.color,110,ecomDayPct)+'</div>';
+  h+='<div class="bc-figures"><div class="bc-big">'+f(D.wllInv)+deltaChip("wllInvoiced","money")+'</div>';
   h+='<div class="bc-target">Target <strong>'+f(D.wllTgt)+'</strong> \u00B7 '+(D.wllInv>=D.wllTgt?'<span class="up">+'+f(D.wllInv-D.wllTgt)+'</span>':'<span class="dn">'+f(D.wllInv-D.wllTgt)+'</span>')+'</div></div></div>';
   h+='<div class="bc-detail">';
   h+='<div><div class="bd-k">Current Daily</div><div class="bd-v" style="color:'+C.wll.color+'">'+f(D.wllDaily)+'<span style="font-weight:400;color:#64748b">/d</span></div></div>';
@@ -792,8 +859,8 @@ function render(D){
   h+='<div class="bc-head"><div class="bc-name"><img src="'+LOGOS.nv+'" class="logo"><strong>Neon Vibes\u00AE</strong></div>';
   h+='<span class="pill pill-'+nvPace.tone+'">'+nvPace.icon+' '+nvPace.label+'</span></div>';
   h+='<div class="bc-subtitle">E-commerce sales \u2014 invoiced at point of order</div>';
-  h+='<div class="bc-gauge"><div class="bc-gauge-svg">'+gauge(nvPct,C.nv.color,110)+'</div>';
-  h+='<div class="bc-figures"><div class="bc-big">'+f(D.nvInv)+'</div>';
+  h+='<div class="bc-gauge"><div class="bc-gauge-svg">'+gauge(nvPct,C.nv.color,110,ecomDayPct)+'</div>';
+  h+='<div class="bc-figures"><div class="bc-big">'+f(D.nvInv)+deltaChip("nvInvoiced","money")+'</div>';
   h+='<div class="bc-target">Target <strong>'+f(D.nvTgt)+'</strong> \u00B7 '+(D.nvInv>=D.nvTgt?'<span class="up">+'+f(D.nvInv-D.nvTgt)+'</span>':'<span class="dn">'+f(D.nvInv-D.nvTgt)+'</span>')+'</div></div></div>';
   h+='<div class="bc-detail">';
   h+='<div><div class="bd-k">Current Daily</div><div class="bd-v" style="color:'+C.nv.color+'">'+f(D.nvDaily)+'<span style="font-weight:400;color:#64748b">/d</span></div></div>';
@@ -1119,8 +1186,88 @@ function buildFYCharts(D){
 }
 
 // ============================================================
+// SNAPSHOTS & DELTAS — fetched once at load, shared globally so the render
+// functions can reach them. The /snapshots endpoint hands us today + baseline +
+// pre-computed deltas; we just render the deltas.
+// ============================================================
+var SNAP_DELTAS = null; // {tsgInvoiced, tsgWipDue, tsgTotal, wllInvoiced, nvInvoiced, newSalesVal, ordersPlaced, enquiries, quotesTotal} | null
+
+async function loadSnapshotDeltas(){
+  try{
+    var res=await fetch("/snapshots",{cache:"no-store"});
+    if(!res.ok)return null;
+    var j=await res.json();
+    return j&&j.deltas?j.deltas:null;
+  }catch(e){return null;}
+}
+
+// Renders a "+X today" chip. For money keys, formats as currency; for counts,
+// integer. Hides itself entirely if delta is null/undefined (no baseline yet).
+function deltaChip(key, format){
+  if(!SNAP_DELTAS||SNAP_DELTAS[key]==null)return"";
+  var v=SNAP_DELTAS[key];
+  if(v===0)return'<span class="delta-chip dc-zero">\u00B10 today</span>';
+  var fmt=format==="money"?f(Math.abs(v)):Math.abs(Math.round(v));
+  var sign=v>0?"+":"\u2212";
+  var cls=v>0?"dc-pos":"dc-neg";
+  return '<span class="delta-chip '+cls+'">'+sign+fmt+' today</span>';
+}
+
+// ============================================================
+// MANUAL REFRESH — triggers the three sync workers then reloads the page data.
+// Shows a 12-second countdown so the team knows to wait rather than hammering
+// the button. Uses the dedicated manual-trigger URLs (key-protected).
+// ============================================================
+var REFRESH_TRIGGERS=[
+  "https://shopvox-aggregator.the-sign-group-account.workers.dev/?key=tsg-manual-trigger-374yfndkei4ifmuru4hn5",
+  "https://shopvox-wllnv-sync.the-sign-group-account.workers.dev/?key=tsg-manual-trigger-374yfndkei4ifmuru4hn5",
+];
+var REFRESH_WAIT_SECONDS=12;
+
+async function manualRefresh(){
+  var btn=document.getElementById("refreshBtn");
+  var status=document.getElementById("refreshStatus");
+  var label=btn.querySelector(".rb-label");
+  if(btn.disabled)return;
+  btn.disabled=true; btn.classList.add("refreshing");
+  status.className="rb-status";
+  status.textContent="Pulling latest data\u2026";
+
+  // Fire all triggers in parallel — fire-and-forget, we wait based on the
+  // countdown not on individual responses. They complete in ~3-8s each.
+  REFRESH_TRIGGERS.forEach(function(url){
+    fetch(url,{mode:"no-cors"}).catch(function(){/* swallow */});
+  });
+
+  // Countdown so the user has something to watch
+  for(var i=REFRESH_WAIT_SECONDS;i>0;i--){
+    label.textContent="Wait "+i+"s\u2026";
+    await new Promise(function(r){setTimeout(r,1000);});
+  }
+
+  // Pull fresh data. Re-using init() means hero/cards/charts all re-render.
+  label.textContent="Loading\u2026";
+  try{
+    document.getElementById("app").innerHTML="";
+    document.getElementById("loading").style.display="";
+    await init();
+    status.className="rb-status rb-success";
+    status.textContent="Refreshed \u00B7 "+new Date().toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"});
+  }catch(e){
+    status.className="rb-status rb-error";
+    status.textContent="Refresh failed";
+  }finally{
+    btn.disabled=false; btn.classList.remove("refreshing");
+    label.textContent="Refresh Now";
+  }
+}
+
+// ============================================================
 async function init(){
   try{
+    // Kick off the snapshot fetch in parallel with the main sales-data fetch
+    // so we don't add latency. By the time render() runs, SNAP_DELTAS is set.
+    var snapPromise=loadSnapshotDeltas();
     var res=await fetch("/sales-data");
     if(!res.ok)throw new Error("API returned "+res.status);
     var raw=await res.json();if(raw.error)throw new Error(raw.error);
@@ -1132,6 +1279,7 @@ async function init(){
       console.groupEnd();
       if(raw.conversions.length>0)console.log("Latest conversions:",raw.conversions[raw.conversions.length-1]);
     }
+    SNAP_DELTAS=await snapPromise;
     document.getElementById("loading").style.display="none";
     var D=processData(raw);render(D);
     if(raw.lastFetched){var ft=new Date(raw.lastFetched);if(window.setNavTimestamp)window.setNavTimestamp(ft);}
