@@ -217,8 +217,10 @@ export async function onRequest(context) {
         else if (monthYM > todayYM) wdCompleted = 0;                                    // future month
         else                        wdCompleted = countWorkingDays(ms, todayStr, holidays); // current month
 
-        // Fallback to Airtable values if compute returned 0 (gov.uk down + no
-        // holidays cached + weird edge case). Keeps the dashboard sensible.
+        // Fallback to Airtable values only when compute is undefined (gov.uk
+        // catastrophically failed AND we had no cache). For future months,
+        // wdCompleted is *intentionally* 0 — that should NOT fall back to a
+        // possibly-stale Airtable value. Hence nullish coalescing not ||.
         const airtableTotal = Number(f[MP.workingDaysTotal]) || 0;
         const airtableDone  = Number(f[MP.workingDaysCompleted]) || 0;
 
@@ -227,8 +229,8 @@ export async function onRequest(context) {
           month:     f[MP.monthLabel] || "",
           dateEntered: ms,
           phase: f[MP.phase] || "",
-          workingDaysTotal:     wdTotal     || airtableTotal,
-          workingDaysCompleted: wdCompleted || airtableDone,
+          workingDaysTotal:     (wdTotal     > 0 ? wdTotal     : airtableTotal),
+          workingDaysCompleted: (wdCompleted != null ? wdCompleted : airtableDone),
           tsgTarget: Number(f[MP.tsgInvoicedTarget]) || 0,
           wllTarget: Number(f[MP.wllInvoicedTarget]) || 0,
           nvTarget:  Number(f[MP.nvInvoicedTarget])  || 0,
