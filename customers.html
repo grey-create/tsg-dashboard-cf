@@ -1,1 +1,1075 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Customers · TSG Dashboard</title>
+  <link rel="stylesheet" href="/nav.css" />
+  <script src="/nav.js" defer></script>
+  <style>
+    :root {
+      --bg: #0a0a0a;
+      --bg-panel: #161616;
+      --bg-hover: #1f1f1f;
+      --bg-active: #2a2a2a;
+      --border: #262626;
+      --border-strong: #3a3a3a;
+      --text: #e5e5e5;
+      --text-dim: #a3a3a3;
+      --text-faint: #6b7280;
+      --accent: #22c55e;
+      --accent-dim: rgba(34, 197, 94, 0.15);
+      --error: #ef4444;
+      --warning: #f97316;
+    }
 
+    /* Segment colours */
+    .seg-Champion       { --c: #fbbf24; --cb: rgba(251, 191, 36, 0.15); }
+    .seg-Loyal          { --c: #22c55e; --cb: rgba(34, 197, 94, 0.15); }
+    .seg-Active         { --c: #3b82f6; --cb: rgba(59, 130, 246, 0.15); }
+    .seg-New            { --c: #06b6d4; --cb: rgba(6, 182, 212, 0.15); }
+    .seg-Prospect       { --c: #a855f7; --cb: rgba(168, 85, 247, 0.15); }
+    .seg-AtRisk         { --c: #f97316; --cb: rgba(249, 115, 22, 0.15); }
+    .seg-Lapsed         { --c: #ef4444; --cb: rgba(239, 68, 68, 0.15); }
+    .seg-Lost           { --c: #6b7280; --cb: rgba(107, 114, 128, 0.15); }
+    .seg-QuoteonlyLost  { --c: #9ca3af; --cb: rgba(156, 163, 175, 0.15); }
+    .seg-Timewaster     { --c: #ec4899; --cb: rgba(236, 72, 153, 0.15); }
+
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+      font-size: 14px;
+      line-height: 1.4;
+    }
+
+    main {
+      max-width: 1600px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    h1 {
+      font-size: 22px;
+      font-weight: 600;
+      margin: 0 0 4px 0;
+    }
+    .subtitle {
+      color: var(--text-dim);
+      font-size: 13px;
+      margin-bottom: 24px;
+    }
+
+    /* AI section (placeholder for Phase 2) */
+    .ai-section {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px 20px;
+      margin-bottom: 24px;
+      opacity: 0.7;
+    }
+    .ai-section h2 {
+      font-size: 14px;
+      font-weight: 600;
+      margin: 0 0 10px 0;
+      color: var(--text-dim);
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .ai-section .badge {
+      font-size: 10px;
+      background: var(--bg-active);
+      color: var(--text-faint);
+      padding: 2px 6px;
+      border-radius: 4px;
+      letter-spacing: 0;
+      text-transform: none;
+    }
+    .ai-input {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      padding: 10px 14px;
+      border-radius: 6px;
+      font-size: 14px;
+      font-family: inherit;
+      cursor: not-allowed;
+    }
+    .ai-suggestions {
+      margin-top: 10px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .ai-suggestion {
+      font-size: 12px;
+      padding: 4px 10px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      color: var(--text-faint);
+    }
+
+    /* Segment chips */
+    .segments {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 18px;
+    }
+    .seg-chip {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.1s;
+      font-size: 13px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .seg-chip:hover {
+      background: var(--bg-hover);
+      border-color: var(--border-strong);
+    }
+    .seg-chip.active {
+      background: var(--cb);
+      border-color: var(--c);
+      color: var(--c);
+    }
+    .seg-chip .count {
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+    }
+    .seg-chip .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--c);
+    }
+
+    /* Filters row */
+    .filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .filters input[type="search"], .filters select {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 14px;
+      font-family: inherit;
+      outline: none;
+    }
+    .filters input[type="search"] {
+      flex: 1;
+      min-width: 250px;
+    }
+    .filters input[type="search"]:focus, .filters select:focus {
+      border-color: var(--accent);
+    }
+    .filters label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--text-dim);
+      cursor: pointer;
+      font-size: 13px;
+    }
+    .filters .result-count {
+      margin-left: auto;
+      color: var(--text-dim);
+      font-size: 13px;
+    }
+
+    /* Table */
+    .table-wrap {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    th {
+      text-align: left;
+      padding: 10px 12px;
+      font-weight: 600;
+      color: var(--text-dim);
+      background: var(--bg-panel);
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      user-select: none;
+      white-space: nowrap;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+    th:hover { color: var(--text); }
+    th.numeric { text-align: right; }
+    th .sort-arrow { opacity: 0.4; margin-left: 4px; }
+    th.sorted .sort-arrow { opacity: 1; color: var(--accent); }
+    td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+    tr.row { cursor: pointer; transition: background 0.05s; }
+    tr.row:hover td { background: var(--bg-hover); }
+    td.numeric {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+    td.company { font-weight: 500; }
+    td.dim { color: var(--text-dim); }
+
+    /* Segment chip in row */
+    .row-seg {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      background: var(--cb);
+      color: var(--c);
+      border: 1px solid var(--cb);
+      white-space: nowrap;
+    }
+
+    /* Flag icons */
+    .flag {
+      font-size: 14px;
+    }
+    .flag-VIP { color: #fbbf24; }
+    .flag-Watch { color: #06b6d4; }
+    .flag-Dontchase { color: var(--text-faint); }
+
+    /* Loading / empty states */
+    .state {
+      padding: 60px 20px;
+      text-align: center;
+      color: var(--text-dim);
+      font-size: 13px;
+    }
+    .state.error { color: var(--error); }
+
+    /* Drilldown slide-out */
+    .drilldown-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+      z-index: 50;
+    }
+    .drilldown-backdrop.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .drilldown {
+      position: fixed;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      width: min(640px, 100vw);
+      background: var(--bg-panel);
+      border-left: 1px solid var(--border-strong);
+      transform: translateX(100%);
+      transition: transform 0.25s ease-out;
+      z-index: 60;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .drilldown.open { transform: translateX(0); }
+    .drilldown-header {
+      padding: 18px 22px 14px 22px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .drilldown-header h2 {
+      margin: 0 0 6px 0;
+      font-size: 18px;
+      font-weight: 600;
+    }
+    .drilldown-header .meta {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--text-dim);
+      font-size: 12px;
+    }
+    .drilldown-close {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      background: transparent;
+      border: none;
+      color: var(--text-dim);
+      font-size: 20px;
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 4px;
+    }
+    .drilldown-close:hover { color: var(--text); background: var(--bg-hover); }
+    .drilldown-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0 22px 22px 22px;
+    }
+
+    .dd-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 12px;
+      margin: 16px 0;
+    }
+    .dd-stat {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 10px 12px;
+    }
+    .dd-stat .label {
+      color: var(--text-dim);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 4px;
+    }
+    .dd-stat .value {
+      font-size: 16px;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .dd-section {
+      margin-top: 22px;
+    }
+    .dd-section h3 {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin: 0 0 10px 0;
+    }
+    .dd-rows {
+      display: grid;
+      grid-template-columns: max-content 1fr;
+      gap: 6px 16px;
+      font-size: 13px;
+    }
+    .dd-rows .key { color: var(--text-dim); }
+    .dd-rows .val { font-variant-numeric: tabular-nums; }
+
+    .dd-field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .dd-field-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--text-dim);
+    }
+    .dd-saved {
+      color: var(--accent);
+      font-size: 11px;
+      opacity: 0;
+      transition: opacity 0.15s;
+    }
+    .dd-saved.show { opacity: 1; }
+    .dd-field textarea, .dd-field select {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-family: inherit;
+      outline: none;
+      resize: vertical;
+    }
+    .dd-field textarea { min-height: 70px; }
+    .dd-field textarea:focus, .dd-field select:focus { border-color: var(--accent); }
+
+    /* Activity tables in drilldown */
+    .dd-activity {
+      width: 100%;
+      font-size: 12px;
+      border-collapse: collapse;
+    }
+    .dd-activity th {
+      text-align: left;
+      padding: 6px 8px;
+      font-weight: 500;
+      color: var(--text-dim);
+      border-bottom: 1px solid var(--border);
+      position: static;
+      cursor: default;
+    }
+    .dd-activity th:hover { color: var(--text-dim); }
+    .dd-activity th.numeric { text-align: right; }
+    .dd-activity td {
+      padding: 6px 8px;
+      border-bottom: 1px solid var(--border);
+    }
+    .dd-activity td.numeric {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+    .dd-activity .empty {
+      padding: 12px;
+      text-align: center;
+      color: var(--text-faint);
+      font-style: italic;
+    }
+    .dd-tabs {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+    .dd-tab {
+      padding: 6px 12px;
+      background: transparent;
+      border: none;
+      color: var(--text-dim);
+      font-size: 13px;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+    }
+    .dd-tab:hover { color: var(--text); }
+    .dd-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+    .voided { color: var(--error); }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Customers</h1>
+    <div class="subtitle">Active customers (excludes "Lost" and "Quote-only / Lost" by default)</div>
+
+    <!-- AI section — Phase 2 placeholder -->
+    <section class="ai-section">
+      <h2>💬 Ask anything <span class="badge">coming soon</span></h2>
+      <input type="text" class="ai-input" placeholder='e.g. "Who has spent the most this year?"' disabled />
+      <div class="ai-suggestions">
+        <span class="ai-suggestion">Top 20 by 12m value</span>
+        <span class="ai-suggestion">Lapsed but worth £25k+</span>
+        <span class="ai-suggestion">Monthly conversion trend for our top 20 customers</span>
+      </div>
+    </section>
+
+    <!-- Segment chips -->
+    <div class="segments" id="segments"></div>
+
+    <!-- Filters row -->
+    <div class="filters">
+      <input type="search" id="search" placeholder="Search company..." autocomplete="off" />
+      <select id="flag-filter">
+        <option value="">All flags</option>
+        <option value="VIP">VIP</option>
+        <option value="Watch">Watch</option>
+        <option value="Don't chase">Don't chase</option>
+        <option value="__none">No flag</option>
+      </select>
+      <label><input type="checkbox" id="include-lost" /> Include Lost / Quote-only</label>
+      <span class="result-count" id="result-count">—</span>
+    </div>
+
+    <!-- Table -->
+    <div class="table-wrap">
+      <table id="customers-table">
+        <thead>
+          <tr id="thead-row"></tr>
+        </thead>
+        <tbody id="tbody">
+          <tr><td colspan="9" class="state">Loading customers…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+
+  <!-- Drilldown -->
+  <div class="drilldown-backdrop" id="dd-backdrop"></div>
+  <aside class="drilldown" id="dd" aria-hidden="true">
+    <div class="drilldown-header">
+      <h2 id="dd-name">—</h2>
+      <div class="meta">
+        <span id="dd-segment" class="row-seg">—</span>
+        <span id="dd-shopvox" class="dim"></span>
+      </div>
+      <button class="drilldown-close" id="dd-close" aria-label="Close">×</button>
+    </div>
+    <div class="drilldown-body" id="dd-body">
+      <div class="state">Click a row to view details</div>
+    </div>
+  </aside>
+
+  <script>
+    // ────────────────────────────────────────────────────────────────
+    // State
+    // ────────────────────────────────────────────────────────────────
+    const state = {
+      allCustomers: [],
+      filtered: [],
+      sortField: "Value Ordered 12m",
+      sortDir: "desc",
+      activeSegment: null,
+      flagFilter: "",
+      searchTerm: "",
+      includeLost: false,
+      drilldownId: null,
+    };
+
+    // ────────────────────────────────────────────────────────────────
+    // Column definitions
+    // ────────────────────────────────────────────────────────────────
+    const COLUMNS = [
+      { key: "Company", label: "Company", numeric: false, render: (v) => escapeHtml(v || "—") },
+      { key: "Segment", label: "Segment", numeric: false, render: (v) => v ? segChipHtml(v) : '<span class="dim">—</span>' },
+      { key: "Flag", label: "", numeric: false, render: (v) => v ? flagHtml(v) : "" },
+      { key: "Last Invoiced", label: "Last Invoiced", numeric: false, render: (v) => v ? formatDate(v) : '<span class="dim">—</span>' },
+      { key: "Days Since Order", label: "Days Since Order", numeric: true, render: (v) => v == null ? '<span class="dim">—</span>' : v },
+      { key: "Orders 12m", label: "Orders 12m", numeric: true, render: (v) => v || 0 },
+      { key: "Value Ordered 12m", label: "Value 12m", numeric: true, render: (v) => formatCurrency(v) },
+      { key: "Value Ordered Lifetime", label: "Value Lifetime", numeric: true, render: (v) => formatCurrency(v) },
+      { key: "Conversion Rate Lifetime", label: "Conv. Rate", numeric: true, render: (v) => v == null ? '<span class="dim">—</span>' : v.toFixed(1) + "%" },
+    ];
+
+    // ────────────────────────────────────────────────────────────────
+    // Init
+    // ────────────────────────────────────────────────────────────────
+    document.addEventListener("DOMContentLoaded", async () => {
+      renderTableHeader();
+      attachEventListeners();
+      await loadCustomers();
+    });
+
+    function attachEventListeners() {
+      document.getElementById("search").addEventListener("input", (e) => {
+        state.searchTerm = e.target.value.trim().toLowerCase();
+        applyFilters();
+      });
+      document.getElementById("flag-filter").addEventListener("change", (e) => {
+        state.flagFilter = e.target.value;
+        applyFilters();
+      });
+      document.getElementById("include-lost").addEventListener("change", (e) => {
+        state.includeLost = e.target.checked;
+        loadCustomers();
+      });
+      document.getElementById("dd-close").addEventListener("click", closeDrilldown);
+      document.getElementById("dd-backdrop").addEventListener("click", closeDrilldown);
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && state.drilldownId) closeDrilldown();
+      });
+    }
+
+    // ────────────────────────────────────────────────────────────────
+    // Load customers
+    // ────────────────────────────────────────────────────────────────
+    async function loadCustomers() {
+      setTableState("Loading customers…");
+      const url = "/customers-data" + (state.includeLost ? "?include=all" : "");
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.error || "fetch failed");
+        state.allCustomers = data.customers || [];
+        applyFilters();
+      } catch (err) {
+        console.error(err);
+        setTableState("Failed to load: " + err.message, true);
+      }
+    }
+
+    // ────────────────────────────────────────────────────────────────
+    // Filtering & sorting
+    // ────────────────────────────────────────────────────────────────
+    function applyFilters() {
+      let list = state.allCustomers;
+
+      if (state.activeSegment) {
+        list = list.filter((c) => c.Segment === state.activeSegment);
+      }
+      if (state.flagFilter === "__none") {
+        list = list.filter((c) => !c.Flag);
+      } else if (state.flagFilter) {
+        list = list.filter((c) => c.Flag === state.flagFilter);
+      }
+      if (state.searchTerm) {
+        list = list.filter((c) => (c.Company || "").toLowerCase().includes(state.searchTerm));
+      }
+      list = sortList(list, state.sortField, state.sortDir);
+
+      state.filtered = list;
+      renderSegmentChips();
+      renderTable();
+      document.getElementById("result-count").textContent =
+        list.length + " of " + state.allCustomers.length;
+    }
+
+    function sortList(list, field, dir) {
+      const mult = dir === "desc" ? -1 : 1;
+      return [...list].sort((a, b) => {
+        const av = a[field], bv = b[field];
+        if (av == null && bv == null) return 0;
+        if (av == null) return 1; // nulls last
+        if (bv == null) return -1;
+        if (typeof av === "string") return mult * av.localeCompare(bv);
+        return mult * (av - bv);
+      });
+    }
+
+    function setSort(field) {
+      if (state.sortField === field) {
+        state.sortDir = state.sortDir === "desc" ? "asc" : "desc";
+      } else {
+        state.sortField = field;
+        state.sortDir = COLUMNS.find((c) => c.key === field)?.numeric ? "desc" : "asc";
+      }
+      renderTableHeader();
+      applyFilters();
+    }
+
+    // ────────────────────────────────────────────────────────────────
+    // Render: segment chips
+    // ────────────────────────────────────────────────────────────────
+    function renderSegmentChips() {
+      const counts = {};
+      // Count from ALL customers, not filtered, so the chip counts stay constant
+      for (const c of state.allCustomers) {
+        if (!c.Segment) continue;
+        counts[c.Segment] = (counts[c.Segment] || 0) + 1;
+      }
+      const order = ["Champion", "Loyal", "Active", "New", "Prospect", "At Risk", "Lapsed", "Time-waster", "Lost", "Quote-only / Lost"];
+      const html = order
+        .filter((s) => counts[s])
+        .map((seg) => {
+          const cls = segClass(seg);
+          const isActive = state.activeSegment === seg;
+          return `<span class="seg-chip ${cls} ${isActive ? "active" : ""}" data-seg="${escapeAttr(seg)}">
+            <span class="dot"></span>
+            <span class="label">${escapeHtml(seg)}</span>
+            <span class="count">${counts[seg]}</span>
+          </span>`;
+        })
+        .join("");
+      const el = document.getElementById("segments");
+      el.innerHTML = html;
+      el.querySelectorAll(".seg-chip").forEach((chip) => {
+        chip.addEventListener("click", () => {
+          const seg = chip.dataset.seg;
+          state.activeSegment = state.activeSegment === seg ? null : seg;
+          applyFilters();
+        });
+      });
+    }
+
+    // ────────────────────────────────────────────────────────────────
+    // Render: table
+    // ────────────────────────────────────────────────────────────────
+    function renderTableHeader() {
+      const html = COLUMNS.map((col) => {
+        const sorted = state.sortField === col.key;
+        const arrow = sorted ? (state.sortDir === "desc" ? "↓" : "↑") : "↕";
+        return `<th class="${col.numeric ? "numeric" : ""} ${sorted ? "sorted" : ""}" data-key="${escapeAttr(col.key)}">${escapeHtml(col.label)} <span class="sort-arrow">${arrow}</span></th>`;
+      }).join("");
+      const row = document.getElementById("thead-row");
+      row.innerHTML = html;
+      row.querySelectorAll("th").forEach((th) => {
+        th.addEventListener("click", () => setSort(th.dataset.key));
+      });
+    }
+
+    function renderTable() {
+      const tbody = document.getElementById("tbody");
+      if (state.filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="${COLUMNS.length}" class="state">No customers match your filters</td></tr>`;
+        return;
+      }
+      const html = state.filtered.map((c) => {
+        const cells = COLUMNS.map((col) => {
+          const val = c[col.key];
+          const rendered = col.render(val);
+          return `<td class="${col.numeric ? "numeric" : ""} ${col.key === "Company" ? "company" : ""}">${rendered}</td>`;
+        }).join("");
+        return `<tr class="row" data-id="${escapeAttr(c.id)}">${cells}</tr>`;
+      }).join("");
+      tbody.innerHTML = html;
+      tbody.querySelectorAll("tr.row").forEach((tr) => {
+        tr.addEventListener("click", () => openDrilldown(tr.dataset.id));
+      });
+    }
+
+    function setTableState(msg, isError = false) {
+      document.getElementById("tbody").innerHTML =
+        `<tr><td colspan="${COLUMNS.length}" class="state ${isError ? "error" : ""}">${escapeHtml(msg)}</td></tr>`;
+    }
+
+    // ────────────────────────────────────────────────────────────────
+    // Drilldown
+    // ────────────────────────────────────────────────────────────────
+    async function openDrilldown(id) {
+      const c = state.allCustomers.find((x) => x.id === id);
+      if (!c) return;
+      state.drilldownId = id;
+
+      // Header
+      document.getElementById("dd-name").textContent = c.Company || "—";
+      const segEl = document.getElementById("dd-segment");
+      if (c.Segment) {
+        segEl.className = "row-seg " + segClass(c.Segment);
+        segEl.textContent = c.Segment;
+      } else {
+        segEl.className = "dim";
+        segEl.textContent = "No segment";
+      }
+      document.getElementById("dd-shopvox").textContent =
+        c["ShopVOX Company ID"] ? "ShopVOX: " + c["ShopVOX Company ID"].slice(0, 8) + "…" : "No ShopVOX link";
+
+      // Body — static stats first, then fetch activity in background
+      renderDrilldownBody(c);
+
+      // Open
+      document.getElementById("dd").classList.add("open");
+      document.getElementById("dd").setAttribute("aria-hidden", "false");
+      document.getElementById("dd-backdrop").classList.add("open");
+
+      // Fetch live activity
+      try {
+        const res = await fetch("/customer-activity?customer_id=" + encodeURIComponent(id));
+        const data = await res.json();
+        if (data.ok) {
+          renderDrilldownActivity(c, data);
+        }
+      } catch (err) {
+        console.error("Activity fetch failed:", err);
+      }
+    }
+
+    function closeDrilldown() {
+      document.getElementById("dd").classList.remove("open");
+      document.getElementById("dd").setAttribute("aria-hidden", "true");
+      document.getElementById("dd-backdrop").classList.remove("open");
+      state.drilldownId = null;
+    }
+
+    function renderDrilldownBody(c) {
+      const body = document.getElementById("dd-body");
+      body.innerHTML = `
+        <!-- Headline stats -->
+        <div class="dd-stats">
+          <div class="dd-stat">
+            <div class="label">Lifetime Value</div>
+            <div class="value">${formatCurrency(c["Value Ordered Lifetime"])}</div>
+          </div>
+          <div class="dd-stat">
+            <div class="label">Lifetime Orders</div>
+            <div class="value">${c["Orders Lifetime"] || 0}</div>
+          </div>
+          <div class="dd-stat">
+            <div class="label">Conv. Rate</div>
+            <div class="value">${c["Conversion Rate Lifetime"] == null ? "—" : c["Conversion Rate Lifetime"].toFixed(1) + "%"}</div>
+          </div>
+        </div>
+
+        <!-- Recency -->
+        <div class="dd-section">
+          <h3>Recency</h3>
+          <div class="dd-rows">
+            <div class="key">First Invoiced</div><div class="val">${c["First Invoiced"] ? formatDate(c["First Invoiced"]) : "—"}</div>
+            <div class="key">Last Invoiced</div><div class="val">${c["Last Invoiced"] ? formatDate(c["Last Invoiced"]) : "—"}</div>
+            <div class="key">Last Confirmed</div><div class="val">${c["Last Confirmed"] ? formatDate(c["Last Confirmed"]) : "—"}</div>
+            <div class="key">Last Quoted</div><div class="val">${c["Last Quoted"] ? formatDate(c["Last Quoted"]) : "—"}</div>
+            <div class="key">Days Since Order</div><div class="val">${c["Days Since Order"] == null ? "—" : c["Days Since Order"] + " days"}</div>
+            <div class="key">Days Since Quote</div><div class="val">${c["Days Since Quote"] == null ? "—" : c["Days Since Quote"] + " days"}</div>
+          </div>
+        </div>
+
+        <!-- Trailing windows -->
+        <div class="dd-section">
+          <h3>Trailing Windows</h3>
+          <div class="dd-rows">
+            <div class="key">Orders 12m</div><div class="val">${c["Orders 12m"] || 0}  ·  ${formatCurrency(c["Value Ordered 12m"])}</div>
+            <div class="key">Orders 24m</div><div class="val">${c["Orders 24m"] || 0}  ·  ${formatCurrency(c["Value Ordered 24m"])}</div>
+            <div class="key">Orders 36m</div><div class="val">${c["Orders 36m"] || 0}  ·  ${formatCurrency(c["Value Ordered 36m"])}</div>
+            <div class="key">Quotes Lifetime</div><div class="val">${c["Quotes Lifetime"] || 0}</div>
+          </div>
+        </div>
+
+        <!-- Editable Notes -->
+        <div class="dd-section">
+          <h3>Notes</h3>
+          <div class="dd-field">
+            <div class="dd-field-label">
+              <span>Free text — visible to AI chat</span>
+              <span class="dd-saved" id="notes-saved">✓ Saved</span>
+            </div>
+            <textarea id="notes-input" placeholder="Add notes about this customer...">${escapeHtml(c.Notes || "")}</textarea>
+          </div>
+        </div>
+
+        <!-- Editable Flag -->
+        <div class="dd-section">
+          <h3>Flag</h3>
+          <div class="dd-field">
+            <div class="dd-field-label">
+              <span>Visibility flag</span>
+              <span class="dd-saved" id="flag-saved">✓ Saved</span>
+            </div>
+            <select id="flag-input">
+              <option value="">— No flag —</option>
+              <option value="VIP" ${c.Flag === "VIP" ? "selected" : ""}>VIP</option>
+              <option value="Watch" ${c.Flag === "Watch" ? "selected" : ""}>Watch</option>
+              <option value="Don't chase" ${c.Flag === "Don't chase" ? "selected" : ""}>Don't chase</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Activity tabs (populated by renderDrilldownActivity) -->
+        <div class="dd-section" id="dd-activity-wrap">
+          <h3>Activity</h3>
+          <div class="dd-tabs">
+            <button class="dd-tab active" data-tab="live">Live</button>
+            <button class="dd-tab" data-tab="legacy">Legacy Jobs</button>
+          </div>
+          <div id="dd-tab-content">
+            <div class="state">Loading activity…</div>
+          </div>
+        </div>
+      `;
+
+      attachDrilldownEditHandlers(c);
+      attachActivityTabs();
+    }
+
+    function attachDrilldownEditHandlers(c) {
+      const notesInput = document.getElementById("notes-input");
+      const flagInput = document.getElementById("flag-input");
+
+      notesInput.addEventListener("blur", async () => {
+        const newVal = notesInput.value;
+        if (newVal === (c.Notes || "")) return;
+        const ok = await saveCustomerField(c.id, { Notes: newVal });
+        if (ok) {
+          c.Notes = newVal;
+          flashSaved("notes-saved");
+        }
+      });
+
+      flagInput.addEventListener("change", async () => {
+        const newVal = flagInput.value || null;
+        if (newVal === (c.Flag || null)) return;
+        const ok = await saveCustomerField(c.id, { Flag: newVal });
+        if (ok) {
+          c.Flag = newVal;
+          flashSaved("flag-saved");
+          renderTable();
+        }
+      });
+    }
+
+    function attachActivityTabs() {
+      let activeTab = "live";
+      const wrap = document.getElementById("dd-activity-wrap");
+      wrap.querySelectorAll(".dd-tab").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          activeTab = btn.dataset.tab;
+          wrap.querySelectorAll(".dd-tab").forEach((b) => b.classList.toggle("active", b === btn));
+          if (state._lastActivity) renderActivityForTab(activeTab, state._lastActivity);
+        });
+      });
+    }
+
+    function renderDrilldownActivity(c, data) {
+      state._lastActivity = data;
+      renderActivityForTab("live", data);
+    }
+
+    function renderActivityForTab(tab, data) {
+      const container = document.getElementById("dd-tab-content");
+      if (!container) return;
+      if (tab === "live") {
+        // Combine quotes, SOs, invoices into a single timeline
+        const items = [];
+        for (const inv of data.invoices || []) {
+          items.push({
+            date: inv["Invoice Date"],
+            type: "Invoice",
+            ref: inv["Invoice Number"] || inv["Invoice ID"]?.slice(0, 8),
+            value: inv["Total Ex VAT"],
+            status: inv.Status,
+            voided: inv["Is Voided"],
+          });
+        }
+        for (const so of data.salesOrders || []) {
+          items.push({
+            date: so["Created At ShopVOX"],
+            type: "Sales Order",
+            ref: so["SO Number"] || so["SO ID"]?.slice(0, 8),
+            value: so["Total Ex VAT"],
+            status: so.Status,
+            voided: so["Is Voided"],
+          });
+        }
+        for (const q of data.quotes || []) {
+          items.push({
+            date: q["Created At ShopVOX"],
+            type: "Quote",
+            ref: q["Quote Number"] || q["Quote ID"]?.slice(0, 8),
+            value: q["Total Ex VAT"],
+            status: q.Status,
+            voided: q["Is Voided"],
+          });
+        }
+        items.sort((a, b) => new Date(b.date) - new Date(a.date));
+        if (items.length === 0) {
+          container.innerHTML = '<div class="empty">No live activity yet</div>';
+          return;
+        }
+        container.innerHTML = `
+          <table class="dd-activity">
+            <thead>
+              <tr>
+                <th>Date</th><th>Type</th><th>Ref</th><th>Status</th><th class="numeric">Value</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${items.slice(0, 30).map((i) => `
+                <tr class="${i.voided ? "voided" : ""}">
+                  <td>${i.date ? formatDate(i.date) : "—"}</td>
+                  <td>${escapeHtml(i.type)}</td>
+                  <td>${escapeHtml(i.ref || "—")}</td>
+                  <td>${escapeHtml(i.status || "")}${i.voided ? " (voided)" : ""}</td>
+                  <td class="numeric">${formatCurrency(i.value)}</td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        `;
+      } else if (tab === "legacy") {
+        const jobs = data.legacyJobs || [];
+        if (jobs.length === 0) {
+          container.innerHTML = '<div class="empty">No legacy jobs</div>';
+          return;
+        }
+        container.innerHTML = `
+          <table class="dd-activity">
+            <thead>
+              <tr>
+                <th>Date</th><th>Ref</th><th>Status</th><th>Description</th><th class="numeric">Value</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${jobs.slice(0, 100).map((j) => `
+                <tr>
+                  <td>${j.Date ? formatDate(j.Date) : "—"}</td>
+                  <td>${escapeHtml(j.Reference || "—")}</td>
+                  <td>${escapeHtml(j.Status || "")}</td>
+                  <td>${escapeHtml((j.Description || "").slice(0, 60))}</td>
+                  <td class="numeric">${formatCurrency(j.Value)}</td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+          ${jobs.length > 100 ? `<div class="state">Showing 100 of ${jobs.length}</div>` : ""}
+        `;
+      }
+    }
+
+    async function saveCustomerField(recordId, fields) {
+      try {
+        const res = await fetch("/customer-update", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ recordId, fields }),
+        });
+        const data = await res.json();
+        return data.ok === true;
+      } catch (err) {
+        console.error("Save failed:", err);
+        return false;
+      }
+    }
+
+    function flashSaved(elId) {
+      const el = document.getElementById(elId);
+      if (!el) return;
+      el.classList.add("show");
+      setTimeout(() => el.classList.remove("show"), 1500);
+    }
+
+    // ────────────────────────────────────────────────────────────────
+    // Formatting helpers
+    // ────────────────────────────────────────────────────────────────
+    function formatCurrency(v) {
+      if (v == null || isNaN(v)) return '<span class="dim">—</span>';
+      const n = Number(v);
+      if (Math.abs(n) < 1000) {
+        return "£" + n.toFixed(0);
+      }
+      return "£" + Math.round(n).toLocaleString("en-GB");
+    }
+
+    function formatDate(s) {
+      if (!s) return "—";
+      const d = new Date(s);
+      if (isNaN(d.getTime())) return "—";
+      const day = d.getDate();
+      const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      return day + " " + months[d.getMonth()] + " " + d.getFullYear();
+    }
+
+    function segClass(seg) {
+      if (!seg) return "";
+      return "seg-" + seg.replace(/[^A-Za-z]/g, "");
+    }
+
+    function segChipHtml(seg) {
+      return `<span class="row-seg ${segClass(seg)}">${escapeHtml(seg)}</span>`;
+    }
+
+    function flagHtml(flag) {
+      const cls = "flag-" + flag.replace(/[^A-Za-z]/g, "");
+      const icon = flag === "VIP" ? "★" : flag === "Watch" ? "◎" : flag === "Don't chase" ? "⊘" : "";
+      return `<span class="flag ${cls}" title="${escapeAttr(flag)}">${icon}</span>`;
+    }
+
+    function escapeHtml(s) {
+      if (s == null) return "";
+      return String(s).replace(/[&<>"']/g, (c) => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+      }[c]));
+    }
+    function escapeAttr(s) { return escapeHtml(s); }
+  </script>
+</body>
+</html>
