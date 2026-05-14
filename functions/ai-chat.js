@@ -20,7 +20,7 @@ const T_SALES_ORDERS = "tblYv3uaqQvRCw8ZK";
 const T_INVOICES = "tblwh4IsxQGTdH7b8";
 
 const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
-const MODEL = "claude-sonnet-4-6";
+const MODEL = "claude-haiku-4-5-20251001";
 const MAX_TOKENS = 4000;
 const MAX_ITERATIONS = 5;
 
