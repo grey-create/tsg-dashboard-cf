@@ -6,6 +6,8 @@
   <title>Customers · TSG Dashboard</title>
   <link rel="stylesheet" href="/nav.css" />
   <script src="/nav.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked@11.1.1/marked.min.js"></script>
   <style>
     :root {
       --bg: #0a0a0a;
@@ -23,7 +25,6 @@
       --warning: #f97316;
     }
 
-    /* Segment colours */
     .seg-Champion       { --c: #fbbf24; --cb: rgba(251, 191, 36, 0.15); }
     .seg-Loyal          { --c: #22c55e; --cb: rgba(34, 197, 94, 0.15); }
     .seg-Active         { --c: #3b82f6; --cb: rgba(59, 130, 246, 0.15); }
@@ -63,14 +64,13 @@
       margin-bottom: 24px;
     }
 
-    /* AI section (placeholder for Phase 2) */
+    /* AI section */
     .ai-section {
       background: var(--bg-panel);
       border: 1px solid var(--border);
       border-radius: 8px;
       padding: 16px 20px;
       margin-bottom: 24px;
-      opacity: 0.7;
     }
     .ai-section h2 {
       font-size: 14px;
@@ -83,26 +83,38 @@
       align-items: center;
       gap: 8px;
     }
-    .ai-section .badge {
-      font-size: 10px;
-      background: var(--bg-active);
-      color: var(--text-faint);
-      padding: 2px 6px;
-      border-radius: 4px;
-      letter-spacing: 0;
-      text-transform: none;
+    .ai-input-wrap {
+      display: flex;
+      gap: 8px;
     }
     .ai-input {
-      width: 100%;
+      flex: 1;
       background: var(--bg);
       border: 1px solid var(--border);
-      color: var(--text-dim);
+      color: var(--text);
       padding: 10px 14px;
       border-radius: 6px;
       font-size: 14px;
       font-family: inherit;
-      cursor: not-allowed;
+      outline: none;
     }
+    .ai-input:focus { border-color: var(--accent); }
+    .ai-input:disabled { color: var(--text-dim); cursor: not-allowed; }
+    .ai-submit {
+      background: var(--accent);
+      color: #0a0a0a;
+      border: none;
+      padding: 0 18px;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: opacity 0.1s;
+    }
+    .ai-submit:hover { opacity: 0.9; }
+    .ai-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+
     .ai-suggestions {
       margin-top: 10px;
       display: flex;
@@ -115,7 +127,104 @@
       background: var(--bg);
       border: 1px solid var(--border);
       border-radius: 12px;
+      color: var(--text-dim);
+      cursor: pointer;
+      transition: all 0.1s;
+    }
+    .ai-suggestion:hover {
+      background: var(--bg-hover);
+      border-color: var(--accent);
+      color: var(--text);
+    }
+
+    .ai-response {
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+      display: none;
+    }
+    .ai-response.show { display: block; }
+    .ai-response.thinking::before {
+      content: "Thinking…";
+      color: var(--text-dim);
+      font-style: italic;
+    }
+    .ai-response.error {
+      color: var(--error);
+    }
+    .ai-content h1, .ai-content h2, .ai-content h3 {
+      font-size: 15px;
+      font-weight: 600;
+      margin: 14px 0 6px 0;
+      color: var(--text);
+    }
+    .ai-content p { margin: 8px 0; }
+    .ai-content ul, .ai-content ol { margin: 8px 0; padding-left: 20px; }
+    .ai-content li { margin: 2px 0; }
+    .ai-content strong { color: var(--text); font-weight: 600; }
+    .ai-content em { color: var(--text-dim); }
+    .ai-content code {
+      background: var(--bg);
+      padding: 1px 6px;
+      border-radius: 3px;
+      font-size: 12px;
+      font-family: ui-monospace, monospace;
+    }
+    .ai-content pre {
+      background: var(--bg);
+      padding: 10px;
+      border-radius: 6px;
+      overflow-x: auto;
+      font-size: 12px;
+      font-family: ui-monospace, monospace;
+    }
+    .ai-content table {
+      border-collapse: collapse;
+      margin: 10px 0;
+      font-size: 13px;
+      width: auto;
+    }
+    .ai-content table th, .ai-content table td {
+      padding: 6px 12px;
+      border: 1px solid var(--border);
+      text-align: left;
+    }
+    .ai-content table th {
+      background: var(--bg);
+      color: var(--text-dim);
+      font-weight: 600;
+    }
+    .ai-content table tr:nth-child(even) td { background: rgba(255, 255, 255, 0.015); }
+
+    .ai-chart-wrap {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 14px;
+      margin: 12px 0;
+      max-width: 800px;
+    }
+    .ai-chart-wrap canvas { max-height: 360px; }
+
+    .ai-meta {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+      font-size: 12px;
       color: var(--text-faint);
+    }
+    .ai-meta details summary {
+      cursor: pointer;
+      user-select: none;
+    }
+    .ai-meta details summary:hover { color: var(--text-dim); }
+    .ai-meta .tool-call {
+      margin: 4px 0;
+      padding: 6px 10px;
+      background: var(--bg);
+      border-radius: 4px;
+      font-family: ui-monospace, monospace;
+      font-size: 11px;
     }
 
     /* Segment chips */
@@ -158,7 +267,6 @@
       background: var(--c);
     }
 
-    /* Filters row */
     .filters {
       display: flex;
       flex-wrap: wrap;
@@ -197,7 +305,6 @@
       font-size: 13px;
     }
 
-    /* Table */
     .table-wrap {
       background: var(--bg-panel);
       border: 1px solid var(--border);
@@ -241,7 +348,6 @@
     td.company { font-weight: 500; }
     td.dim { color: var(--text-dim); }
 
-    /* Segment chip in row */
     .row-seg {
       display: inline-flex;
       align-items: center;
@@ -256,15 +362,11 @@
       white-space: nowrap;
     }
 
-    /* Flag icons */
-    .flag {
-      font-size: 14px;
-    }
+    .flag { font-size: 14px; }
     .flag-VIP { color: #fbbf24; }
     .flag-Watch { color: #06b6d4; }
     .flag-Dontchase { color: var(--text-faint); }
 
-    /* Loading / empty states */
     .state {
       padding: 60px 20px;
       text-align: center;
@@ -273,7 +375,7 @@
     }
     .state.error { color: var(--error); }
 
-    /* Drilldown slide-out */
+    /* Drilldown */
     .drilldown-backdrop {
       position: fixed;
       inset: 0;
@@ -283,15 +385,10 @@
       transition: opacity 0.2s;
       z-index: 50;
     }
-    .drilldown-backdrop.open {
-      opacity: 1;
-      pointer-events: auto;
-    }
+    .drilldown-backdrop.open { opacity: 1; pointer-events: auto; }
     .drilldown {
       position: fixed;
-      top: 0;
-      right: 0;
-      bottom: 0;
+      top: 0; right: 0; bottom: 0;
       width: min(640px, 100vw);
       background: var(--bg-panel);
       border-left: 1px solid var(--border-strong);
@@ -364,9 +461,7 @@
       font-variant-numeric: tabular-nums;
     }
 
-    .dd-section {
-      margin-top: 22px;
-    }
+    .dd-section { margin-top: 22px; }
     .dd-section h3 {
       font-size: 12px;
       font-weight: 600;
@@ -384,11 +479,7 @@
     .dd-rows .key { color: var(--text-dim); }
     .dd-rows .val { font-variant-numeric: tabular-nums; }
 
-    .dd-field {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
+    .dd-field { display: flex; flex-direction: column; gap: 6px; }
     .dd-field-label {
       display: flex;
       align-items: center;
@@ -417,7 +508,6 @@
     .dd-field textarea { min-height: 70px; }
     .dd-field textarea:focus, .dd-field select:focus { border-color: var(--accent); }
 
-    /* Activity tables in drilldown */
     .dd-activity {
       width: 100%;
       font-size: 12px;
@@ -475,21 +565,28 @@
     <h1>Customers</h1>
     <div class="subtitle">Active customers (excludes "Lost" and "Quote-only / Lost" by default)</div>
 
-    <!-- AI section — Phase 2 placeholder -->
+    <!-- AI section -->
     <section class="ai-section">
-      <h2>💬 Ask anything <span class="badge">coming soon</span></h2>
-      <input type="text" class="ai-input" placeholder='e.g. "Who has spent the most this year?"' disabled />
-      <div class="ai-suggestions">
-        <span class="ai-suggestion">Top 20 by 12m value</span>
-        <span class="ai-suggestion">Lapsed but worth £25k+</span>
-        <span class="ai-suggestion">Monthly conversion trend for our top 20 customers</span>
+      <h2>💬 Ask anything</h2>
+      <div class="ai-input-wrap">
+        <input type="text" class="ai-input" id="ai-input" placeholder='e.g. "Who has spent the most this year?"' autocomplete="off" />
+        <button class="ai-submit" id="ai-submit">Ask</button>
+      </div>
+      <div class="ai-suggestions" id="ai-suggestions">
+        <span class="ai-suggestion" data-q="Show me our top 20 customers by 12 month value">Top 20 by 12m value</span>
+        <span class="ai-suggestion" data-q="Which Lapsed customers were worth £25k+ in their lifetime?">Lapsed but worth £25k+</span>
+        <span class="ai-suggestion" data-q="Show me a chart of our monthly invoiced revenue for the last 12 months">Monthly invoiced revenue, 12mo</span>
+        <span class="ai-suggestion" data-q="Who has quoted most heavily this year but rarely converts?">Heavy quoters, low conversion</span>
+        <span class="ai-suggestion" data-q="Which customers have we quoted recently but never got an order from?">Recent prospects, never ordered</span>
+      </div>
+      <div class="ai-response" id="ai-response">
+        <div class="ai-content" id="ai-content"></div>
+        <div class="ai-meta" id="ai-meta"></div>
       </div>
     </section>
 
-    <!-- Segment chips -->
     <div class="segments" id="segments"></div>
 
-    <!-- Filters row -->
     <div class="filters">
       <input type="search" id="search" placeholder="Search company..." autocomplete="off" />
       <select id="flag-filter">
@@ -503,7 +600,6 @@
       <span class="result-count" id="result-count">—</span>
     </div>
 
-    <!-- Table -->
     <div class="table-wrap">
       <table id="customers-table">
         <thead>
@@ -516,7 +612,6 @@
     </div>
   </main>
 
-  <!-- Drilldown -->
   <div class="drilldown-backdrop" id="dd-backdrop"></div>
   <aside class="drilldown" id="dd" aria-hidden="true">
     <div class="drilldown-header">
@@ -533,9 +628,6 @@
   </aside>
 
   <script>
-    // ────────────────────────────────────────────────────────────────
-    // State
-    // ────────────────────────────────────────────────────────────────
     const state = {
       allCustomers: [],
       filtered: [],
@@ -546,11 +638,10 @@
       searchTerm: "",
       includeLost: false,
       drilldownId: null,
+      aiBusy: false,
+      activeCharts: [],
     };
 
-    // ────────────────────────────────────────────────────────────────
-    // Column definitions
-    // ────────────────────────────────────────────────────────────────
     const COLUMNS = [
       { key: "Company", label: "Company", numeric: false, render: (v) => escapeHtml(v || "—") },
       { key: "Segment", label: "Segment", numeric: false, render: (v) => v ? segChipHtml(v) : '<span class="dim">—</span>' },
@@ -563,9 +654,6 @@
       { key: "Conversion Rate Lifetime", label: "Conv. Rate", numeric: true, render: (v) => v == null ? '<span class="dim">—</span>' : v.toFixed(1) + "%" },
     ];
 
-    // ────────────────────────────────────────────────────────────────
-    // Init
-    // ────────────────────────────────────────────────────────────────
     document.addEventListener("DOMContentLoaded", async () => {
       renderTableHeader();
       attachEventListeners();
@@ -573,6 +661,7 @@
     });
 
     function attachEventListeners() {
+      // Existing filters
       document.getElementById("search").addEventListener("input", (e) => {
         state.searchTerm = e.target.value.trim().toLowerCase();
         applyFilters();
@@ -590,10 +679,147 @@
       document.addEventListener("keydown", (e) => {
         if (e.key === "Escape" && state.drilldownId) closeDrilldown();
       });
+
+      // AI section
+      const aiInput = document.getElementById("ai-input");
+      document.getElementById("ai-submit").addEventListener("click", () => submitAI(aiInput.value));
+      aiInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && !e.shiftKey) {
+          e.preventDefault();
+          submitAI(aiInput.value);
+        }
+      });
+      document.querySelectorAll(".ai-suggestion").forEach((s) => {
+        s.addEventListener("click", () => {
+          const q = s.dataset.q;
+          aiInput.value = q;
+          submitAI(q);
+        });
+      });
     }
 
     // ────────────────────────────────────────────────────────────────
-    // Load customers
+    // AI chat
+    // ────────────────────────────────────────────────────────────────
+    async function submitAI(message) {
+      const trimmed = (message || "").trim();
+      if (!trimmed || state.aiBusy) return;
+      state.aiBusy = true;
+
+      // Reset old charts
+      for (const c of state.activeCharts) { try { c.destroy(); } catch {} }
+      state.activeCharts = [];
+
+      const respEl = document.getElementById("ai-response");
+      const contentEl = document.getElementById("ai-content");
+      const metaEl = document.getElementById("ai-meta");
+      respEl.classList.remove("error");
+      respEl.classList.add("show", "thinking");
+      contentEl.innerHTML = "";
+      metaEl.innerHTML = "";
+
+      const submitBtn = document.getElementById("ai-submit");
+      submitBtn.disabled = true;
+      submitBtn.textContent = "…";
+
+      try {
+        const res = await fetch("/ai-chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: trimmed }),
+        });
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.error || "request failed");
+
+        respEl.classList.remove("thinking");
+        renderAIResponse(data.response, data.toolCalls || []);
+      } catch (err) {
+        respEl.classList.remove("thinking");
+        respEl.classList.add("error");
+        contentEl.innerHTML = "Error: " + escapeHtml(err.message);
+      } finally {
+        state.aiBusy = false;
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Ask";
+      }
+    }
+
+    function renderAIResponse(text, toolCalls) {
+      const contentEl = document.getElementById("ai-content");
+      const metaEl = document.getElementById("ai-meta");
+
+      // Extract ```chart blocks before markdown parsing
+      const chartBlocks = [];
+      let cleanedText = text;
+      const chartRegex = /```chart\s*\n?([\s\S]*?)```/g;
+      let idx = 0;
+      cleanedText = cleanedText.replace(chartRegex, (full, json) => {
+        chartBlocks.push({ index: idx, json: json.trim() });
+        const placeholder = `<div class="ai-chart-wrap" data-chart-index="${idx}"></div>`;
+        idx++;
+        return placeholder;
+      });
+
+      // Render markdown (with HTML enabled so our chart placeholders pass through)
+      marked.setOptions({ breaks: true, gfm: true });
+      const rawHtml = marked.parse(cleanedText);
+      contentEl.innerHTML = rawHtml;
+
+      // Render charts
+      for (const cb of chartBlocks) {
+        const slot = contentEl.querySelector(`[data-chart-index="${cb.index}"]`);
+        if (!slot) continue;
+        try {
+          const config = JSON.parse(cb.json);
+          // Apply dark-mode defaults if not specified
+          if (!config.options) config.options = {};
+          if (!config.options.plugins) config.options.plugins = {};
+          if (!config.options.plugins.legend) config.options.plugins.legend = {};
+          if (!config.options.plugins.legend.labels) config.options.plugins.legend.labels = {};
+          if (!config.options.plugins.legend.labels.color) config.options.plugins.legend.labels.color = "#a3a3a3";
+          if (!config.options.scales) config.options.scales = {};
+          applyDarkAxisDefaults(config.options.scales);
+          const canvas = document.createElement("canvas");
+          slot.appendChild(canvas);
+          const chart = new Chart(canvas, config);
+          state.activeCharts.push(chart);
+        } catch (err) {
+          slot.innerHTML = '<div class="state error">Chart render error: ' + escapeHtml(err.message) + '</div>';
+        }
+      }
+
+      // Tool call summary
+      if (toolCalls && toolCalls.length > 0) {
+        metaEl.innerHTML = `
+          <details>
+            <summary>${toolCalls.length} tool call${toolCalls.length > 1 ? "s" : ""} used</summary>
+            ${toolCalls.map((tc) =>
+              `<div class="tool-call">${escapeHtml(tc.name)}(${escapeHtml(JSON.stringify(tc.input).slice(0, 300))})${tc.ok ? "" : " · failed"}</div>`
+            ).join("")}
+          </details>
+        `;
+      }
+    }
+
+    function applyDarkAxisDefaults(scales) {
+      for (const key of Object.keys(scales)) {
+        const sc = scales[key];
+        if (!sc.ticks) sc.ticks = {};
+        if (!sc.ticks.color) sc.ticks.color = "#a3a3a3";
+        if (!sc.grid) sc.grid = {};
+        if (!sc.grid.color) sc.grid.color = "#262626";
+      }
+      // Also ensure x and y exist with defaults if scales is empty
+      if (!scales.x) {
+        scales.x = { ticks: { color: "#a3a3a3" }, grid: { color: "#262626" } };
+      }
+      if (!scales.y) {
+        scales.y = { ticks: { color: "#a3a3a3" }, grid: { color: "#262626" } };
+      }
+    }
+
+    // ────────────────────────────────────────────────────────────────
+    // Customer loading & filtering (unchanged from Phase 1)
     // ────────────────────────────────────────────────────────────────
     async function loadCustomers() {
       setTableState("Loading customers…");
@@ -610,30 +836,17 @@
       }
     }
 
-    // ────────────────────────────────────────────────────────────────
-    // Filtering & sorting
-    // ────────────────────────────────────────────────────────────────
     function applyFilters() {
       let list = state.allCustomers;
-
-      if (state.activeSegment) {
-        list = list.filter((c) => c.Segment === state.activeSegment);
-      }
-      if (state.flagFilter === "__none") {
-        list = list.filter((c) => !c.Flag);
-      } else if (state.flagFilter) {
-        list = list.filter((c) => c.Flag === state.flagFilter);
-      }
-      if (state.searchTerm) {
-        list = list.filter((c) => (c.Company || "").toLowerCase().includes(state.searchTerm));
-      }
+      if (state.activeSegment) list = list.filter((c) => c.Segment === state.activeSegment);
+      if (state.flagFilter === "__none") list = list.filter((c) => !c.Flag);
+      else if (state.flagFilter) list = list.filter((c) => c.Flag === state.flagFilter);
+      if (state.searchTerm) list = list.filter((c) => (c.Company || "").toLowerCase().includes(state.searchTerm));
       list = sortList(list, state.sortField, state.sortDir);
-
       state.filtered = list;
       renderSegmentChips();
       renderTable();
-      document.getElementById("result-count").textContent =
-        list.length + " of " + state.allCustomers.length;
+      document.getElementById("result-count").textContent = list.length + " of " + state.allCustomers.length;
     }
 
     function sortList(list, field, dir) {
@@ -641,7 +854,7 @@
       return [...list].sort((a, b) => {
         const av = a[field], bv = b[field];
         if (av == null && bv == null) return 0;
-        if (av == null) return 1; // nulls last
+        if (av == null) return 1;
         if (bv == null) return -1;
         if (typeof av === "string") return mult * av.localeCompare(bv);
         return mult * (av - bv);
@@ -659,29 +872,22 @@
       applyFilters();
     }
 
-    // ────────────────────────────────────────────────────────────────
-    // Render: segment chips
-    // ────────────────────────────────────────────────────────────────
     function renderSegmentChips() {
       const counts = {};
-      // Count from ALL customers, not filtered, so the chip counts stay constant
       for (const c of state.allCustomers) {
         if (!c.Segment) continue;
         counts[c.Segment] = (counts[c.Segment] || 0) + 1;
       }
       const order = ["Champion", "Loyal", "Active", "New", "Prospect", "At Risk", "Lapsed", "Time-waster", "Lost", "Quote-only / Lost"];
-      const html = order
-        .filter((s) => counts[s])
-        .map((seg) => {
-          const cls = segClass(seg);
-          const isActive = state.activeSegment === seg;
-          return `<span class="seg-chip ${cls} ${isActive ? "active" : ""}" data-seg="${escapeAttr(seg)}">
-            <span class="dot"></span>
-            <span class="label">${escapeHtml(seg)}</span>
-            <span class="count">${counts[seg]}</span>
-          </span>`;
-        })
-        .join("");
+      const html = order.filter((s) => counts[s]).map((seg) => {
+        const cls = segClass(seg);
+        const isActive = state.activeSegment === seg;
+        return `<span class="seg-chip ${cls} ${isActive ? "active" : ""}" data-seg="${escapeAttr(seg)}">
+          <span class="dot"></span>
+          <span class="label">${escapeHtml(seg)}</span>
+          <span class="count">${counts[seg]}</span>
+        </span>`;
+      }).join("");
       const el = document.getElementById("segments");
       el.innerHTML = html;
       el.querySelectorAll(".seg-chip").forEach((chip) => {
@@ -693,9 +899,6 @@
       });
     }
 
-    // ────────────────────────────────────────────────────────────────
-    // Render: table
-    // ────────────────────────────────────────────────────────────────
     function renderTableHeader() {
       const html = COLUMNS.map((col) => {
         const sorted = state.sortField === col.key;
@@ -735,14 +938,13 @@
     }
 
     // ────────────────────────────────────────────────────────────────
-    // Drilldown
+    // Drilldown (unchanged from Phase 1)
     // ────────────────────────────────────────────────────────────────
     async function openDrilldown(id) {
       const c = state.allCustomers.find((x) => x.id === id);
       if (!c) return;
       state.drilldownId = id;
 
-      // Header
       document.getElementById("dd-name").textContent = c.Company || "—";
       const segEl = document.getElementById("dd-segment");
       if (c.Segment) {
@@ -755,21 +957,16 @@
       document.getElementById("dd-shopvox").textContent =
         c["ShopVOX Company ID"] ? "ShopVOX: " + c["ShopVOX Company ID"].slice(0, 8) + "…" : "No ShopVOX link";
 
-      // Body — static stats first, then fetch activity in background
       renderDrilldownBody(c);
 
-      // Open
       document.getElementById("dd").classList.add("open");
       document.getElementById("dd").setAttribute("aria-hidden", "false");
       document.getElementById("dd-backdrop").classList.add("open");
 
-      // Fetch live activity
       try {
         const res = await fetch("/customer-activity?customer_id=" + encodeURIComponent(id));
         const data = await res.json();
-        if (data.ok) {
-          renderDrilldownActivity(c, data);
-        }
+        if (data.ok) renderDrilldownActivity(c, data);
       } catch (err) {
         console.error("Activity fetch failed:", err);
       }
@@ -785,23 +982,11 @@
     function renderDrilldownBody(c) {
       const body = document.getElementById("dd-body");
       body.innerHTML = `
-        <!-- Headline stats -->
         <div class="dd-stats">
-          <div class="dd-stat">
-            <div class="label">Lifetime Value</div>
-            <div class="value">${formatCurrency(c["Value Ordered Lifetime"])}</div>
-          </div>
-          <div class="dd-stat">
-            <div class="label">Lifetime Orders</div>
-            <div class="value">${c["Orders Lifetime"] || 0}</div>
-          </div>
-          <div class="dd-stat">
-            <div class="label">Conv. Rate</div>
-            <div class="value">${c["Conversion Rate Lifetime"] == null ? "—" : c["Conversion Rate Lifetime"].toFixed(1) + "%"}</div>
-          </div>
+          <div class="dd-stat"><div class="label">Lifetime Value</div><div class="value">${formatCurrency(c["Value Ordered Lifetime"])}</div></div>
+          <div class="dd-stat"><div class="label">Lifetime Orders</div><div class="value">${c["Orders Lifetime"] || 0}</div></div>
+          <div class="dd-stat"><div class="label">Conv. Rate</div><div class="value">${c["Conversion Rate Lifetime"] == null ? "—" : c["Conversion Rate Lifetime"].toFixed(1) + "%"}</div></div>
         </div>
-
-        <!-- Recency -->
         <div class="dd-section">
           <h3>Recency</h3>
           <div class="dd-rows">
@@ -813,8 +998,6 @@
             <div class="key">Days Since Quote</div><div class="val">${c["Days Since Quote"] == null ? "—" : c["Days Since Quote"] + " days"}</div>
           </div>
         </div>
-
-        <!-- Trailing windows -->
         <div class="dd-section">
           <h3>Trailing Windows</h3>
           <div class="dd-rows">
@@ -824,27 +1007,17 @@
             <div class="key">Quotes Lifetime</div><div class="val">${c["Quotes Lifetime"] || 0}</div>
           </div>
         </div>
-
-        <!-- Editable Notes -->
         <div class="dd-section">
           <h3>Notes</h3>
           <div class="dd-field">
-            <div class="dd-field-label">
-              <span>Free text — visible to AI chat</span>
-              <span class="dd-saved" id="notes-saved">✓ Saved</span>
-            </div>
+            <div class="dd-field-label"><span>Free text — visible to AI chat</span><span class="dd-saved" id="notes-saved">✓ Saved</span></div>
             <textarea id="notes-input" placeholder="Add notes about this customer...">${escapeHtml(c.Notes || "")}</textarea>
           </div>
         </div>
-
-        <!-- Editable Flag -->
         <div class="dd-section">
           <h3>Flag</h3>
           <div class="dd-field">
-            <div class="dd-field-label">
-              <span>Visibility flag</span>
-              <span class="dd-saved" id="flag-saved">✓ Saved</span>
-            </div>
+            <div class="dd-field-label"><span>Visibility flag</span><span class="dd-saved" id="flag-saved">✓ Saved</span></div>
             <select id="flag-input">
               <option value="">— No flag —</option>
               <option value="VIP" ${c.Flag === "VIP" ? "selected" : ""}>VIP</option>
@@ -853,20 +1026,15 @@
             </select>
           </div>
         </div>
-
-        <!-- Activity tabs (populated by renderDrilldownActivity) -->
         <div class="dd-section" id="dd-activity-wrap">
           <h3>Activity</h3>
           <div class="dd-tabs">
             <button class="dd-tab active" data-tab="live">Live</button>
             <button class="dd-tab" data-tab="legacy">Legacy Jobs</button>
           </div>
-          <div id="dd-tab-content">
-            <div class="state">Loading activity…</div>
-          </div>
+          <div id="dd-tab-content"><div class="state">Loading activity…</div></div>
         </div>
       `;
-
       attachDrilldownEditHandlers(c);
       attachActivityTabs();
     }
@@ -879,21 +1047,14 @@
         const newVal = notesInput.value;
         if (newVal === (c.Notes || "")) return;
         const ok = await saveCustomerField(c.id, { Notes: newVal });
-        if (ok) {
-          c.Notes = newVal;
-          flashSaved("notes-saved");
-        }
+        if (ok) { c.Notes = newVal; flashSaved("notes-saved"); }
       });
 
       flagInput.addEventListener("change", async () => {
         const newVal = flagInput.value || null;
         if (newVal === (c.Flag || null)) return;
         const ok = await saveCustomerField(c.id, { Flag: newVal });
-        if (ok) {
-          c.Flag = newVal;
-          flashSaved("flag-saved");
-          renderTable();
-        }
+        if (ok) { c.Flag = newVal; flashSaved("flag-saved"); renderTable(); }
       });
     }
 
@@ -918,90 +1079,23 @@
       const container = document.getElementById("dd-tab-content");
       if (!container) return;
       if (tab === "live") {
-        // Combine quotes, SOs, invoices into a single timeline
         const items = [];
         for (const inv of data.invoices || []) {
-          items.push({
-            date: inv["Invoice Date"],
-            type: "Invoice",
-            ref: inv["Invoice Number"] || inv["Invoice ID"]?.slice(0, 8),
-            value: inv["Total Ex VAT"],
-            status: inv.Status,
-            voided: inv["Is Voided"],
-          });
+          items.push({ date: inv["Invoice Date"], type: "Invoice", ref: inv["Invoice Number"] || inv["Invoice ID"]?.slice(0, 8), value: inv["Total Ex VAT"], status: inv.Status, voided: inv["Is Voided"] });
         }
         for (const so of data.salesOrders || []) {
-          items.push({
-            date: so["Created At ShopVOX"],
-            type: "Sales Order",
-            ref: so["SO Number"] || so["SO ID"]?.slice(0, 8),
-            value: so["Total Ex VAT"],
-            status: so.Status,
-            voided: so["Is Voided"],
-          });
+          items.push({ date: so["Created At ShopVOX"], type: "Sales Order", ref: so["SO Number"] || so["SO ID"]?.slice(0, 8), value: so["Total Ex VAT"], status: so.Status, voided: so["Is Voided"] });
         }
         for (const q of data.quotes || []) {
-          items.push({
-            date: q["Created At ShopVOX"],
-            type: "Quote",
-            ref: q["Quote Number"] || q["Quote ID"]?.slice(0, 8),
-            value: q["Total Ex VAT"],
-            status: q.Status,
-            voided: q["Is Voided"],
-          });
+          items.push({ date: q["Created At ShopVOX"], type: "Quote", ref: q["Quote Number"] || q["Quote ID"]?.slice(0, 8), value: q["Total Ex VAT"], status: q.Status, voided: q["Is Voided"] });
         }
         items.sort((a, b) => new Date(b.date) - new Date(a.date));
-        if (items.length === 0) {
-          container.innerHTML = '<div class="empty">No live activity yet</div>';
-          return;
-        }
-        container.innerHTML = `
-          <table class="dd-activity">
-            <thead>
-              <tr>
-                <th>Date</th><th>Type</th><th>Ref</th><th>Status</th><th class="numeric">Value</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${items.slice(0, 30).map((i) => `
-                <tr class="${i.voided ? "voided" : ""}">
-                  <td>${i.date ? formatDate(i.date) : "—"}</td>
-                  <td>${escapeHtml(i.type)}</td>
-                  <td>${escapeHtml(i.ref || "—")}</td>
-                  <td>${escapeHtml(i.status || "")}${i.voided ? " (voided)" : ""}</td>
-                  <td class="numeric">${formatCurrency(i.value)}</td>
-                </tr>
-              `).join("")}
-            </tbody>
-          </table>
-        `;
+        if (items.length === 0) { container.innerHTML = '<div class="empty">No live activity yet</div>'; return; }
+        container.innerHTML = `<table class="dd-activity"><thead><tr><th>Date</th><th>Type</th><th>Ref</th><th>Status</th><th class="numeric">Value</th></tr></thead><tbody>${items.slice(0, 30).map((i) => `<tr class="${i.voided ? "voided" : ""}"><td>${i.date ? formatDate(i.date) : "—"}</td><td>${escapeHtml(i.type)}</td><td>${escapeHtml(i.ref || "—")}</td><td>${escapeHtml(i.status || "")}${i.voided ? " (voided)" : ""}</td><td class="numeric">${formatCurrency(i.value)}</td></tr>`).join("")}</tbody></table>`;
       } else if (tab === "legacy") {
         const jobs = data.legacyJobs || [];
-        if (jobs.length === 0) {
-          container.innerHTML = '<div class="empty">No legacy jobs</div>';
-          return;
-        }
-        container.innerHTML = `
-          <table class="dd-activity">
-            <thead>
-              <tr>
-                <th>Date</th><th>Ref</th><th>Status</th><th>Description</th><th class="numeric">Value</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${jobs.slice(0, 100).map((j) => `
-                <tr>
-                  <td>${j.Date ? formatDate(j.Date) : "—"}</td>
-                  <td>${escapeHtml(j.Reference || "—")}</td>
-                  <td>${escapeHtml(j.Status || "")}</td>
-                  <td>${escapeHtml((j.Description || "").slice(0, 60))}</td>
-                  <td class="numeric">${formatCurrency(j.Value)}</td>
-                </tr>
-              `).join("")}
-            </tbody>
-          </table>
-          ${jobs.length > 100 ? `<div class="state">Showing 100 of ${jobs.length}</div>` : ""}
-        `;
+        if (jobs.length === 0) { container.innerHTML = '<div class="empty">No legacy jobs</div>'; return; }
+        container.innerHTML = `<table class="dd-activity"><thead><tr><th>Date</th><th>Ref</th><th>Status</th><th>Description</th><th class="numeric">Value</th></tr></thead><tbody>${jobs.slice(0, 100).map((j) => `<tr><td>${j.Date ? formatDate(j.Date) : "—"}</td><td>${escapeHtml(j.Reference || "—")}</td><td>${escapeHtml(j.Status || "")}</td><td>${escapeHtml((j.Description || "").slice(0, 60))}</td><td class="numeric">${formatCurrency(j.Value)}</td></tr>`).join("")}</tbody></table>${jobs.length > 100 ? `<div class="state">Showing 100 of ${jobs.length}</div>` : ""}`;
       }
     }
 
@@ -1033,9 +1127,7 @@
     function formatCurrency(v) {
       if (v == null || isNaN(v)) return '<span class="dim">—</span>';
       const n = Number(v);
-      if (Math.abs(n) < 1000) {
-        return "£" + n.toFixed(0);
-      }
+      if (Math.abs(n) < 1000) return "£" + n.toFixed(0);
       return "£" + Math.round(n).toLocaleString("en-GB");
     }
 
@@ -1065,9 +1157,7 @@
 
     function escapeHtml(s) {
       if (s == null) return "";
-      return String(s).replace(/[&<>"']/g, (c) => ({
-        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
-      }[c]));
+      return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
     }
     function escapeAttr(s) { return escapeHtml(s); }
   </script>
