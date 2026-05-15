@@ -1739,15 +1739,18 @@
       btn.textContent = "Loading…";
 
       try {
+        console.log("[PDF] Starting download...");
         await loadHtml2Pdf();
+        console.log("[PDF] html2pdf library loaded");
         btn.textContent = "Building…";
 
         // 1. Snapshot live canvases to data URLs (clone won't carry pixels)
         const liveThread = document.getElementById("ai-thread");
         const liveCanvases = Array.from(liveThread.querySelectorAll("canvas"));
+        console.log("[PDF] Live canvases found:", liveCanvases.length);
         const canvasURLs = liveCanvases.map((c) => {
           try { return c.toDataURL("image/png"); }
-          catch { return null; }
+          catch (err) { console.warn("[PDF] Canvas snapshot failed:", err); return null; }
         });
 
         // 2. Clone the thread and swap canvases for images
@@ -1760,15 +1763,20 @@
           img.style.cssText = "max-width:100%;height:auto;display:block";
           c.parentNode.replaceChild(img, c);
         });
+        console.log("[PDF] Thread cloned, canvases swapped");
 
-        // 3. Build the export container with TSG header/footer
+        // 3. Build the export container with TSG header/footer.
+        //    Position with visibility:hidden (not off-screen) — browsers can
+        //    optimize away rendering of far-off-screen elements, which leaves
+        //    html2pdf with nothing to capture. visibility:hidden keeps the
+        //    layout computed but the element invisible.
         const wrap = document.createElement("div");
         wrap.id = "pdf-export";
-        wrap.style.cssText = "position:fixed;left:-99999px;top:0;z-index:-1";
+        wrap.style.cssText = "position:fixed;top:0;left:0;width:794px;visibility:hidden;pointer-events:none;background:#ffffff;";
 
         const headerHTML = `
           <div class="pdf-header">
-            <img src="${TSG_LOGO_URL}" class="pdf-logo" alt="TSG" />
+            <img src="${TSG_LOGO_URL}" class="pdf-logo" alt="TSG" crossorigin="anonymous" />
             <div>
               <h1>Customer Insights</h1>
               <div class="pdf-meta">The Sign Group&trade; · Generated ${new Date().toLocaleString("en-GB", { dateStyle: "long", timeStyle: "short" })}</div>
@@ -1785,9 +1793,19 @@
 
         document.body.appendChild(wrap);
 
+        // Force a layout pass before html2pdf reads dimensions
+        const computedHeight = wrap.offsetHeight;
+        const computedWidth = wrap.offsetWidth;
+        console.log("[PDF] Export container size:", computedWidth + "×" + computedHeight);
+
+        if (computedHeight === 0 || computedWidth === 0) {
+          throw new Error("Export container has zero dimensions — content may not have rendered");
+        }
+
         // 4. Generate and download
         const q = (state.thread[0].question || "response").slice(0, 60).replace(/[^a-zA-Z0-9-_ ]/g, "").trim();
         const filename = `tsg-ai-${q.replace(/\s+/g, "-")}.pdf`.toLowerCase();
+        console.log("[PDF] Generating PDF: " + filename);
 
         await window.html2pdf().set({
           margin: [10, 10],
@@ -1797,6 +1815,7 @@
           jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
           pagebreak: { mode: ["css", "legacy"] },
         }).from(wrap).save();
+        console.log("[PDF] PDF saved successfully");
 
         wrap.remove();
 
@@ -1807,7 +1826,7 @@
           btn.classList.remove("success");
         }, 1500);
       } catch (err) {
-        console.error("PDF download failed:", err);
+        console.error("[PDF] Download failed:", err);
         btn.textContent = "Failed";
         setTimeout(() => { btn.textContent = original; }, 2000);
       } finally {
