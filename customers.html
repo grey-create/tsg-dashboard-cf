@@ -4,6 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Customers · TSG Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/marked@11.1.1/marked.min.js"></script>
   <style>
@@ -14,11 +15,16 @@
       --bg-active: #2a2a2a;
       --border: #262626;
       --border-strong: #3a3a3a;
-      --text: #e5e5e5;
-      --text-dim: #a3a3a3;
-      --text-faint: #6b7280;
-      --accent: #22c55e;
-      --accent-dim: rgba(34, 197, 94, 0.15);
+      --text: #f1f5f9;
+      --text-dim: #94a3b8;
+      --text-faint: #64748b;
+      --accent: #CDE453;             /* TSG brand lime — used for AI accents */
+      --accent-bright: #CDE453;
+      --accent-warm: #6BD4EC;        /* TSG brand cyan */
+      --accent-pink: #ff3399;        /* TSG brand pink */
+      --accent-dim: rgba(205, 228, 83, 0.15);
+      --accent-glow: rgba(205, 228, 83, 0.25);
+      --success: #22c55e;            /* Saved indicators stay green */
       --error: #ef4444;
       --warning: #f97316;
     }
@@ -40,112 +46,226 @@
       padding: 0;
       background: var(--bg);
       color: var(--text);
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
       font-size: 14px;
-      line-height: 1.4;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
     }
 
     main {
       max-width: 1600px;
       margin: 0 auto;
-      padding: 24px;
+      padding: 28px 24px 40px;
     }
 
-    h1 { font-size: 22px; font-weight: 600; margin: 0 0 4px 0; }
-    .subtitle { color: var(--text-dim); font-size: 13px; margin-bottom: 24px; }
+    .page-header { margin-bottom: 28px; }
+    h1 {
+      font-size: 28px;
+      font-weight: 800;
+      margin: 0;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      color: var(--text);
+    }
+    .subtitle {
+      color: var(--text-dim);
+      font-size: 14px;
+      margin-top: 6px;
+      font-weight: 400;
+      letter-spacing: 0.1px;
+    }
 
-    /* AI section — contained to prevent layout thrash on response render */
+    /* ─────────────────────────────────────────────────────
+       AI section — the centrepiece of the page.
+       Treated like a hero panel: gradient background, animated
+       brand-coloured strip on top, soft ambient glow, generous
+       spacing. Built to feel like a premium AI surface, not a
+       form on a forgotten admin page.
+       ───────────────────────────────────────────────────── */
     .ai-section {
-      background: var(--bg-panel);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 16px 20px;
-      margin-bottom: 24px;
+      position: relative;
+      background:
+        radial-gradient(ellipse 80% 60% at 30% 0%, rgba(205,228,83,0.05), transparent 70%),
+        radial-gradient(ellipse 70% 60% at 70% 100%, rgba(107,212,236,0.04), transparent 70%),
+        linear-gradient(180deg, #181818 0%, #121212 100%);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 16px;
+      padding: 26px 28px 24px;
+      margin-bottom: 28px;
+      overflow: hidden;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4), 0 1px 0 rgba(255,255,255,0.04) inset;
       contain: layout style;
     }
-    .ai-section h2 {
-      font-size: 14px;
-      font-weight: 600;
-      margin: 0 0 10px 0;
-      color: var(--text-dim);
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
+    /* Animated brand-coloured strip across the top — same animation
+       cadence as the main dashboard hero so it feels like one family. */
+    .ai-section::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--accent-bright), var(--accent-warm), var(--accent-pink), var(--accent-bright));
+      background-size: 300% 100%;
+      animation: ai-hue 14s linear infinite;
+      opacity: 0.85;
+    }
+    @keyframes ai-hue { to { background-position: 300% 0; } }
+
+    /* Header — title + description, no more uppercase admin look */
+    .ai-head {
       display: flex;
       align-items: center;
-      gap: 8px;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 16px;
     }
-    .ai-input-wrap { display: flex; gap: 8px; }
+    .ai-head-text { flex: 1; min-width: 0; }
+    .ai-section h2 {
+      font-size: 18px;
+      font-weight: 700;
+      margin: 0 0 4px 0;
+      color: var(--text);
+      letter-spacing: -0.01em;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-transform: none;
+    }
+    .ai-section h2 .ai-spark {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 26px; height: 26px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, var(--accent-bright), #a3d139);
+      color: #0a0a0a;
+      font-size: 14px;
+      box-shadow: 0 2px 12px rgba(205,228,83,0.25);
+    }
+    .ai-section .ai-desc {
+      font-size: 13px;
+      color: var(--text-dim);
+      line-height: 1.5;
+      margin: 0;
+    }
+    .ai-section .ai-desc strong { color: var(--text); font-weight: 600; }
+
+    /* Input + Ask button — larger, more inviting, with focus glow */
+    .ai-input-wrap {
+      display: flex;
+      gap: 10px;
+      align-items: stretch;
+    }
     .ai-input {
       flex: 1;
-      background: var(--bg);
-      border: 1px solid var(--border);
+      background: rgba(0,0,0,0.45);
+      border: 1px solid rgba(255,255,255,0.08);
       color: var(--text);
-      padding: 10px 14px;
-      border-radius: 6px;
-      font-size: 14px;
+      padding: 14px 18px;
+      border-radius: 10px;
+      font-size: 15px;
       font-family: inherit;
       outline: none;
+      transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
     }
-    .ai-input:focus { border-color: var(--accent); }
-    .ai-input:disabled { color: var(--text-dim); cursor: not-allowed; }
+    .ai-input::placeholder { color: var(--text-faint); }
+    .ai-input:focus {
+      border-color: var(--accent-bright);
+      background: rgba(0,0,0,0.6);
+      box-shadow: 0 0 0 4px rgba(205,228,83,0.08);
+    }
+    .ai-input:disabled { color: var(--text-dim); cursor: not-allowed; opacity: 0.7; }
     .ai-submit {
-      background: var(--accent);
+      background: linear-gradient(135deg, #CDE453 0%, #a3d139 100%);
       color: #0a0a0a;
       border: none;
-      padding: 0 18px;
-      border-radius: 6px;
+      padding: 0 22px;
+      border-radius: 10px;
       font-size: 14px;
-      font-weight: 600;
+      font-weight: 700;
       font-family: inherit;
+      letter-spacing: 0.2px;
       cursor: pointer;
-      transition: opacity 0.1s;
+      transition: transform 0.1s, box-shadow 0.15s, opacity 0.15s;
+      box-shadow: 0 2px 12px rgba(205,228,83,0.18);
+      min-width: 90px;
     }
-    .ai-submit:hover { opacity: 0.9; }
-    .ai-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+    .ai-submit:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(205,228,83,0.28);
+    }
+    .ai-submit:active:not(:disabled) { transform: translateY(0); }
+    .ai-submit:disabled { opacity: 0.55; cursor: not-allowed; box-shadow: none; }
 
+    /* "Try one of these" label + suggestion chips */
+    .ai-try-label {
+      font-size: 11px;
+      color: var(--text-faint);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      font-weight: 600;
+      margin-top: 16px;
+      margin-bottom: 8px;
+    }
     .ai-suggestions {
-      margin-top: 10px;
       display: flex;
       flex-wrap: wrap;
-      gap: 6px;
+      gap: 7px;
     }
     .ai-suggestion {
       font-size: 12px;
-      padding: 4px 10px;
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 12px;
+      padding: 6px 13px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 99px;
       color: var(--text-dim);
       cursor: pointer;
-      transition: all 0.1s;
+      transition: all 0.15s;
+      font-weight: 500;
+      user-select: none;
     }
     .ai-suggestion:hover {
-      background: var(--bg-hover);
-      border-color: var(--accent);
-      color: var(--text);
+      background: rgba(205,228,83,0.08);
+      border-color: rgba(205,228,83,0.4);
+      color: var(--accent-bright);
+      transform: translateY(-1px);
     }
 
-    /* History */
+    /* History — cleaner, more subdued */
     .ai-history {
-      margin-top: 12px;
+      margin-top: 18px;
       font-size: 12px;
     }
     .ai-history > summary {
       cursor: pointer;
       color: var(--text-dim);
       user-select: none;
-      padding: 4px 0;
-    }
-    .ai-history > summary:hover { color: var(--text); }
-    .ai-history-list {
-      margin-top: 6px;
-      max-height: 240px;
-      overflow-y: auto;
-      border: 1px solid var(--border);
+      padding: 6px 12px;
       border-radius: 6px;
+      display: inline-block;
+      font-weight: 500;
+      transition: all 0.1s;
+      list-style: none;
+    }
+    .ai-history > summary::-webkit-details-marker { display: none; }
+    .ai-history > summary::before {
+      content: "▸";
+      display: inline-block;
+      margin-right: 6px;
+      transition: transform 0.15s;
+      font-size: 10px;
+    }
+    .ai-history[open] > summary::before { transform: rotate(90deg); }
+    .ai-history > summary:hover { color: var(--text); background: rgba(255,255,255,0.04); }
+    .ai-history-list {
+      margin-top: 8px;
+      max-height: 260px;
+      overflow-y: auto;
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 8px;
+      background: rgba(0,0,0,0.25);
     }
     .ai-history-empty {
-      padding: 12px;
+      padding: 14px;
       text-align: center;
       color: var(--text-faint);
       font-style: italic;
@@ -154,19 +274,20 @@
       display: flex;
       align-items: center;
       gap: 8px;
-      padding: 8px 12px;
-      border-bottom: 1px solid var(--border);
+      padding: 9px 14px;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
       cursor: pointer;
-      transition: background 0.05s;
+      transition: background 0.08s;
     }
     .ai-history-item:last-child { border-bottom: none; }
-    .ai-history-item:hover { background: var(--bg-hover); }
+    .ai-history-item:hover { background: rgba(255,255,255,0.04); }
     .ai-history-q {
       flex: 1;
       color: var(--text);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      font-weight: 500;
     }
     .ai-history-time {
       color: var(--text-faint);
@@ -222,9 +343,9 @@
       border-radius: 50%;
       background: conic-gradient(from 0deg,
         transparent 0deg,
-        rgba(34,197,94,0.2) 60deg,
+        rgba(205,228,83,0.2) 60deg,
         var(--accent) 180deg,
-        rgba(34,197,94,0.2) 300deg,
+        rgba(205,228,83,0.2) 300deg,
         transparent 360deg);
       animation: tsg-spin 1.3s linear infinite;
     }
@@ -276,7 +397,7 @@
       align-items: flex-start;
       gap: 8px;
       padding: 8px 12px;
-      background: rgba(34,197,94,0.06);
+      background: rgba(205,228,83,0.06);
       border-left: 3px solid var(--accent);
       border-radius: 4px;
       font-size: 13px;
@@ -601,7 +722,7 @@
 
     .dd-field { display: flex; flex-direction: column; gap: 6px; }
     .dd-field-label { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-dim); }
-    .dd-saved { color: var(--accent); font-size: 11px; opacity: 0; transition: opacity 0.15s; }
+    .dd-saved { color: var(--success); font-size: 11px; opacity: 0; transition: opacity 0.15s; }
     .dd-saved.show { opacity: 1; }
     .dd-field textarea, .dd-field select {
       background: var(--bg);
@@ -652,28 +773,38 @@
 <body>
   <script src="/nav.js"></script>
   <main>
-    <h1>Customers</h1>
-    <div class="subtitle">Active customers (excludes "Lost" and "Quote-only / Lost" by default)</div>
+    <div class="page-header">
+      <h1>Customers</h1>
+      <div class="subtitle">Every customer since 2008, live from ShopVOX. Search, filter, drill in, or just ask.</div>
+    </div>
 
     <!-- AI section -->
     <section class="ai-section">
-      <h2>💬 Ask anything</h2>
+      <div class="ai-head">
+        <div class="ai-head-text">
+          <h2><span class="ai-spark">✨</span> Ask anything</h2>
+          <p class="ai-desc">In plain English. <strong>Try a question</strong> about a customer, a trend, a comparison — the AI knows every order, quote, and invoice since 2008.</p>
+        </div>
+      </div>
+
       <div class="ai-input-wrap">
-        <input type="text" class="ai-input" id="ai-input" placeholder='e.g. "Who has spent the most this year?"' autocomplete="off" />
+        <input type="text" class="ai-input" id="ai-input" placeholder='e.g. "Champion customers we haven&apos;t heard from in 60 days"' autocomplete="off" />
         <button class="ai-submit" id="ai-submit">Ask</button>
       </div>
+
+      <div class="ai-try-label">Or try one of these</div>
       <div class="ai-suggestions" id="ai-suggestions">
         <span class="ai-suggestion" data-q="Show me our top 20 customers by 12 month value">Top 20 by 12m value</span>
         <span class="ai-suggestion" data-q="Which Lapsed customers were worth £25k+ in their lifetime?">Lapsed but worth £25k+</span>
-        <span class="ai-suggestion" data-q="Show me a chart of our monthly invoiced revenue for the last 12 months">Monthly invoiced revenue, 12mo</span>
+        <span class="ai-suggestion" data-q="Show me a chart of our monthly invoiced revenue for the last 12 months">Monthly revenue, last 12mo</span>
         <span class="ai-suggestion" data-q="Who has quoted most heavily this year but rarely converts?">Heavy quoters, low conversion</span>
         <span class="ai-suggestion" data-q="Which customers have we quoted recently but never got an order from?">Recent prospects, never ordered</span>
       </div>
 
       <details class="ai-history" id="ai-history">
-        <summary id="ai-history-summary">📜 Recent (0)</summary>
+        <summary id="ai-history-summary">📜 Your recent questions (0)</summary>
         <div class="ai-history-list" id="ai-history-list">
-          <div class="ai-history-empty">No saved questions yet</div>
+          <div class="ai-history-empty">Nothing here yet — your conversations will appear here for re-use, no extra cost.</div>
         </div>
       </details>
 
@@ -981,7 +1112,7 @@
       pendingQ.style.paddingTop = state.thread.length > 0 ? "18px" : "8px";
       if (state.thread.length > 0) {
         pendingQ.style.borderTop = "1px dashed var(--border)";
-        pendingQ.style.background = "rgba(34,197,94,0.06)";
+        pendingQ.style.background = "rgba(205,228,83,0.06)";
       }
       pendingQ.innerHTML = '<span class="q-icon">→</span><span>' + escapeHtml(trimmed) + '</span>';
       loaderSlot.innerHTML = "";
@@ -1398,9 +1529,9 @@
       const history = loadHistory();
       const list = document.getElementById("ai-history-list");
       const summary = document.getElementById("ai-history-summary");
-      summary.textContent = `📜 Recent (${history.length})`;
+      summary.textContent = `📜 Your recent questions (${history.length})`;
       if (history.length === 0) {
-        list.innerHTML = '<div class="ai-history-empty">No saved questions yet</div>';
+        list.innerHTML = '<div class="ai-history-empty">Nothing here yet — your conversations will appear here for re-use, no extra cost.</div>';
         return;
       }
       list.innerHTML = history.map((h) => {
