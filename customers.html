@@ -375,12 +375,12 @@
       border-bottom: 1px solid var(--border);
       vertical-align: middle;
     }
-    /* Skip rendering off-screen rows — major performance gain on long tables */
+    /* content-visibility:auto was here previously but it caused layout work
+       to cascade when the AI response panel above the table changed size.
+       Removed in favour of event delegation + smaller per-row cost. */
     tr.row {
       cursor: pointer;
       transition: background 0.05s;
-      content-visibility: auto;
-      contain-intrinsic-size: 0 38px;
     }
     tr.row:hover td { background: var(--bg-hover); }
     td.numeric { text-align: right; font-variant-numeric: tabular-nums; }
@@ -609,6 +609,55 @@
     const HISTORY_MAX = 50;
     const COOLDOWN_MS = 10000; // 10s gap between AI asks to stay under rate limits
 
+    // ────────────────────────────────────────────────────────────────
+    // Diagnostic timing — logs phase timings to console always; renders
+    // a visible panel when the URL contains ?debug=1. The console log
+    // appears with prefix [PERF] so users can filter for it. Format:
+    //   [PERF] AI response  total=2843ms  | fetch=1820 parse=12 marked=98 inject=4 chartFrame=N/A historySave=8 historyRender=12
+    // The visible panel shows the most recent timing for quick screenshotting.
+    // ────────────────────────────────────────────────────────────────
+    const DEBUG_MODE = new URLSearchParams(window.location.search).get("debug") === "1";
+    const perf = {
+      start(label) {
+        return { label, t0: performance.now(), marks: {} };
+      },
+      mark(timer, name) {
+        timer.marks[name] = performance.now() - timer.t0;
+      },
+      end(timer) {
+        const total = performance.now() - timer.t0;
+        const parts = Object.entries(timer.marks)
+          .map(([k, v]) => k + "=" + Math.round(v))
+          .join(" ");
+        console.log("[PERF] " + timer.label + " total=" + Math.round(total) + "ms | " + parts);
+        if (DEBUG_MODE) showDebugTiming(timer.label, total, timer.marks);
+        return total;
+      },
+    };
+
+    function showDebugTiming(label, total, marks) {
+      let panel = document.getElementById("debug-panel");
+      if (!panel) {
+        panel = document.createElement("div");
+        panel.id = "debug-panel";
+        panel.style.cssText = "position:fixed;bottom:12px;right:12px;width:380px;max-height:50vh;overflow-y:auto;background:#000;border:2px solid #f97316;border-radius:8px;padding:10px 12px;font-family:ui-monospace,monospace;font-size:11px;color:#e5e5e5;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,0.6)";
+        panel.innerHTML = '<div style="font-weight:700;color:#f97316;margin-bottom:8px;display:flex;justify-content:space-between"><span>⏱ DEBUG TIMING</span><button onclick="this.parentElement.parentElement.remove()" style="background:transparent;border:none;color:#f97316;cursor:pointer">×</button></div><div id="debug-entries"></div>';
+        document.body.appendChild(panel);
+      }
+      const entries = document.getElementById("debug-entries");
+      const div = document.createElement("div");
+      div.style.cssText = "margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid #262626";
+      const time = new Date().toLocaleTimeString("en-GB");
+      let html = '<div style="color:#22c55e;font-weight:600">' + time + " · " + label + " · " + Math.round(total) + "ms</div>";
+      html += '<div style="color:#a3a3a3;font-size:10px;margin-top:3px">';
+      html += Object.entries(marks).map(([k, v]) => k + ": <strong style=\"color:" + (v > 200 ? "#ef4444" : v > 50 ? "#fbbf24" : "#22c55e") + '">' + Math.round(v) + "ms</strong>").join(" · ");
+      html += "</div>";
+      div.innerHTML = html;
+      entries.insertBefore(div, entries.firstChild);
+      // Keep only last 10 entries
+      while (entries.children.length > 10) entries.removeChild(entries.lastChild);
+    }
+
     const state = {
       allCustomers: [],
       filtered: [],
@@ -717,13 +766,16 @@
       submitBtn.disabled = true;
       submitBtn.textContent = "…";
 
+      const timer = perf.start("AI response");
       try {
+        const fetchStart = performance.now();
         const res = await fetch("/ai-chat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ message: trimmed }),
         });
         const data = await res.json();
+        perf.mark(timer, "fetch");
         if (!data.ok) throw new Error(data.error || "request failed");
 
         respEl.classList.remove("thinking");
@@ -731,15 +783,20 @@
         state.lastResponseText = data.response;
         state.lastToolCalls = data.toolCalls || [];
 
-        renderAIResponse(data.response, data.toolCalls || []);
+        renderAIResponse(data.response, data.toolCalls || [], timer);
 
-        // Save to history
-        saveToHistory({
-          id: Date.now().toString(),
-          timestamp: new Date().toISOString(),
-          question: trimmed,
-          response: data.response,
-          toolCalls: data.toolCalls || [],
+        // Save to history — deferred so it doesn't block the response paint
+        requestAnimationFrame(() => {
+          const histStart = performance.now();
+          saveToHistory({
+            id: Date.now().toString(),
+            timestamp: new Date().toISOString(),
+            question: trimmed,
+            response: data.response,
+            toolCalls: data.toolCalls || [],
+          });
+          perf.mark(timer, "historySave");
+          perf.end(timer);
         });
       } catch (err) {
         respEl.classList.remove("thinking");
@@ -768,11 +825,12 @@
       tick();
     }
 
-    function renderAIResponse(text, toolCalls) {
+    function renderAIResponse(text, toolCalls, timer) {
       const contentEl = document.getElementById("ai-content");
       const metaEl = document.getElementById("ai-meta");
 
       // Extract chart blocks before markdown parsing
+      const extractStart = performance.now();
       const chartBlocks = [];
       const chartRegex = /```chart\s*\n?([\s\S]*?)```/g;
       let idx = 0;
@@ -782,37 +840,18 @@
         idx++;
         return placeholder;
       });
+      if (timer) perf.mark(timer, "stripCharts");
 
       marked.setOptions({ breaks: true, gfm: true });
-      contentEl.innerHTML = marked.parse(cleanedText);
+      const markedStart = performance.now();
+      const html = marked.parse(cleanedText);
+      if (timer) perf.mark(timer, "marked");
 
-      // Defer chart rendering to next frame so the browser can paint the text first
-      // (this is what fixes the perceived lag after responses arrive)
-      requestAnimationFrame(() => {
-        for (const cb of chartBlocks) {
-          const slot = contentEl.querySelector(`[data-chart-index="${cb.index}"]`);
-          if (!slot) continue;
-          try {
-            const config = JSON.parse(cb.json);
-            if (!config.options) config.options = {};
-            // Force no animation regardless of what Claude specified
-            config.options.animation = false;
-            if (!config.options.plugins) config.options.plugins = {};
-            if (!config.options.plugins.legend) config.options.plugins.legend = {};
-            if (!config.options.plugins.legend.labels) config.options.plugins.legend.labels = {};
-            if (!config.options.plugins.legend.labels.color) config.options.plugins.legend.labels.color = "#a3a3a3";
-            if (!config.options.scales) config.options.scales = {};
-            applyDarkAxisDefaults(config.options.scales);
-            const canvas = document.createElement("canvas");
-            slot.appendChild(canvas);
-            const chart = new Chart(canvas, config);
-            state.activeCharts.push(chart);
-          } catch (err) {
-            slot.innerHTML = '<div class="state error">Chart render error: ' + escapeHtml(err.message) + '</div>';
-          }
-        }
-      });
+      const injectStart = performance.now();
+      contentEl.innerHTML = html;
+      if (timer) perf.mark(timer, "inject");
 
+      // Tool call summary
       if (toolCalls && toolCalls.length > 0) {
         metaEl.innerHTML = `
           <details>
@@ -822,6 +861,40 @@
             ).join("")}
           </details>
         `;
+      } else {
+        metaEl.innerHTML = "";
+      }
+      if (timer) perf.mark(timer, "meta");
+
+      // Defer chart rendering to next frame so the browser can paint the text first
+      if (chartBlocks.length > 0) {
+        requestAnimationFrame(() => {
+          const chartStart = performance.now();
+          for (const cb of chartBlocks) {
+            const slot = contentEl.querySelector(`[data-chart-index="${cb.index}"]`);
+            if (!slot) continue;
+            try {
+              const config = JSON.parse(cb.json);
+              if (!config.options) config.options = {};
+              config.options.animation = false;
+              if (!config.options.plugins) config.options.plugins = {};
+              if (!config.options.plugins.legend) config.options.plugins.legend = {};
+              if (!config.options.plugins.legend.labels) config.options.plugins.legend.labels = {};
+              if (!config.options.plugins.legend.labels.color) config.options.plugins.legend.labels.color = "#a3a3a3";
+              if (!config.options.scales) config.options.scales = {};
+              applyDarkAxisDefaults(config.options.scales);
+              const canvas = document.createElement("canvas");
+              slot.appendChild(canvas);
+              const chart = new Chart(canvas, config);
+              state.activeCharts.push(chart);
+            } catch (err) {
+              slot.innerHTML = '<div class="state error">Chart render error: ' + escapeHtml(err.message) + '</div>';
+            }
+          }
+          if (timer) perf.mark(timer, "charts");
+        });
+      } else if (timer) {
+        perf.mark(timer, "charts");
       }
     }
 
@@ -1144,9 +1217,15 @@
         return `<tr class="row" data-id="${escapeAttr(c.id)}">${cells}</tr>`;
       }).join("");
       tbody.innerHTML = html;
-      tbody.querySelectorAll("tr.row").forEach((tr) => {
-        tr.addEventListener("click", () => openDrilldown(tr.dataset.id));
-      });
+      // Event delegation: one listener on tbody, not one per row. Big win on
+      // large tables — avoids 1000 listener allocations and reduces memory.
+      if (!tbody._delegated) {
+        tbody.addEventListener("click", (e) => {
+          const tr = e.target.closest("tr.row");
+          if (tr && tr.dataset.id) openDrilldown(tr.dataset.id);
+        });
+        tbody._delegated = true;
+      }
     }
 
     function setTableState(msg, isError = false) {
@@ -1161,6 +1240,7 @@
       const c = state.allCustomers.find((x) => x.id === id);
       if (!c) return;
       state.drilldownId = id;
+      const timer = perf.start("Drilldown open");
 
       document.getElementById("dd-name").textContent = c.Company || "—";
       const segEl = document.getElementById("dd-segment");
@@ -1175,18 +1255,25 @@
         c["ShopVOX Company ID"] ? "ShopVOX: " + c["ShopVOX Company ID"].slice(0, 8) + "…" : "No ShopVOX link";
 
       renderDrilldownBody(c);
+      perf.mark(timer, "renderBody");
 
       document.getElementById("dd").classList.add("open");
       document.getElementById("dd").setAttribute("aria-hidden", "false");
       document.getElementById("dd-backdrop").classList.add("open");
+      perf.mark(timer, "openPanel");
 
       try {
         const res = await fetch("/customer-activity?customer_id=" + encodeURIComponent(id));
         const data = await res.json();
-        if (data.ok) renderDrilldownActivity(c, data);
+        perf.mark(timer, "activityFetch");
+        if (data.ok) {
+          renderDrilldownActivity(c, data);
+          perf.mark(timer, "renderActivity");
+        }
       } catch (err) {
         console.error("Activity fetch failed:", err);
       }
+      perf.end(timer);
     }
 
     function closeDrilldown() {
