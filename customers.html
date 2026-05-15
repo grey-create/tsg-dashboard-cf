@@ -890,6 +890,16 @@
       border-radius: 12px;
       overflow: hidden;
       box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+      /* GPU-promote to its own compositing layer. When elements above
+         change height (e.g. the AI section dropdowns open/close), the
+         browser can shift this layer with a matrix transform instead
+         of reflowing all ~1000 rows. Without this, every dropdown
+         click reflows ~10,000 DOM nodes. */
+      transform: translateZ(0);
+      will-change: transform;
+      /* Contain layout so the table's internal layout is fully isolated
+         from anything outside it. */
+      contain: layout style;
     }
     table { width: 100%; border-collapse: collapse; font-size: 13px; }
     th {
@@ -921,9 +931,12 @@
       vertical-align: middle;
     }
     tbody tr:last-child td { border-bottom: none; }
+    /* No transition on hover — with ~1000 rows, even an 80ms transition
+       fires repeatedly as the mouse moves and adds up to noticeable lag.
+       Instant background swap is one paint per hover, much cheaper. */
     tr.row {
       cursor: pointer;
-      transition: background 0.08s;
+      contain: layout paint;
     }
     tr.row:hover td { background: rgba(205,228,83,0.04); }
     td.numeric { text-align: right; font-variant-numeric: tabular-nums; }
