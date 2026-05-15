@@ -1840,20 +1840,29 @@
 
         document.body.appendChild(wrap);
 
-        // Inject print CSS — hides everything except #pdf-export during print,
-        // forces colour rendering, sets up page layout.
+        // Inject print CSS — hides everything except #pdf-export during
+        // print, forces white background (otherwise the body's dark theme
+        // fills remaining pages with black), forces colour rendering.
+        // Uses display:none rather than visibility:hidden — the latter
+        // keeps elements in the layout, which adds dozens of black trailing
+        // pages from the body's #0a0a0a background.
         printStyles = document.createElement("style");
         printStyles.textContent = `
           @media print {
             @page { size: A4 portrait; margin: 10mm; }
-            body * { visibility: hidden !important; }
-            #pdf-export, #pdf-export * { visibility: visible !important; }
-            #pdf-export {
-              position: absolute !important;
-              left: 0 !important;
-              top: 0 !important;
+            html, body {
+              background: white !important;
+              color: black !important;
+              height: auto !important;
+              overflow: visible !important;
+            }
+            body > * { display: none !important; }
+            body > #pdf-export {
+              display: block !important;
+              position: static !important;
               width: 100% !important;
               padding: 0 !important;
+              margin: 0 !important;
             }
             * {
               -webkit-print-color-adjust: exact !important;
