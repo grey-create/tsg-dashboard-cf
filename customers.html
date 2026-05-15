@@ -4,8 +4,6 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Customers · TSG Dashboard</title>
-  <link rel="stylesheet" href="/nav.css" />
-  <script src="/nav.js" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/marked@11.1.1/marked.min.js"></script>
   <style>
@@ -521,6 +519,7 @@
   </style>
 </head>
 <body>
+  <script src="/nav.js"></script>
   <main>
     <h1>Customers</h1>
     <div class="subtitle">Active customers (excludes "Lost" and "Quote-only / Lost" by default)</div>
@@ -608,6 +607,7 @@
 
     const HISTORY_KEY = "tsg_ai_history";
     const HISTORY_MAX = 50;
+    const COOLDOWN_MS = 10000; // 10s gap between AI asks to stay under rate limits
 
     const state = {
       allCustomers: [],
@@ -624,6 +624,7 @@
       lastResponseText: "",
       lastQuestion: "",
       lastToolCalls: [],
+      cooldownUntil: 0,
     };
 
     const COLUMNS = [
@@ -690,6 +691,14 @@
     async function submitAI(message) {
       const trimmed = (message || "").trim();
       if (!trimmed || state.aiBusy) return;
+
+      // Cooldown check — prevents rate limit hits
+      const now = Date.now();
+      if (now < state.cooldownUntil) {
+        startCooldownTimer();
+        return;
+      }
+
       state.aiBusy = true;
 
       // Reset old charts
@@ -738,9 +747,25 @@
         contentEl.innerHTML = "Error: " + escapeHtml(err.message);
       } finally {
         state.aiBusy = false;
-        submitBtn.disabled = false;
-        submitBtn.textContent = "Ask";
+        state.cooldownUntil = Date.now() + COOLDOWN_MS;
+        startCooldownTimer();
       }
+    }
+
+    function startCooldownTimer() {
+      const submitBtn = document.getElementById("ai-submit");
+      function tick() {
+        const remaining = state.cooldownUntil - Date.now();
+        if (remaining <= 0) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = "Ask";
+          return;
+        }
+        submitBtn.disabled = true;
+        submitBtn.textContent = `Wait ${Math.ceil(remaining / 1000)}s`;
+        setTimeout(tick, 250);
+      }
+      tick();
     }
 
     function renderAIResponse(text, toolCalls) {
