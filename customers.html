@@ -306,6 +306,109 @@
     }
     .ai-history-delete:hover { color: var(--error); opacity: 1; background: var(--bg-active); }
 
+    /* Guidance block — collapsible "what works, what doesn't" panel.
+       Sits between the suggestion chips and the recent-questions list
+       so it's discoverable for new users but doesn't get in the way
+       for power users who already know what to ask. */
+    .ai-guidance {
+      margin-top: 16px;
+      border: 1px solid rgba(107,212,236,0.18);
+      background: rgba(107,212,236,0.04);
+      border-radius: 8px;
+      overflow: hidden;
+      font-size: 12px;
+    }
+    .ai-guidance > summary {
+      cursor: pointer;
+      padding: 9px 14px;
+      font-weight: 600;
+      color: #6BD4EC;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      user-select: none;
+      transition: background 0.1s;
+      list-style: none;
+    }
+    .ai-guidance > summary::-webkit-details-marker { display: none; }
+    .ai-guidance > summary::after {
+      content: "▾";
+      margin-left: auto;
+      transition: transform 0.15s;
+      font-size: 10px;
+      opacity: 0.7;
+    }
+    .ai-guidance[open] > summary::after { transform: rotate(180deg); }
+    .ai-guidance > summary:hover { background: rgba(107,212,236,0.06); }
+    .ai-guidance-body {
+      padding: 2px 16px 14px;
+      font-size: 12px;
+      line-height: 1.55;
+      color: var(--text-dim);
+    }
+    .ai-guidance-body h4 {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      margin: 10px 0 5px;
+      color: var(--text);
+    }
+    .ai-guidance-body h4.good { color: #22c55e; }
+    .ai-guidance-body h4.bad { color: #f97316; }
+    .ai-guidance-body ul {
+      margin: 4px 0 6px;
+      padding-left: 18px;
+    }
+    .ai-guidance-body li { margin: 3px 0; color: var(--text-dim); }
+    .ai-guidance-body li strong { color: var(--text); font-weight: 600; }
+    .ai-guidance-body code {
+      background: rgba(255,255,255,0.05);
+      padding: 1px 6px;
+      border-radius: 3px;
+      font-size: 11px;
+      color: var(--text);
+      font-family: ui-monospace, monospace;
+    }
+    .ai-guidance-note {
+      margin-top: 10px;
+      padding: 8px 12px;
+      border-left: 2px solid #6BD4EC;
+      background: rgba(107,212,236,0.04);
+      color: var(--text-dim);
+      border-radius: 0 4px 4px 0;
+      font-size: 11.5px;
+      line-height: 1.55;
+    }
+
+    /* Table note — small info line below the filters row to set
+       expectations about what's visible vs hidden. Tighter than the
+       guidance block; one-liner, always visible. */
+    .table-note {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11.5px;
+      color: var(--text-faint);
+      margin: -4px 4px 12px;
+      font-style: italic;
+      line-height: 1.45;
+    }
+    .table-note .ti {
+      flex-shrink: 0;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: rgba(107,212,236,0.12);
+      color: #6BD4EC;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 9px;
+      font-weight: 700;
+      font-style: normal;
+    }
+
     /* ─────────────────────────────────────────────────────
        PDF export — light-theme overrides scoped to a
        temporary #pdf-export wrapper. The dark-theme styles
@@ -990,6 +1093,27 @@
         <span class="ai-suggestion" data-q="Which customers have we quoted recently but never got an order from?">Recent prospects, never ordered</span>
       </div>
 
+      <details class="ai-guidance">
+        <summary>💡 What it does well — and what it can't (yet)</summary>
+        <div class="ai-guidance-body">
+          <h4 class="good">✓ Works great</h4>
+          <ul>
+            <li>Rankings and trends across the <strong>last 12, 24, or 36 months</strong> — e.g. "top customers by 12m value", "monthly revenue this year"</li>
+            <li><strong>Lifetime totals</strong> — "our biggest customer ever", "highest conversion rates", "customers who've spent £100k+"</li>
+            <li><strong>Individual customer drilldowns</strong> — click any row to see their full timeline back to 2008, or ask the AI about a specific company by name</li>
+            <li>Quote vs order conversion analysis across any of the above</li>
+          </ul>
+
+          <h4 class="bad">⚠ Doesn't work yet</h4>
+          <ul>
+            <li>Ranking customers within a <strong>specific past year</strong> — e.g. <code>"best customer in 2012"</code> won't return a list</li>
+            <li>Custom historical date ranges older than 3 years</li>
+          </ul>
+
+          <div class="ai-guidance-note">All historical data from 2008 onwards is still in the system — click any customer to see their full timeline. The limitations above are about what the AI can rank <em>across</em> customers, not what's stored. We may add older-year ranking later.</div>
+        </div>
+      </details>
+
       <details class="ai-history" id="ai-history">
         <summary id="ai-history-summary">📜 Your recent questions (0)</summary>
         <div class="ai-history-list" id="ai-history-list">
@@ -1024,6 +1148,11 @@
       </select>
       <label><input type="checkbox" id="include-lost" /> Include Lost / Quote-only</label>
       <span class="result-count" id="result-count">—</span>
+    </div>
+
+    <div class="table-note">
+      <span class="ti">i</span>
+      <span>Showing the <strong style="color:var(--text-dim);font-style:normal">active</strong> list by default — roughly 1,000 customers who've ordered in the last 3 years. Around 4,300 older / quote-only records are hidden but still in the system. Tick the box above to include them. The AI can search the full database regardless of what's shown here.</span>
     </div>
 
     <div class="table-wrap">
