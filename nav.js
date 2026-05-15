@@ -43,7 +43,14 @@
     '.top-nav .tn-insights{font-size:12px;font-weight:600;color:#94a3b8;text-decoration:none;padding:6px 14px;border-radius:6px;transition:all .15s;white-space:nowrap;border:1px solid #333;background:transparent}',
     '.top-nav .tn-insights:hover{color:#fff;border-color:#555;background:rgba(255,255,255,.04)}',
     '.top-nav .tn-insights.active{color:#6BD4EC;border-color:#6BD4EC;background:rgba(107,212,236,.08)}',
-    '@media(max-width:700px){.top-nav{padding:10px 16px;height:auto;flex-wrap:wrap;gap:8px}.top-nav .tn-title{font-size:13px;margin-right:0;width:100%}.top-nav .tn-pills{width:100%}.top-nav .tn-sep{display:none}.top-nav .tn-review{margin-top:4px}.top-nav .tn-insights{margin-top:4px}.top-nav .tn-updated{margin-top:4px;width:100%;justify-content:center}}',
+    // Customers (Beta) button — purple accent so it visually separates from the
+    // existing Review (lime) and Insights (cyan) buttons. The BETA badge is a
+    // small inline pill so the team knows the feature is still maturing.
+    '.top-nav .tn-customers{font-size:12px;font-weight:600;color:#94a3b8;text-decoration:none;padding:6px 14px;border-radius:6px;transition:all .15s;white-space:nowrap;border:1px solid #333;background:transparent;display:inline-flex;align-items:center;gap:8px}',
+    '.top-nav .tn-customers:hover{color:#fff;border-color:#555;background:rgba(255,255,255,.04)}',
+    '.top-nav .tn-customers.active{color:#a855f7;border-color:#a855f7;background:rgba(168,85,247,.08)}',
+    '.top-nav .tn-beta-badge{display:inline-block;font-size:9px;font-weight:800;letter-spacing:.6px;padding:2px 6px;border-radius:3px;background:rgba(168,85,247,.18);color:#a855f7;border:1px solid rgba(168,85,247,.4);text-transform:uppercase;line-height:1}',
+    '@media(max-width:700px){.top-nav{padding:10px 16px;height:auto;flex-wrap:wrap;gap:8px}.top-nav .tn-title{font-size:13px;margin-right:0;width:100%}.top-nav .tn-pills{width:100%}.top-nav .tn-sep{display:none}.top-nav .tn-review{margin-top:4px}.top-nav .tn-insights{margin-top:4px}.top-nav .tn-customers{margin-top:4px}.top-nav .tn-updated{margin-top:4px;width:100%;justify-content:center}}',
   ].join('\n');
   document.head.appendChild(style);
 
@@ -54,7 +61,8 @@
   var isSales = path.indexOf('/sales') === 0;
   var isReview = path.indexOf('/review') === 0;
   var isInsights = path.indexOf('/insights') === 0;
-  var isInvoicing = !isSales && !isReview && !isInsights && (path === '/' || path === '/index.html' || path === '');
+  var isCustomers = path.indexOf('/customers') === 0;
+  var isInvoicing = !isSales && !isReview && !isInsights && !isCustomers && (path === '/' || path === '/index.html' || path === '');
 
   nav.innerHTML = [
     '<img src="https://cdn.shopify.com/s/files/1/1070/8974/files/TSG-Logo-Roundel-Black.png?v=1772037610" class="tn-logo" alt="TSG">',
@@ -66,6 +74,7 @@
     '<div class="tn-sep"></div>',
     '<a href="/review" class="tn-review' + (isReview ? ' active' : '') + '"><span class="tn-rv-dot"></span>' + prevMonthName + ' Review</a>',
     '<a href="/insights" class="tn-insights' + (isInsights ? ' active' : '') + '">\uD83D\uDCA1 Insights</a>',
+    '<a href="/customers" class="tn-customers' + (isCustomers ? ' active' : '') + '">\uD83D\uDC65 Customers <span class="tn-beta-badge">Beta</span></a>',
     '<div class="tn-spacer"></div>',
     // Nav timestamp pill removed — it was based on /sales-data response time,
     // not actual Airtable freshness, and didn't reflect when the aggregator
