@@ -186,6 +186,7 @@
     .ai-history-delete:hover { color: var(--error); opacity: 1; background: var(--bg-active); }
 
     /* Response */
+    /* Response — container for the full conversation thread */
     .ai-response {
       margin-top: 16px;
       padding-top: 16px;
@@ -194,12 +195,142 @@
       contain: layout style paint;
     }
     .ai-response.show { display: block; }
-    .ai-response.thinking::before {
-      content: "Thinking…";
+    .ai-response.error { color: var(--error); }
+
+    /* TSG Loader — spinning conic-gradient ring around the roundel logo.
+       Snazzy enough to feel branded, restrained enough to not annoy.
+       Rotating status text below cycles through phases so users know
+       it's working rather than frozen. */
+    .tsg-loader {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      padding: 28px 20px;
+    }
+    .tsg-loader-orb {
+      width: 60px;
+      height: 60px;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .tsg-loader-ring {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      background: conic-gradient(from 0deg,
+        transparent 0deg,
+        rgba(34,197,94,0.2) 60deg,
+        var(--accent) 180deg,
+        rgba(34,197,94,0.2) 300deg,
+        transparent 360deg);
+      animation: tsg-spin 1.3s linear infinite;
+    }
+    .tsg-loader-ring::after {
+      content: '';
+      position: absolute;
+      inset: 3px;
+      background: var(--bg);
+      border-radius: 50%;
+    }
+    .tsg-loader-logo {
+      position: relative;
+      width: 36px;
+      height: 36px;
+      z-index: 1;
+      filter: invert(1) brightness(2);
+      animation: tsg-pulse 1.8s ease-in-out infinite;
+    }
+    @keyframes tsg-spin {
+      to { transform: rotate(360deg); }
+    }
+    @keyframes tsg-pulse {
+      0%, 100% { opacity: 0.85; transform: scale(1); }
+      50% { opacity: 1; transform: scale(1.08); }
+    }
+    .tsg-loader-text {
+      font-size: 13px;
       color: var(--text-dim);
       font-style: italic;
+      min-height: 18px;
+      text-align: center;
+      letter-spacing: 0.2px;
     }
-    .ai-response.error { color: var(--error); }
+    /* Compact loader variant — for inside the drilldown and table cells */
+    .tsg-loader.small { padding: 16px 12px; gap: 10px; }
+    .tsg-loader.small .tsg-loader-orb { width: 40px; height: 40px; }
+    .tsg-loader.small .tsg-loader-logo { width: 22px; height: 22px; }
+    .tsg-loader.small .tsg-loader-text { font-size: 12px; }
+
+    /* Conversation thread — stack of turns */
+    .ai-thread { display: flex; flex-direction: column; gap: 18px; }
+    .ai-turn { display: flex; flex-direction: column; gap: 10px; }
+    .ai-turn:not(:first-child) {
+      padding-top: 18px;
+      border-top: 1px dashed var(--border);
+    }
+    .ai-turn-question {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 8px 12px;
+      background: rgba(34,197,94,0.06);
+      border-left: 3px solid var(--accent);
+      border-radius: 4px;
+      font-size: 13px;
+      color: var(--text);
+      line-height: 1.45;
+    }
+    .ai-turn-question .q-icon {
+      flex-shrink: 0;
+      color: var(--accent);
+      font-weight: 700;
+      font-size: 12px;
+    }
+    .ai-turn-answer { /* container for content + meta */ }
+
+    /* Follow-up input — appears below the thread */
+    .ai-followup {
+      margin-top: 14px;
+      display: flex;
+      gap: 8px;
+      align-items: stretch;
+    }
+    .ai-followup-input {
+      flex: 1;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 9px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-family: inherit;
+      outline: none;
+    }
+    .ai-followup-input:focus { border-color: var(--accent); }
+    .ai-followup-input::placeholder { color: var(--text-faint); font-style: italic; }
+    .ai-followup-btn {
+      background: transparent;
+      color: var(--accent);
+      border: 1px solid var(--accent);
+      padding: 0 16px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.1s;
+    }
+    .ai-followup-btn:hover { background: var(--accent); color: #0a0a0a; }
+    .ai-followup-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .ai-followup-hint {
+      margin-top: 6px;
+      font-size: 11px;
+      color: var(--text-faint);
+      font-style: italic;
+    }
 
     .ai-toolbar {
       display: flex;
@@ -548,13 +679,14 @@
 
       <div class="ai-response" id="ai-response">
         <div class="ai-toolbar" id="ai-toolbar">
-          <button class="ai-toolbar-btn" id="ai-copy" title="Copy markdown to clipboard">📋 Copy</button>
+          <button class="ai-toolbar-btn" id="ai-copy" title="Copy conversation as markdown">📋 Copy</button>
           <button class="ai-toolbar-btn" id="ai-export-md" title="Download as Markdown">⬇ MD</button>
           <button class="ai-toolbar-btn" id="ai-export-csv" title="Download tables as CSV">⬇ CSV</button>
-          <button class="ai-toolbar-btn" id="ai-clear" title="Clear response">✕ Clear</button>
+          <button class="ai-toolbar-btn" id="ai-clear" title="Clear conversation">✕ Clear</button>
         </div>
-        <div class="ai-content" id="ai-content"></div>
-        <div class="ai-meta" id="ai-meta"></div>
+        <div class="ai-thread" id="ai-thread"></div>
+        <div id="ai-loader-slot"></div>
+        <div id="ai-followup-slot"></div>
       </div>
     </section>
 
@@ -635,6 +767,17 @@
       },
     };
 
+    // ────────────────────────────────────────────────────────────────
+    // TSG Loader — spinning logo + rotating status text. Returns a
+    // controller object: { el, stop() }. Caller inserts el into the
+    // DOM and calls stop() when work completes. Phrases are picked
+    // by context so the AI loader and table loader feel different.
+    // ────────────────────────────────────────────────────────────────
+    // ────────────────────────────────────────────────────────────────
+    // TSG Loader — spinning logo + rotating status text. Returns a
+    // controller object: { el, stop() }. Caller inserts el into the
+    // DOM and calls stop() when work completes.
+    // ────────────────────────────────────────────────────────────────
     function showDebugTiming(label, total, marks) {
       let panel = document.getElementById("debug-panel");
       if (!panel) {
@@ -654,8 +797,56 @@
       html += "</div>";
       div.innerHTML = html;
       entries.insertBefore(div, entries.firstChild);
-      // Keep only last 10 entries
       while (entries.children.length > 10) entries.removeChild(entries.lastChild);
+    }
+
+    const LOADER_PHRASES = {
+      ai: [
+        "Searching the data…",
+        "Crunching the numbers…",
+        "Pulling history…",
+        "Building your answer…",
+        "Almost there…",
+      ],
+      activity: [
+        "Loading activity…",
+        "Pulling job history…",
+        "Almost there…",
+      ],
+      table: [
+        "Loading customers…",
+        "Almost ready…",
+      ],
+    };
+    const TSG_LOGO_URL = "https://cdn.shopify.com/s/files/1/1070/8974/files/TSG-Logo-Roundel-Black.png?v=1772037610";
+
+    function makeLoader(variant = "ai", small = false) {
+      const el = document.createElement("div");
+      el.className = "tsg-loader" + (small ? " small" : "");
+      el.innerHTML = `
+        <div class="tsg-loader-orb">
+          <div class="tsg-loader-ring"></div>
+          <img class="tsg-loader-logo" src="${TSG_LOGO_URL}" alt="" />
+        </div>
+        <div class="tsg-loader-text"></div>
+      `;
+      const textEl = el.querySelector(".tsg-loader-text");
+      const phrases = LOADER_PHRASES[variant] || LOADER_PHRASES.ai;
+      let i = 0;
+      textEl.textContent = phrases[0];
+      // Cycle phrases every 2.2s so the user sees movement even if the
+      // request hangs for a while. Cleared in stop().
+      const intervalId = setInterval(() => {
+        i = (i + 1) % phrases.length;
+        textEl.textContent = phrases[i];
+      }, 2200);
+      return {
+        el,
+        stop() {
+          clearInterval(intervalId);
+          if (el.parentNode) el.parentNode.removeChild(el);
+        },
+      };
     }
 
     const state = {
@@ -670,9 +861,8 @@
       drilldownId: null,
       aiBusy: false,
       activeCharts: [],
-      lastResponseText: "",
-      lastQuestion: "",
-      lastToolCalls: [],
+      thread: [],         // [{question, response, toolCalls}, ...]
+      threadId: null,     // history entry id when loaded from history
       cooldownUntil: 0,
     };
 
@@ -737,11 +927,20 @@
     // ────────────────────────────────────────────────────────────────
     // AI chat
     // ────────────────────────────────────────────────────────────────
-    async function submitAI(message) {
+    // ────────────────────────────────────────────────────────────────
+    // AI chat — supports multi-turn conversation. Each call to submitAI
+    // is either a fresh start (from the main input or a suggestion) or
+    // a follow-up (from the follow-up input below the thread). The
+    // backend receives the full thread history so the AI can reason
+    // about "narrow that to last quarter" type follow-ups.
+    // ────────────────────────────────────────────────────────────────
+    async function submitAI(message, opts = {}) {
       const trimmed = (message || "").trim();
       if (!trimmed || state.aiBusy) return;
 
-      // Cooldown check — prevents rate limit hits
+      const isFollowUp = opts.isFollowUp === true;
+
+      // Cooldown check
       const now = Date.now();
       if (now < state.cooldownUntil) {
         startCooldownTimer();
@@ -750,63 +949,107 @@
 
       state.aiBusy = true;
 
-      // Reset old charts
-      for (const c of state.activeCharts) { try { c.destroy(); } catch {} }
-      state.activeCharts = [];
+      // Fresh ask from the main input = start a new thread
+      if (!isFollowUp) {
+        destroyCharts();
+        state.thread = [];
+        state.threadId = null;
+        document.getElementById("ai-thread").innerHTML = "";
+        document.getElementById("ai-followup-slot").innerHTML = "";
+      }
 
       const respEl = document.getElementById("ai-response");
-      const contentEl = document.getElementById("ai-content");
-      const metaEl = document.getElementById("ai-meta");
       respEl.classList.remove("error");
-      respEl.classList.add("show", "thinking");
-      contentEl.innerHTML = "";
-      metaEl.innerHTML = "";
+      respEl.classList.add("show");
 
+      // Lock the main submit button while the request is in flight
       const submitBtn = document.getElementById("ai-submit");
       submitBtn.disabled = true;
       submitBtn.textContent = "…";
 
+      // Lock follow-up button if it's present
+      const fuBtn = document.getElementById("ai-followup-send");
+      if (fuBtn) fuBtn.disabled = true;
+
+      // Show the loader inside the response area
+      const loaderSlot = document.getElementById("ai-loader-slot");
+      const loader = makeLoader("ai");
+      // Display the question right above the loader so users know what's running
+      const pendingQ = document.createElement("div");
+      pendingQ.className = "ai-turn-question";
+      pendingQ.style.marginTop = state.thread.length > 0 ? "18px" : "0";
+      pendingQ.style.paddingTop = state.thread.length > 0 ? "18px" : "8px";
+      if (state.thread.length > 0) {
+        pendingQ.style.borderTop = "1px dashed var(--border)";
+        pendingQ.style.background = "rgba(34,197,94,0.06)";
+      }
+      pendingQ.innerHTML = '<span class="q-icon">→</span><span>' + escapeHtml(trimmed) + '</span>';
+      loaderSlot.innerHTML = "";
+      loaderSlot.appendChild(pendingQ);
+      loaderSlot.appendChild(loader.el);
+
+      // Build history from current thread for the API call
+      const history = [];
+      for (const turn of state.thread) {
+        history.push({ role: "user", content: turn.question });
+        history.push({ role: "assistant", content: turn.response });
+      }
+
       const timer = perf.start("AI response");
       try {
-        const fetchStart = performance.now();
         const res = await fetch("/ai-chat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message: trimmed }),
+          body: JSON.stringify({ message: trimmed, history }),
         });
         const data = await res.json();
         perf.mark(timer, "fetch");
         if (!data.ok) throw new Error(data.error || "request failed");
 
-        respEl.classList.remove("thinking");
-        state.lastQuestion = trimmed;
-        state.lastResponseText = data.response;
-        state.lastToolCalls = data.toolCalls || [];
+        // Stop the loader, remove the pending-question placeholder
+        loader.stop();
+        loaderSlot.innerHTML = "";
 
-        renderAIResponse(data.response, data.toolCalls || [], timer);
+        // Append the turn to the thread
+        const turn = {
+          question: trimmed,
+          response: data.response,
+          toolCalls: data.toolCalls || [],
+        };
+        state.thread.push(turn);
+        appendTurn(turn, timer);
 
-        // Save to history — deferred so it doesn't block the response paint
+        // Render the follow-up input below the thread
+        renderFollowUp();
+
+        // Save to history (whole thread) — deferred to next frame
         requestAnimationFrame(() => {
           const histStart = performance.now();
-          saveToHistory({
-            id: Date.now().toString(),
-            timestamp: new Date().toISOString(),
-            question: trimmed,
-            response: data.response,
-            toolCalls: data.toolCalls || [],
-          });
+          saveThreadToHistory();
           perf.mark(timer, "historySave");
           perf.end(timer);
         });
       } catch (err) {
-        respEl.classList.remove("thinking");
-        respEl.classList.add("error");
-        contentEl.innerHTML = "Error: " + escapeHtml(err.message);
+        loader.stop();
+        loaderSlot.innerHTML = "";
+        const errEl = document.createElement("div");
+        errEl.className = "state error";
+        errEl.textContent = "Error: " + err.message;
+        loaderSlot.appendChild(errEl);
+        // Also re-render the follow-up so user can try again
+        renderFollowUp();
       } finally {
         state.aiBusy = false;
         state.cooldownUntil = Date.now() + COOLDOWN_MS;
         startCooldownTimer();
+        const fuBtnEl = document.getElementById("ai-followup-send");
+        if (fuBtnEl) fuBtnEl.disabled = false;
       }
+    }
+
+    function destroyCharts() {
+      for (const c of state.activeCharts) { try { c.destroy(); } catch {} }
+      state.activeCharts = [];
     }
 
     function startCooldownTimer() {
@@ -825,12 +1068,40 @@
       tick();
     }
 
-    function renderAIResponse(text, toolCalls, timer) {
-      const contentEl = document.getElementById("ai-content");
-      const metaEl = document.getElementById("ai-meta");
+    // Append a single turn (Q + A) to the thread DOM. Each turn is a
+    // self-contained element with its own content and meta blocks.
+    function appendTurn(turn, timer) {
+      const threadEl = document.getElementById("ai-thread");
 
+      const turnEl = document.createElement("div");
+      turnEl.className = "ai-turn";
+
+      const qEl = document.createElement("div");
+      qEl.className = "ai-turn-question";
+      qEl.innerHTML = '<span class="q-icon">→</span><span>' + escapeHtml(turn.question) + '</span>';
+      turnEl.appendChild(qEl);
+
+      const answerEl = document.createElement("div");
+      answerEl.className = "ai-turn-answer";
+      const contentEl = document.createElement("div");
+      contentEl.className = "ai-content";
+      const metaEl = document.createElement("div");
+      metaEl.className = "ai-meta";
+      answerEl.appendChild(contentEl);
+      answerEl.appendChild(metaEl);
+      turnEl.appendChild(answerEl);
+
+      threadEl.appendChild(turnEl);
+
+      // Render markdown + charts into this turn's content
+      renderResponseInto(contentEl, metaEl, turn.response, turn.toolCalls || [], timer);
+    }
+
+    // Render the markdown response + chart blocks + tool calls into the
+    // provided content and meta elements. Used by both fresh turns and
+    // history reloads.
+    function renderResponseInto(contentEl, metaEl, text, toolCalls, timer) {
       // Extract chart blocks before markdown parsing
-      const extractStart = performance.now();
       const chartBlocks = [];
       const chartRegex = /```chart\s*\n?([\s\S]*?)```/g;
       let idx = 0;
@@ -843,11 +1114,9 @@
       if (timer) perf.mark(timer, "stripCharts");
 
       marked.setOptions({ breaks: true, gfm: true });
-      const markedStart = performance.now();
       const html = marked.parse(cleanedText);
       if (timer) perf.mark(timer, "marked");
 
-      const injectStart = performance.now();
       contentEl.innerHTML = html;
       if (timer) perf.mark(timer, "inject");
 
@@ -866,10 +1135,9 @@
       }
       if (timer) perf.mark(timer, "meta");
 
-      // Defer chart rendering to next frame so the browser can paint the text first
+      // Defer chart rendering to next frame
       if (chartBlocks.length > 0) {
         requestAnimationFrame(() => {
-          const chartStart = performance.now();
           for (const cb of chartBlocks) {
             const slot = contentEl.querySelector(`[data-chart-index="${cb.index}"]`);
             if (!slot) continue;
@@ -898,6 +1166,37 @@
       }
     }
 
+    // Render the follow-up input below the thread. Replaces existing
+    // contents of the followup slot.
+    function renderFollowUp() {
+      const slot = document.getElementById("ai-followup-slot");
+      slot.innerHTML = `
+        <div class="ai-followup">
+          <input type="text" class="ai-followup-input" id="ai-followup-input"
+            placeholder='Ask a follow-up — e.g. "now break that down by month"' autocomplete="off" />
+          <button class="ai-followup-btn" id="ai-followup-send">Ask</button>
+        </div>
+        <div class="ai-followup-hint">The AI remembers the conversation above — you can refer to it directly.</div>
+      `;
+      const input = document.getElementById("ai-followup-input");
+      const send = document.getElementById("ai-followup-send");
+      send.addEventListener("click", () => {
+        const v = input.value;
+        input.value = "";
+        submitAI(v, { isFollowUp: true });
+      });
+      input.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && !e.shiftKey) {
+          e.preventDefault();
+          const v = input.value;
+          input.value = "";
+          submitAI(v, { isFollowUp: true });
+        }
+      });
+      // Auto-focus so users can just start typing the next question
+      setTimeout(() => input.focus(), 50);
+    }
+
     function applyDarkAxisDefaults(scales) {
       for (const key of Object.keys(scales)) {
         const sc = scales[key];
@@ -914,8 +1213,8 @@
     // Export functions
     // ────────────────────────────────────────────────────────────────
     async function copyResponse() {
-      const text = state.lastResponseText;
-      if (!text) return;
+      if (state.thread.length === 0) return;
+      const text = threadToMarkdown(state.thread);
       try {
         await navigator.clipboard.writeText(text);
         flashBtn("ai-copy", "✓ Copied");
@@ -925,28 +1224,45 @@
     }
 
     function downloadMarkdown() {
-      const text = state.lastResponseText;
-      if (!text) return;
-      const q = (state.lastQuestion || "response").slice(0, 60).replace(/[^a-zA-Z0-9-_ ]/g, "").trim();
+      if (state.thread.length === 0) return;
+      const text = threadToMarkdown(state.thread);
+      const q = (state.thread[0].question || "response").slice(0, 60).replace(/[^a-zA-Z0-9-_ ]/g, "").trim();
       const filename = `tsg-ai-${q.replace(/\s+/g, "-")}.md`.toLowerCase();
-      const header = `# ${state.lastQuestion}\n\n_Asked on ${new Date().toLocaleString("en-GB")}_\n\n`;
-      downloadFile(header + text, filename, "text/markdown");
+      downloadFile(text, filename, "text/markdown");
       flashBtn("ai-export-md", "✓ Downloaded");
     }
 
     function downloadCSV() {
-      const text = state.lastResponseText;
-      if (!text) return;
-      const tables = extractMarkdownTables(text);
+      if (state.thread.length === 0) return;
+      // Combine tables from every turn in the thread
+      const tables = [];
+      for (const turn of state.thread) {
+        const t = extractMarkdownTables(turn.response);
+        tables.push(...t);
+      }
       if (tables.length === 0) {
         flashBtn("ai-export-csv", "No tables");
         return;
       }
       const csv = tablesToCSV(tables);
-      const q = (state.lastQuestion || "response").slice(0, 60).replace(/[^a-zA-Z0-9-_ ]/g, "").trim();
+      const q = (state.thread[0].question || "response").slice(0, 60).replace(/[^a-zA-Z0-9-_ ]/g, "").trim();
       const filename = `tsg-ai-${q.replace(/\s+/g, "-")}.csv`.toLowerCase();
       downloadFile(csv, filename, "text/csv");
       flashBtn("ai-export-csv", "✓ Downloaded");
+    }
+
+    // Convert the thread to a markdown document with Q/A sections
+    function threadToMarkdown(thread) {
+      const header = `# ${thread[0].question}\n\n_Asked on ${new Date().toLocaleString("en-GB")}_\n\n`;
+      const parts = [header];
+      thread.forEach((turn, i) => {
+        if (i === 0) {
+          parts.push(turn.response);
+        } else {
+          parts.push("\n\n---\n\n## Follow-up: " + turn.question + "\n\n" + turn.response);
+        }
+      });
+      return parts.join("\n");
     }
 
     function extractMarkdownTables(text) {
@@ -1005,33 +1321,67 @@
     }
 
     function clearResponse() {
-      for (const c of state.activeCharts) { try { c.destroy(); } catch {} }
-      state.activeCharts = [];
+      destroyCharts();
+      state.thread = [];
+      state.threadId = null;
       document.getElementById("ai-response").classList.remove("show");
-      document.getElementById("ai-content").innerHTML = "";
-      document.getElementById("ai-meta").innerHTML = "";
-      state.lastResponseText = "";
-      state.lastQuestion = "";
-      state.lastToolCalls = [];
+      document.getElementById("ai-thread").innerHTML = "";
+      document.getElementById("ai-loader-slot").innerHTML = "";
+      document.getElementById("ai-followup-slot").innerHTML = "";
     }
 
     // ────────────────────────────────────────────────────────────────
-    // History
+    // History — stores whole conversation threads. Entries now have
+    // a `turns` array; older entries with just `question`/`response`
+    // are auto-converted to single-turn threads on load.
     // ────────────────────────────────────────────────────────────────
     function loadHistory() {
       try {
-        return JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
+        const raw = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
+        // Normalise — if entry is old single-Q&A format, wrap it
+        return raw.map((h) => {
+          if (h.turns && Array.isArray(h.turns)) return h;
+          if (h.question && h.response) {
+            return {
+              id: h.id,
+              timestamp: h.timestamp,
+              turns: [{ question: h.question, response: h.response, toolCalls: h.toolCalls || [] }],
+            };
+          }
+          return null;
+        }).filter(Boolean);
       } catch {
         return [];
       }
     }
 
-    function saveToHistory(entry) {
+    function saveThreadToHistory() {
       try {
-        let history = loadHistory();
-        history.unshift(entry);
-        history = history.slice(0, HISTORY_MAX);
-        localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+        const history = loadHistory();
+        // If state.threadId exists (loaded from history), update in place;
+        // otherwise create a new entry at the top.
+        let entry;
+        if (state.threadId) {
+          const idx = history.findIndex((h) => h.id === state.threadId);
+          if (idx >= 0) {
+            history[idx].turns = state.thread.map((t) => ({ ...t }));
+            history[idx].timestamp = new Date().toISOString();
+            // Move to top
+            entry = history.splice(idx, 1)[0];
+            history.unshift(entry);
+          }
+        }
+        if (!entry) {
+          entry = {
+            id: Date.now().toString(),
+            timestamp: new Date().toISOString(),
+            turns: state.thread.map((t) => ({ ...t })),
+          };
+          state.threadId = entry.id;
+          history.unshift(entry);
+        }
+        const trimmed = history.slice(0, HISTORY_MAX);
+        localStorage.setItem(HISTORY_KEY, JSON.stringify(trimmed));
         renderHistoryList();
       } catch (err) {
         console.error("Failed to save history:", err);
@@ -1053,13 +1403,16 @@
         list.innerHTML = '<div class="ai-history-empty">No saved questions yet</div>';
         return;
       }
-      list.innerHTML = history.map((h) => `
-        <div class="ai-history-item" data-id="${escapeAttr(h.id)}">
-          <div class="ai-history-q" title="${escapeAttr(h.question)}">${escapeHtml(h.question)}</div>
-          <div class="ai-history-time">${formatRelativeTime(h.timestamp)}</div>
-          <button class="ai-history-delete" data-id="${escapeAttr(h.id)}" title="Delete">×</button>
-        </div>
-      `).join("");
+      list.innerHTML = history.map((h) => {
+        const firstQ = (h.turns && h.turns[0] && h.turns[0].question) || "(empty)";
+        const extra = (h.turns && h.turns.length > 1) ? ` <span style="color:var(--accent)">+${h.turns.length - 1}</span>` : "";
+        return `
+          <div class="ai-history-item" data-id="${escapeAttr(h.id)}">
+            <div class="ai-history-q" title="${escapeAttr(firstQ)}">${escapeHtml(firstQ)}${extra}</div>
+            <div class="ai-history-time">${formatRelativeTime(h.timestamp)}</div>
+            <button class="ai-history-delete" data-id="${escapeAttr(h.id)}" title="Delete">×</button>
+          </div>`;
+      }).join("");
       list.querySelectorAll(".ai-history-item").forEach((item) => {
         item.addEventListener("click", (e) => {
           if (e.target.closest(".ai-history-delete")) return;
@@ -1077,21 +1430,28 @@
     function loadFromHistory(id) {
       const entry = loadHistory().find((h) => h.id === id);
       if (!entry) return;
-      // Clean up existing charts
-      for (const c of state.activeCharts) { try { c.destroy(); } catch {} }
-      state.activeCharts = [];
 
-      document.getElementById("ai-input").value = entry.question;
-      state.lastQuestion = entry.question;
-      state.lastResponseText = entry.response;
-      state.lastToolCalls = entry.toolCalls || [];
+      // Clean up existing thread + charts
+      destroyCharts();
+      document.getElementById("ai-thread").innerHTML = "";
+      document.getElementById("ai-loader-slot").innerHTML = "";
+      document.getElementById("ai-followup-slot").innerHTML = "";
+
+      state.thread = entry.turns.map((t) => ({ ...t }));
+      state.threadId = entry.id;
 
       const respEl = document.getElementById("ai-response");
-      respEl.classList.remove("thinking", "error");
+      respEl.classList.remove("error");
       respEl.classList.add("show");
-      renderAIResponse(entry.response, entry.toolCalls || []);
 
-      // Close the history dropdown for cleaner UX
+      // Render every turn
+      for (const turn of state.thread) appendTurn(turn);
+      renderFollowUp();
+
+      // Set the main input to the first question (for reference / quick re-ask)
+      document.getElementById("ai-input").value = state.thread[0].question;
+
+      // Close the history dropdown
       document.getElementById("ai-history").open = false;
     }
 
@@ -1112,15 +1472,21 @@
     // Customer loading & filtering
     // ────────────────────────────────────────────────────────────────
     async function loadCustomers() {
-      setTableState("Loading customers…");
+      const tbody = document.getElementById("tbody");
+      tbody.innerHTML = `<tr><td colspan="${COLUMNS.length}"><div id="table-loader-slot"></div></td></tr>`;
+      const slot = document.getElementById("table-loader-slot");
+      const loader = makeLoader("table");
+      slot.appendChild(loader.el);
       const url = "/customers-data" + (state.includeLost ? "?include=all" : "");
       try {
         const res = await fetch(url);
         const data = await res.json();
         if (!data.ok) throw new Error(data.error || "fetch failed");
+        loader.stop();
         state.allCustomers = data.customers || [];
         applyFilters();
       } catch (err) {
+        loader.stop();
         console.error(err);
         setTableState("Failed to load: " + err.message, true);
       }
@@ -1336,11 +1702,19 @@
             <button class="dd-tab active" data-tab="live">Live</button>
             <button class="dd-tab" data-tab="legacy">Legacy Jobs</button>
           </div>
-          <div id="dd-tab-content"><div class="state">Loading activity…</div></div>
+          <div id="dd-tab-content"><div id="dd-loader-slot"></div></div>
         </div>
       `;
       attachDrilldownEditHandlers(c);
       attachActivityTabs();
+      // Insert the activity loader after innerHTML is set
+      const ddLoaderSlot = document.getElementById("dd-loader-slot");
+      if (ddLoaderSlot) {
+        const ddLoader = makeLoader("activity", true);
+        ddLoaderSlot.appendChild(ddLoader.el);
+        // Stash on state so renderDrilldownActivity can stop it
+        state._ddLoader = ddLoader;
+      }
     }
 
     function attachDrilldownEditHandlers(c) {
@@ -1374,6 +1748,7 @@
 
     function renderDrilldownActivity(c, data) {
       state._lastActivity = data;
+      if (state._ddLoader) { state._ddLoader.stop(); state._ddLoader = null; }
       renderActivityForTab("live", data);
     }
 
