@@ -29,7 +29,7 @@ const UUID_RE = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi
 // ─────────────────────────────────────────────────────────────────
 // System prompt
 // ─────────────────────────────────────────────────────────────────
-const SYSTEM_PROMPT = `You are an analyst for The Sign Group (TSG), a UK signage manufacturer (Leeds). You help the sales team understand customer data.
+const SYSTEM_PROMPT_BASE = `You are an analyst for The Sign Group (TSG), a UK signage manufacturer (Leeds). You help the sales team understand customer data.
 
 # Data
 - ~5,287 customer records spanning legacy Clarity data (2008–2026) and live ShopVOX data (2025+).
@@ -111,7 +111,15 @@ You have three tools:
 2. **get_customer_detail** — full info + activity for one customer. Use when zooming in.
 3. **compute_monthly_metric** — monthly buckets for trend questions. Use when the answer is a time series.
 
+# Follow-up questions
+The user may ask follow-up questions that build on previous answers in the conversation. Treat the conversation as a thread — when they say "narrow that to last quarter" or "break it down by brand", refer back to the previous results without re-running tools unless necessary. Reuse the data you've already pulled when you can.
+
 Only call tools when needed. Don't call query_customers just to confirm something obvious.`;
+
+function getSystemPrompt() {
+  const today = new Date().toISOString().slice(0, 10);
+  return SYSTEM_PROMPT_BASE + `\n\n# Current date\nToday is ${today}.`;
+}
 
 // ─────────────────────────────────────────────────────────────────
 // Tool definitions
@@ -222,8 +230,19 @@ export async function onRequest(context) {
     return jsonResponse({ ok: false, error: "Missing 'message' field" }, 400);
   }
 
+  // Optional conversation history for multi-turn / follow-ups.
+  // Each entry: { role: "user" | "assistant", content: "string" }
+  // Cap at 16 entries (8 turns) to keep token cost bounded.
+  const HISTORY_CAP = 16;
+  let history = [];
+  if (Array.isArray(body.history)) {
+    history = body.history
+      .filter((m) => m && typeof m === "object" && (m.role === "user" || m.role === "assistant") && typeof m.content === "string" && m.content.length > 0)
+      .slice(-HISTORY_CAP);
+  }
+
   try {
-    const result = await runConversation(userMessage, env);
+    const result = await runConversation(userMessage, history, env);
     return jsonResponse({ ok: true, ...result });
   } catch (err) {
     console.error("AI chat error:", err);
@@ -234,11 +253,17 @@ export async function onRequest(context) {
 // ─────────────────────────────────────────────────────────────────
 // Conversation loop
 // ─────────────────────────────────────────────────────────────────
-async function runConversation(userMessage, env) {
-  const todayContext = `Today is ${new Date().toISOString().slice(0, 10)}.`;
-  const messages = [
-    { role: "user", content: `${todayContext}\n\n${userMessage}` },
-  ];
+async function runConversation(userMessage, history, env) {
+  const messages = [];
+  // Prior conversation turns (if any)
+  if (history && history.length > 0) {
+    for (const m of history) {
+      messages.push({ role: m.role, content: m.content });
+    }
+  }
+  // Current user message
+  messages.push({ role: "user", content: userMessage });
+
   const toolCallsLog = [];
 
   for (let i = 0; i < MAX_ITERATIONS; i++) {
@@ -305,7 +330,7 @@ async function callAnthropic(messages, env) {
     body: JSON.stringify({
       model: MODEL,
       max_tokens: MAX_TOKENS,
-      system: SYSTEM_PROMPT,
+      system: getSystemPrompt(),
       tools: TOOLS,
       messages,
     }),
