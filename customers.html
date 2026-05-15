@@ -84,15 +84,35 @@
        ───────────────────────────────────────────────────── */
     .ai-section {
       position: relative;
-      background: linear-gradient(180deg, #181818 0%, #121212 100%);
+      background:
+        radial-gradient(ellipse 80% 60% at 30% 0%, rgba(205,228,83,0.05), transparent 70%),
+        radial-gradient(ellipse 70% 60% at 70% 100%, rgba(107,212,236,0.04), transparent 70%),
+        linear-gradient(180deg, #181818 0%, #121212 100%);
       border: 1px solid rgba(255,255,255,0.06);
       border-radius: 16px;
       padding: 26px 28px 24px;
       margin-bottom: 28px;
       overflow: hidden;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4), 0 1px 0 rgba(255,255,255,0.04) inset;
       contain: layout style paint;
     }
+    /* Animated brand-coloured strip. Previously caused page-wide lag
+       because layout changes here triggered reflows of the table below.
+       Now the table is GPU-promoted (own compositing layer), this
+       animation only repaints its own 2px strip. If perf regresses
+       again, remove the `animation` line below — the strip will stay
+       as a static gradient with no ongoing cost. */
+    .ai-section::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--accent-bright), var(--accent-warm), var(--accent-pink), var(--accent-bright));
+      background-size: 300% 100%;
+      animation: ai-hue 18s linear infinite;
+      opacity: 0.85;
+    }
+    @keyframes ai-hue { to { background-position: 300% 0; } }
     /* Static brand-coloured strip across the top. Previously had an infinite
        gradient animation here — looked nice but ran the GPU constantly,
        which made dropdowns and other UI feel laggy. Static version costs
@@ -215,7 +235,7 @@
       border-radius: 99px;
       color: var(--text-dim);
       cursor: pointer;
-      transition: background-color 0.12s, border-color 0.12s, color 0.12s;
+      transition: background-color 0.12s, border-color 0.12s, color 0.12s, transform 0.12s;
       font-weight: 500;
       user-select: none;
     }
@@ -223,6 +243,7 @@
       background: rgba(205,228,83,0.08);
       border-color: rgba(205,228,83,0.4);
       color: var(--accent-bright);
+      transform: translateY(-1px);
     }
 
     /* History — cleaner, more subdued */
@@ -811,7 +832,7 @@
       border-radius: 8px;
       cursor: pointer;
       user-select: none;
-      transition: background-color 0.1s, border-color 0.1s, color 0.1s;
+      transition: background-color 0.12s, border-color 0.12s, color 0.12s, transform 0.12s;
       font-size: 12px;
       font-weight: 500;
       display: inline-flex;
@@ -823,6 +844,7 @@
       background: rgba(255,255,255,0.05);
       border-color: rgba(255,255,255,0.12);
       color: var(--text);
+      transform: translateY(-1px);
     }
     .seg-chip.active {
       background: var(--cb);
@@ -835,6 +857,7 @@
       height: 8px;
       border-radius: 50%;
       background: var(--c);
+      box-shadow: 0 0 8px var(--c);
     }
 
     .filters {
