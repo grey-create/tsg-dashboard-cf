@@ -1892,6 +1892,27 @@
         wrap.offsetHeight;
         await new Promise((r) => requestAnimationFrame(r));
 
+        // CRITICAL: wait for all images (especially the chart data URLs
+        // we just generated) to actually load and decode. Without this,
+        // html2canvas snapshots before the imgs are painted and renders
+        // a blank PDF, even though `complete` may be false momentarily.
+        // The dimensions check passes because layout is computed from
+        // the natural size of the data, but pixel data isn't ready yet.
+        const imgs = Array.from(wrap.querySelectorAll("img"));
+        console.log(`[PDF] Waiting for ${imgs.length} image(s) to load…`);
+        await Promise.all(imgs.map((img) => {
+          if (img.complete && img.naturalHeight > 0) return Promise.resolve();
+          return new Promise((resolve) => {
+            img.onload = resolve;
+            img.onerror = resolve;
+            // Failsafe in case onload never fires
+            setTimeout(resolve, 3000);
+          });
+        }));
+        // Extra paint tick so decoded images actually hit the layer
+        await new Promise((r) => requestAnimationFrame(r));
+        console.log("[PDF] Images ready");
+
         const w = wrap.offsetWidth;
         const h = wrap.offsetHeight;
         console.log(`[PDF] Export container size: ${w}×${h}`);
@@ -1909,7 +1930,14 @@
           margin: [10, 10],
           filename,
           image: { type: "jpeg", quality: 0.95 },
-          html2canvas: { scale: 2, useCORS: true, logging: false, backgroundColor: "#ffffff" },
+          html2canvas: {
+            scale: 2,
+            useCORS: true,
+            logging: true,           // verbose so we can see what html2canvas is doing if this still fails
+            backgroundColor: "#ffffff",
+            allowTaint: false,
+            imageTimeout: 5000,
+          },
           jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
           pagebreak: { mode: ["css", "legacy"] },
         }).from(wrap).save();
