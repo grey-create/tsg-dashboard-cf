@@ -77,8 +77,8 @@
 
     /* ─────────────────────────────────────────────────────
        AI section — the centrepiece of the page.
-       Treated like a hero panel: gradient background, animated
-       brand-coloured strip on top, soft ambient glow, generous
+       Treated like a hero panel: gradient background, brand-
+       coloured strip on top, soft ambient glow, generous
        spacing. Built to feel like a premium AI surface, not a
        form on a forgotten admin page.
        ───────────────────────────────────────────────────── */
@@ -94,21 +94,20 @@
       margin-bottom: 28px;
       overflow: hidden;
       box-shadow: 0 8px 32px rgba(0,0,0,0.4), 0 1px 0 rgba(255,255,255,0.04) inset;
-      contain: layout style;
+      contain: layout style paint;   /* full containment isolates repaints */
     }
-    /* Animated brand-coloured strip across the top — same animation
-       cadence as the main dashboard hero so it feels like one family. */
+    /* Static brand-coloured strip across the top. Previously had an infinite
+       gradient animation here — looked nice but ran the GPU constantly,
+       which made dropdowns and other UI feel laggy. Static version costs
+       nothing after the initial paint. */
     .ai-section::before {
       content: "";
       position: absolute;
       top: 0; left: 0; right: 0;
       height: 2px;
-      background: linear-gradient(90deg, var(--accent-bright), var(--accent-warm), var(--accent-pink), var(--accent-bright));
-      background-size: 300% 100%;
-      animation: ai-hue 14s linear infinite;
+      background: linear-gradient(90deg, var(--accent-bright), var(--accent-warm), var(--accent-pink));
       opacity: 0.85;
     }
-    @keyframes ai-hue { to { background-position: 300% 0; } }
 
     /* Header — title + description, no more uppercase admin look */
     .ai-head {
@@ -612,6 +611,12 @@
     @keyframes tsg-pulse {
       0%, 100% { opacity: 0.85; transform: scale(1); }
       50% { opacity: 1; transform: scale(1.08); }
+    }
+    /* Respect reduced-motion preference — disable loader animations for
+       users who've opted out of motion at the OS level. */
+    @media (prefers-reduced-motion: reduce) {
+      .tsg-loader-ring, .tsg-loader-logo { animation: none !important; }
+      * { transition-duration: 0.01s !important; }
     }
     .tsg-loader-text {
       font-size: 13px;
