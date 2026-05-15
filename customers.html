@@ -1773,22 +1773,47 @@
       btn.disabled = true;
       btn.textContent = "Loading…";
 
+      let overlay = null;
+      let wrap = null;
+
       try {
-        console.log("[PDF] Starting download...");
+        console.log("[PDF] Starting download…");
         await loadHtml2Pdf();
-        console.log("[PDF] html2pdf library loaded");
+        console.log("[PDF] html2pdf loaded");
         btn.textContent = "Building…";
 
-        // 1. Snapshot live canvases to data URLs (clone won't carry pixels)
+        // Pre-fetch the logo and convert to a data URL. Avoids CORS taint
+        // (the Shopify CDN may not always send the right CORS headers for
+        // canvas rendering), and means html2canvas just sees a base64 string
+        // it can render without any network. Falls back to a TSG text badge
+        // if the fetch fails for any reason.
+        let logoDataUrl = null;
+        try {
+          const resp = await fetch(TSG_LOGO_URL);
+          if (resp.ok) {
+            const blob = await resp.blob();
+            logoDataUrl = await new Promise((res, rej) => {
+              const reader = new FileReader();
+              reader.onload = () => res(reader.result);
+              reader.onerror = rej;
+              reader.readAsDataURL(blob);
+            });
+            console.log("[PDF] Logo fetched as data URL");
+          }
+        } catch (err) {
+          console.warn("[PDF] Logo fetch failed, using fallback:", err);
+        }
+
+        // Snapshot live canvases to data URLs (clone won't carry pixels)
         const liveThread = document.getElementById("ai-thread");
         const liveCanvases = Array.from(liveThread.querySelectorAll("canvas"));
-        console.log("[PDF] Live canvases found:", liveCanvases.length);
+        console.log("[PDF] Live canvases:", liveCanvases.length);
         const canvasURLs = liveCanvases.map((c) => {
           try { return c.toDataURL("image/png"); }
           catch (err) { console.warn("[PDF] Canvas snapshot failed:", err); return null; }
         });
 
-        // 2. Clone the thread and swap canvases for images
+        // Clone the thread and swap canvases for images
         const clone = liveThread.cloneNode(true);
         const clonedCanvases = clone.querySelectorAll("canvas");
         clonedCanvases.forEach((c, i) => {
@@ -1800,25 +1825,59 @@
         });
         console.log("[PDF] Thread cloned, canvases swapped");
 
-        // 3. Build the export container with TSG header/footer.
-        //    Position with visibility:hidden (not off-screen) — browsers can
-        //    optimize away rendering of far-off-screen elements, which leaves
-        //    html2pdf with nothing to capture. visibility:hidden keeps the
-        //    layout computed but the element invisible.
-        const wrap = document.createElement("div");
-        wrap.id = "pdf-export";
-        wrap.style.cssText = "position:fixed;top:0;left:0;width:794px;visibility:hidden;pointer-events:none;background:#ffffff;";
+        // Show a full-screen overlay so the user doesn't see the export
+        // content briefly flash on screen while html2pdf reads it. The
+        // overlay sits *above* the export wrap (higher z-index).
+        overlay = document.createElement("div");
+        overlay.id = "pdf-overlay";
+        overlay.style.cssText = [
+          "position:fixed",
+          "inset:0",
+          "background:rgba(10,10,10,0.94)",
+          "display:flex",
+          "align-items:center",
+          "justify-content:center",
+          "z-index:99999",
+          "color:#f1f5f9",
+          "font-family:Inter,-apple-system,sans-serif",
+        ].join(";");
+        overlay.innerHTML = `
+          <div style="text-align:center">
+            <div style="font-size:42px;margin-bottom:14px">📄</div>
+            <div style="font-size:18px;font-weight:600;letter-spacing:-0.01em">Generating PDF…</div>
+            <div style="font-size:12px;color:#94a3b8;margin-top:8px">This usually takes a few seconds</div>
+          </div>
+        `;
+        document.body.appendChild(overlay);
 
-        const headerHTML = `
+        // Build the wrap — VISIBLE this time, just hidden behind the overlay.
+        // html2canvas (used by html2pdf under the hood) explicitly does NOT
+        // render elements with visibility:hidden, which is why my previous
+        // attempts produced blank files.
+        wrap = document.createElement("div");
+        wrap.id = "pdf-export";
+        wrap.style.cssText = [
+          "position:fixed",
+          "top:0",
+          "left:0",
+          "width:794px",
+          "z-index:99998",
+          "background:#ffffff",
+        ].join(";");
+
+        const logoHTML = logoDataUrl
+          ? `<img src="${logoDataUrl}" class="pdf-logo" alt="TSG" />`
+          : `<div style="width:52px;height:52px;background:#CDE453;border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:800;color:#0a0a0a;font-size:16px;letter-spacing:0.5px">TSG</div>`;
+
+        wrap.innerHTML = `
           <div class="pdf-header">
-            <img src="${TSG_LOGO_URL}" class="pdf-logo" alt="TSG" crossorigin="anonymous" />
+            ${logoHTML}
             <div>
               <h1>Customer Insights</h1>
               <div class="pdf-meta">The Sign Group&trade; · Generated ${new Date().toLocaleString("en-GB", { dateStyle: "long", timeStyle: "short" })}</div>
             </div>
           </div>
         `;
-        wrap.innerHTML = headerHTML;
         wrap.appendChild(clone);
 
         const footer = document.createElement("div");
@@ -1828,19 +1887,23 @@
 
         document.body.appendChild(wrap);
 
-        // Force a layout pass before html2pdf reads dimensions
-        const computedHeight = wrap.offsetHeight;
-        const computedWidth = wrap.offsetWidth;
-        console.log("[PDF] Export container size:", computedWidth + "×" + computedHeight);
+        // Force a layout pass, then wait a frame so the browser actually
+        // paints the wrap before html2pdf reads it.
+        wrap.offsetHeight;
+        await new Promise((r) => requestAnimationFrame(r));
 
-        if (computedHeight === 0 || computedWidth === 0) {
-          throw new Error("Export container has zero dimensions — content may not have rendered");
+        const w = wrap.offsetWidth;
+        const h = wrap.offsetHeight;
+        console.log(`[PDF] Export container size: ${w}×${h}`);
+
+        if (h === 0 || w === 0) {
+          throw new Error(`Export container has zero dimensions (${w}×${h})`);
         }
 
-        // 4. Generate and download
+        // Generate and download
         const q = (state.thread[0].question || "response").slice(0, 60).replace(/[^a-zA-Z0-9-_ ]/g, "").trim();
         const filename = `tsg-ai-${q.replace(/\s+/g, "-")}.pdf`.toLowerCase();
-        console.log("[PDF] Generating PDF: " + filename);
+        console.log("[PDF] Generating: " + filename);
 
         await window.html2pdf().set({
           margin: [10, 10],
@@ -1850,9 +1913,7 @@
           jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
           pagebreak: { mode: ["css", "legacy"] },
         }).from(wrap).save();
-        console.log("[PDF] PDF saved successfully");
-
-        wrap.remove();
+        console.log("[PDF] Saved successfully");
 
         btn.textContent = "✓ Downloaded";
         btn.classList.add("success");
@@ -1863,8 +1924,12 @@
       } catch (err) {
         console.error("[PDF] Download failed:", err);
         btn.textContent = "Failed";
+        // Tell the user — silent failures are the worst.
+        alert("PDF generation failed: " + (err && err.message ? err.message : String(err)) + "\n\nOpen the browser console (F12) for full diagnostic logs.");
         setTimeout(() => { btn.textContent = original; }, 2000);
       } finally {
+        if (wrap && wrap.parentNode) wrap.remove();
+        if (overlay && overlay.parentNode) overlay.remove();
         btn.disabled = false;
       }
     }
