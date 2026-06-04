@@ -358,12 +358,24 @@ export async function onRequest(context) {
         const tsgTbc  = Number(f[MS.tsgDateTbcWip]) || 0;
         const tsgNm   = Number(f[MS.tsgNmWip])      || 0;
 
+        // COMPLETED months report invoiced-only. Including WIP is right for
+        // the in-progress month (it's this month's committed pipeline), but
+        // wrong for history: once a month rolls over, the aggregator stops
+        // updating its row, so any leftover WIP freezes onto it and
+        // permanently inflates the "final" figure (e.g. May-26 showed TSG
+        // £302,649 vs a true invoiced £169,312, putting it falsely into the
+        // all-time top 10). Past months therefore return pure invoiced; the
+        // current (and any future) month keeps invoiced + WIP. The split
+        // fields below (tsgInvoiced / tsgWip / tsgUndated / tsgNextMonth)
+        // are unchanged and still expose every bucket.
+        const isPastMonth = ms.slice(0, 7) < todayStr.slice(0, 7);
+
         return {
           dateEntered: ms,
           monthYear:   f[MS.monthLabel] || "",
           month:       f[MS.monthLabel] || "",
           overall: Number(f[MS.overallInvoiced]) || 0,
-          tsg:     tsgInv + tsgDat + tsgTbc + tsgNm,
+          tsg:     isPastMonth ? tsgInv : tsgInv + tsgDat + tsgTbc + tsgNm,
           wll:     Number(f[MS.wllInvoiced])   || 0,
           nv:      Number(f[MS.nvInvoiced])    || 0,
           other:   Number(f[MS.otherInvoiced]) || 0,
