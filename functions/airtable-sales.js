@@ -99,6 +99,13 @@ export async function onRequestGet(context) {
       };
     });
 
+    // Current month in London time as "YYYY-MM". Used to decide whether a
+    // row's TSG figure should include Dated WIP (current/future month) or be
+    // pure invoiced (completed month) — see comment below.
+    const todayYM = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Europe/London", year: "numeric", month: "2-digit",
+    }).format(new Date());
+
     // Map Monthly Summary records to legacy response shape
     const records = msRecords
       .filter(r => r.fields[MS.monthStart])
@@ -109,26 +116,33 @@ export async function onRequestGet(context) {
           overallTarget: 0, tsgTarget: 0, wllTarget: 0, nvTarget: 0, tsgNewSalesTarget: 0
         };
 
-        // TSG figure for Brand Sales: Invoiced + Dated WIP (this month's due-but-
-        // not-yet-invoiced). Matches the "money in the bank" convention used on
-        // the Revenue & Invoicing page so TSG is comparable to WLL/NV. Does NOT
-        // include TBC WIP (no due date set yet) or NM WIP (next month's pipeline)
-        // because those aren't this-month money. The breakdown fields below
-        // still expose every bucket if a consumer needs it.
+        // TSG figure for Brand Sales — CURRENT month only: Invoiced + Dated
+        // WIP (this month's due-but-not-yet-invoiced). Matches the "money in
+        // the bank" convention used on the Revenue & Invoicing page so TSG is
+        // comparable to WLL/NV. Does NOT include TBC WIP (no due date set
+        // yet) or NM WIP (next month's pipeline) because those aren't
+        // this-month money.
+        //
+        // COMPLETED months report pure invoiced. Once a month rolls over the
+        // aggregator stops updating its row, so any leftover Dated WIP
+        // freezes onto it and would permanently inflate the month's "final"
+        // figure (the May-26 / £302k Best-Months bug). The breakdown fields
+        // below still expose every bucket if a consumer needs it.
         const tsgInvoiced   = Number(f[MS.tsgInvoiced])   || 0;
         const tsgDatedWip   = Number(f[MS.tsgDatedWip])   || 0;
         const tsgDateTbcWip = Number(f[MS.tsgDateTbcWip]) || 0;
         const tsgNmWip      = Number(f[MS.tsgNmWip])      || 0;
-        const tsg           = tsgInvoiced + tsgDatedWip;
+        const isPastMonth   = ms.slice(0, 7) < todayYM;
+        const tsg           = isPastMonth ? tsgInvoiced : tsgInvoiced + tsgDatedWip;
 
         const wll   = Number(f[MS.wllInvoiced])   || 0;
         const nv    = Number(f[MS.nvInvoiced])    || 0;
         const other = Number(f[MS.otherInvoiced]) || 0;
 
-        // Overall = TSG (incl. Dated WIP) + WLL + NV + Other. We recompute here
-        // rather than using MS.overallInvoiced because that field is invoiced-
-        // only and would understate Overall when TSG has Dated WIP, breaking
-        // the parity with the per-brand cards.
+        // Overall = TSG (as defined above) + WLL + NV + Other. We recompute
+        // here rather than using MS.overallInvoiced so Overall always agrees
+        // with the per-brand cards: for the current month that means TSG
+        // includes Dated WIP; for completed months everything is invoiced-only.
         const overall = tsg + wll + nv + other;
 
         return {
