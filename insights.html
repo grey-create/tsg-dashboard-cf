@@ -129,7 +129,13 @@ function processInsights(raw){
   var curKey=curYear+"-"+String(curMonth).padStart(2,"0");
 
   var invByKey={},ovByKey={};
-  raw.invoiced.forEach(function(r){var p=parseMY(r.monthYear);if(p)invByKey[p.key]=r;});
+  // COMPLETED months use invoiced-only (tsgInvoiced). The API's `tsg` field is
+  // invoiced + WIP, which is right for the in-progress month but wrong for
+  // history: when a month rolls over, the aggregator stops updating its row, so
+  // any leftover WIP freezes onto it and permanently inflates the "final"
+  // figure (e.g. May-26 showed £302,649 vs a true invoiced £169,312). The
+  // current month keeps invoiced + WIP so the timeline shows where it's heading.
+  raw.invoiced.forEach(function(r){var p=parseMY(r.monthYear);if(p){if(p.key!==curKey&&r.tsgInvoiced!=null)r.tsg=Number(r.tsgInvoiced)||0;invByKey[p.key]=r;}});
   raw.overview.forEach(function(r){var p=parseMY(r.monthYear);if(p)ovByKey[p.key]=r;});
 
   var allKeys=Object.keys(invByKey).sort();
