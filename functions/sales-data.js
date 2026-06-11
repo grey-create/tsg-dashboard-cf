@@ -191,6 +191,12 @@ export async function onRequest(context) {
     otherInvoiced:   "fld8iKdS7ZKiwM5N7",
     overallInvoiced: "fldoxUT9wPIsUV3BE",
     lastAggregated:  "fldamXlxJOZG6NQyP",
+    // "Last Changed" dateTime fields — when each figure last actually moved
+    // (stamped by the aggregator), for the per-block "Data changed" stamps.
+    tsgInvoicedLastChanged: "fldTJ17TqQBbobJGA",
+    tsgNewSalesLastChanged: "fldhQoz9CUWHhfKhM",
+    wllInvoicedLastChanged: "fldgogLcqSSJ6zb7A",
+    nvInvoicedLastChanged:  "fldr2W0KuuFggJJT1",
   };
 
   // Month Plan
@@ -388,6 +394,15 @@ export async function onRequest(context) {
           tsgWip:       tsgDat,
           tsgUndated:   tsgTbc,
           tsgNextMonth: tsgNm,
+          // When each figure last CHANGED (not when the aggregator last ran).
+          // All four live on this same Monthly Summary row; null until the
+          // aggregator deploy starts populating them → front end shows "—".
+          lastChanged: {
+            tsgInvoiced: f[MS.tsgInvoicedLastChanged] || null,
+            tsgNewSales: f[MS.tsgNewSalesLastChanged] || null,
+            wll:         f[MS.wllInvoicedLastChanged]  || null,
+            nv:          f[MS.nvInvoicedLastChanged]   || null,
+          },
         };
       });
 

@@ -232,6 +232,8 @@
   .brand-card.bc-small .bc-detail{padding-top:10px}
   .brand-card .bc-detail .bd-k{color:#64748b;font-weight:600;text-transform:uppercase;font-size:9px;letter-spacing:.5px;margin-bottom:1px}
   .brand-card .bc-detail .bd-v{color:#e2e8f0;font-weight:600;font-size:12px}
+  /* Per-block "Data changed" stamp — when the figure last actually moved. */
+  .brand-card .bc-stamp{font-size:10px;color:#64748b;font-weight:600;letter-spacing:.2px;margin-top:10px;padding-top:8px;border-top:1px solid #2a3a4e}
 
   /* New Sales Orders TSG card — deliberately distinct visual treatment so it
      can never be misread as "the same number as TSG Invoicing". Stacks four
@@ -282,6 +284,15 @@ var LOGOS={tsg:"https://cdn.shopify.com/s/files/1/1070/8974/files/TSG-Logo-Round
 var FY_START_MONTH=12;
 
 function f(n){return"\u00A3"+Math.round(Number(n)||0).toLocaleString("en-GB")}
+// "Data changed" stamp: format an ISO instant as "DD Mon HH:MM" Europe/London,
+// or "\u2014" when not yet populated (the aggregator stamps these on real changes).
+function fmtStamp(iso){
+  if(!iso)return"\u2014";
+  var d=new Date(iso);
+  if(isNaN(d))return"\u2014";
+  return d.toLocaleString("en-GB",{timeZone:"Europe/London",day:"numeric",month:"short",hour:"2-digit",minute:"2-digit",hour12:false}).replace(",","");
+}
+function stampLine(iso){return'<div class="bc-stamp">Data changed: '+fmtStamp(iso)+'</div>';}
 function ps(n){return(n>0?"+":"")+n+"%"}
 function po(a,b){if(!b)return 0;return Math.round(((a-b)/b)*100)}
 function dl(v){var p=v>0;return'<span class="'+(p?"up":"dn")+'">'+(p?"\u25B2":"\u25BC")+" "+(p?"+":"")+v+"%</span>"}
@@ -468,6 +479,8 @@ function processData(raw){
   var allKeys=Object.keys(invByKey).sort();
 
   var curInv=invByKey[curKey]||{},curConv=convByKey[curKey]||{};
+  // Per-figure "last changed" timestamps (all four live on the current MS row).
+  D.lc=curInv.lastChanged||{};
   // Airtable lookup fields return arrays — unpack before arithmetic
   function extractNum(v){if(Array.isArray(v))v=v.length>0?v[0]:0;if(v==null)return 0;return parseFloat(v)||0;}
   function getBrandTgt(ovVal,invVal){var v=extractNum(ovVal);return v||extractNum(invVal)||0;}
@@ -791,7 +804,7 @@ function render(D){
   h+='<div><div class="bd-k">WIP Due This Month</div><div class="bd-v" style="color:#fbbf24">'+f(D.tsgWipDue||0)+deltaChip("tsgWipDue","money")+'</div></div>';
   h+='<div><div class="bd-k">WIP TBC</div><div class="bd-v">'+f(D.tsgWipUndated||0)+'</div></div>';
   h+='<div><div class="bd-k">Next Month WIP</div><div class="bd-v">'+f(D.tsgWipNextMonth||0)+'</div></div>';
-  h+='</div></div>';
+  h+='</div>'+stampLine(D.lc.tsgInvoiced)+'</div>';
 
   // TSG New Sales Orders card — distinct styling but in the same zone
   h+='<div class="brand-card bc-large bc-nsales" style="--accent:#CDE453">';
@@ -809,7 +822,7 @@ function render(D){
   h+='<div><div class="bd-k">Orders Placed</div><div class="bd-v">'+(D.nsOrd||0)+deltaChip("ordersPlaced","count")+'</div></div>';
   h+='<div><div class="bd-k">Conversion Rate</div><div class="bd-v" style="color:#6BD4EC">'+(D.nsConv||0)+'%</div></div>';
   h+='<div><div class="bd-k">Avg Order Value</div><div class="bd-v">'+f(D.nsAov||0)+'</div></div>';
-  h+='</div></div>';
+  h+='</div>'+stampLine(D.lc.tsgNewSales)+'</div>';
 
   h+='</div></div>'; // close brand-row-tsg + zone-box
 
@@ -852,7 +865,7 @@ function render(D){
   h+='<div><div class="bd-k">Daily Needed</div><div class="bd-v" style="color:'+(D.wllDaily>=wllDailyTgt?"#4ade80":"#f87171")+'">'+f(wllDailyTgt)+'<span style="font-weight:400;color:#64748b">/d</span></div></div>';
   h+='<div><div class="bd-k">Projected EoM</div><div class="bd-v">'+f(D.wllProj)+'</div></div>';
   h+='<div><div class="bd-k">3mo Avg/d</div><div class="bd-v">'+f(D.wllHistDaily)+'</div></div>';
-  h+='</div></div>';
+  h+='</div>'+stampLine(D.lc.wll)+'</div>';
 
   // NV card
   h+='<div class="brand-card bc-small" style="--accent:'+C.nv.color+'">';
@@ -867,7 +880,7 @@ function render(D){
   h+='<div><div class="bd-k">Daily Needed</div><div class="bd-v" style="color:'+(D.nvDaily>=nvDailyTgt?"#4ade80":"#f87171")+'">'+f(nvDailyTgt)+'<span style="font-weight:400;color:#64748b">/d</span></div></div>';
   h+='<div><div class="bd-k">Projected EoM</div><div class="bd-v">'+f(D.nvProj)+'</div></div>';
   h+='<div><div class="bd-k">3mo Avg/d</div><div class="bd-v">'+f(D.nvHistDaily)+'</div></div>';
-  h+='</div></div>';
+  h+='</div>'+stampLine(D.lc.nv)+'</div>';
 
   h+='</div></div>'; // close brand-row-ecom + zone-box
 
