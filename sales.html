@@ -666,7 +666,11 @@ async function loadData() {
       const ym = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
       grouped[r.employee].push({
         date: ym, month: r.monthYear || ym,
-        enq: Number(r.enq)||0, orders: Number(r.orders)||0, convRate: Number(r.convRate)||0,
+        enq: Number(r.enq)||0, orders: Number(r.orders)||0,
+        // Cohort orders (no carry-over) for conversion-rate maths only. Falls
+        // back to orders if an older /airtable response doesn't supply it.
+        ordersConv: (r.ordersConv != null ? Number(r.ordersConv) : Number(r.orders)) || 0,
+        convRate: Number(r.convRate)||0,
         rejected: Number(r.rejected)||0, follow: Number(r.follow)||0,
         valueEnq: Number(r.valueEnq)||0, valueOrd: Number(r.valueOrd)||0,
         aov: Number(r.aov)||0
@@ -895,7 +899,8 @@ function updateHistorical() {
     return;
   }
   const tEnq=data.reduce((s,d)=>s+d.enq,0), tOrd=data.reduce((s,d)=>s+d.orders,0);
-  const avgConv=tEnq>0?tOrd/tEnq:0, tSales=data.reduce((s,d)=>s+d.valueOrd,0);
+  const tOrdConv=data.reduce((s,d)=>s+d.ordersConv,0);
+  const avgConv=tEnq>0?tOrdConv/tEnq:0, tSales=data.reduce((s,d)=>s+d.valueOrd,0);
   const avgAOV=tOrd>0?tSales/tOrd:0;
   const tRej=data.reduce((s,d)=>s+d.rejected,0), tFol=data.reduce((s,d)=>s+d.follow,0);
 
@@ -942,8 +947,9 @@ function buildTeamSummary(months) {
   const stats = EMPLOYEES.map(emp => {
     const d = getDataForMonths(emp,months);
     const tEnq=d.reduce((s,r)=>s+r.enq,0), tOrd=d.reduce((s,r)=>s+r.orders,0);
+    const tOrdConv=d.reduce((s,r)=>s+r.ordersConv,0);
     const tSales=d.reduce((s,r)=>s+r.valueOrd,0);
-    return { name:emp, enq:tEnq, orders:tOrd, convRate:tEnq>0?tOrd/tEnq:0, sales:tSales, aov:tOrd>0?tSales/tOrd:0 };
+    return { name:emp, enq:tEnq, orders:tOrd, convRate:tEnq>0?tOrdConv/tEnq:0, sales:tSales, aov:tOrd>0?tSales/tOrd:0 };
   });
   const rows = [
     {label:'Enquiries',key:'enq',fmt:v=>v.toLocaleString(),target:null},
@@ -1057,7 +1063,7 @@ function updateTeamDeepDive() {
 
   const totals = EMPLOYEES.map(emp=>{
     const d=getDataForMonths(emp,months);
-    if(mc.key==='convRate'){const o=d.reduce((s,r)=>s+r.orders,0),e=d.reduce((s,r)=>s+r.enq,0);return e>0?o/e:0;}
+    if(mc.key==='convRate'){const o=d.reduce((s,r)=>s+r.ordersConv,0),e=d.reduce((s,r)=>s+r.enq,0);return e>0?o/e:0;}
     if(mc.key==='aov'){const s=d.reduce((s,r)=>s+r.valueOrd,0),o=d.reduce((s,r)=>s+r.orders,0);return o>0?s/o:0;}
     return d.reduce((s,r)=>s+r[mc.key],0);
   });
@@ -1098,7 +1104,8 @@ function updateRankings() {
   const stats=EMPLOYEES.map(emp=>{
     const d=getDataForMonths(emp,months);
     const tE=d.reduce((s,r)=>s+r.enq,0),tO=d.reduce((s,r)=>s+r.orders,0),tS=d.reduce((s,r)=>s+r.valueOrd,0);
-    return{name:emp,months:d.length,enq:tE,convRate:tE>0?tO/tE:0,sales:tS,aov:tO>0?tS/tO:0};
+    const tOConv=d.reduce((s,r)=>s+r.ordersConv,0);
+    return{name:emp,months:d.length,enq:tE,convRate:tE>0?tOConv/tE:0,sales:tS,aov:tO>0?tS/tO:0};
   });
   const short=stats.filter(s=>s.months<months.length&&s.months>0);
   const exclusionPrefix = ['last3','last6','last12','all'].includes(period)

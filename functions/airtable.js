@@ -9,8 +9,16 @@
 // to YYYY-MM internally so no consumer change is needed).
 //
 // Response shape: { records: [...], lastFetched: ISO string }
-//   Each record: { date, employee, enq, orders, convRate, rejected, follow,
-//                  valueEnq, valueOrd, aov, monthYear }
+//   Each record: { date, employee, enq, orders, ordersConv, convRate, rejected,
+//                  follow, valueEnq, valueOrd, aov, monthYear }
+//
+//   `orders` / `valueOrd` are CONFIRMED figures: the row's Orders + Carry-over
+//   Orders and Value of Orders + Carry-over Value — i.e. what the rep actually
+//   won in the month, including orders that landed this month from quotes
+//   raised earlier. `ordersConv` is the cohort Orders count ONLY (no carry-over)
+//   and exists so sales.html can keep the conversion-rate maths exactly as it
+//   was — carry-over orders belong to their quote month's conversion, not this
+//   month's.
 
 export async function onRequest(context) {
   const AIRTABLE_TOKEN = context.env.AIRTABLE_TOKEN;
@@ -30,6 +38,8 @@ export async function onRequest(context) {
     valueEnq:       "fld0pU4o4FGv5nX2y",
     valueOrd:       "fldLZLoNuNS6HhKQ7",
     aov:            "fldTWsx6SJxpoqPLP",
+    carryOverOrders:"fldmBhZdtdzYTqNaR",  // orders won this month from earlier-month quotes
+    carryOverValue: "fldvinrxMw3NVX4lt",  // ex-VAT value of those carry-over orders
     lastAggregated: "fldhIlOJ0jQS5LtYx",
   };
 
@@ -124,18 +134,36 @@ export async function onRequest(context) {
     const records = dedupedRecords
       .map(r => {
         const f = r.fields;
+        // Cohort figures straight from the Monthly Summary by Rep row. Orders /
+        // Value of Orders are attributed to the quote's month; Carry-over Orders
+        // / Value are orders that LANDED this month from earlier-month quotes.
+        const ordersCohort = Number(f[F.orders])   || 0;
+        const valueCohort  = Number(f[F.valueOrd]) || 0;
+        const carryOrders  = Number(f[F.carryOverOrders]) || 0;
+        const carryValue   = Number(f[F.carryOverValue])  || 0;
+
+        // Confirmed = what the rep actually won this month (cohort + carry-over).
+        const ordersConfirmed = ordersCohort + carryOrders;
+        const valueConfirmed  = valueCohort  + carryValue;
+
         return {
-          date:      f[F.monthStart],
-          employee:  selName(f[F.employee]),
-          enq:       Number(f[F.enquiries]) || 0,
-          orders:    Number(f[F.orders]) || 0,
-          convRate:  Number(f[F.convRate]) || 0,
-          rejected:  Number(f[F.quotesRejected]) || 0,
-          follow:    Number(f[F.quotesPending]) || 0,
-          valueEnq:  Number(f[F.valueEnq]) || 0,
-          valueOrd:  Number(f[F.valueOrd]) || 0,
-          aov:       Number(f[F.aov]) || 0,
-          monthYear: f[F.monthLabel] || ""
+          date:       f[F.monthStart],
+          employee:   selName(f[F.employee]),
+          enq:        Number(f[F.enquiries]) || 0,
+          // Displayed orders / value include carry-over (confirmed total).
+          orders:     ordersConfirmed,
+          valueOrd:   valueConfirmed,
+          // Cohort orders only — kept separate so the conversion rate is
+          // unchanged (carry-over counts toward its quote month, not this one).
+          ordersConv: ordersCohort,
+          // Cohort conversion rate from the row — left exactly as-is.
+          convRate:   Number(f[F.convRate]) || 0,
+          rejected:   Number(f[F.quotesRejected]) || 0,
+          follow:     Number(f[F.quotesPending]) || 0,
+          valueEnq:   Number(f[F.valueEnq]) || 0,
+          // AOV reflects the confirmed orders/value actually displayed.
+          aov:        ordersConfirmed > 0 ? valueConfirmed / ordersConfirmed : 0,
+          monthYear:  f[F.monthLabel] || ""
         };
       });
 
