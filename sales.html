@@ -181,6 +181,25 @@
      aggregated, not when the page was opened. */
   .block-stamp { font-size: 10px; font-weight: 600; color: var(--gray2); letter-spacing: 0.2px; text-transform: none; margin-left: 8px; white-space: nowrap; }
 
+  /* Breakdown (indented) rows in the Team Overview table */
+  .team-summary-table .sub-label { font-weight: 600; color: var(--gray2); font-size: 11px; text-transform: none; letter-spacing: 0; padding-left: 30px; }
+  .team-summary-table td.cell-sub { color: var(--gray1); font-weight: 600; }
+  .team-summary-table tr.sub-row td { border-bottom-color: var(--gray5); }
+
+  /* Secondary breakdown cards on the Individual panels */
+  .mtd-card.mtd-card-sub { background: var(--gray5); }
+  .mtd-card.mtd-card-sub .mtd-label { color: var(--gray1); font-weight: 600; text-transform: none; font-size: 11px; }
+  .mtd-card.mtd-card-sub .mtd-value { font-size: 20px; color: var(--gray1); }
+
+  /* "Earlier months" reference block under the Team Overview table (secondary) */
+  .earlier-ref { margin-top: 14px; }
+  .earlier-ref .earlier-ref-title { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--gray2); margin-bottom: 8px; }
+  .earlier-ref table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .earlier-ref th, .earlier-ref td { text-align: left; padding: 6px 12px; border-bottom: 1px solid var(--gray5); }
+  .earlier-ref th { font-size: 10px; text-transform: uppercase; letter-spacing: 0.4px; color: var(--gray2); font-weight: 700; }
+  .earlier-ref th:first-child, .earlier-ref td.ref-metric { width: 240px; }
+  .earlier-ref td { color: var(--gray1); font-weight: 600; }
+
   /* ===== INSIGHTS ROW ===== */
   .insights-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; margin-bottom: 24px; }
   .insight-card { background: var(--white); border-radius: 10px; padding: 18px 20px; border: 1px solid var(--gray4); }
@@ -384,6 +403,7 @@
           <h2>Team Overview <span class="section-badge" id="teamSummaryPeriodLabel">Month to Date</span><span class="block-stamp" id="stampTeamOverview"></span></h2>
         </div>
         <div id="teamSummaryTable"></div>
+        <div id="teamEarlierRef" class="earlier-ref"></div>
       </div>
 
       <hr class="section-divider">
@@ -770,24 +790,6 @@ function refreshStamps() {
 }
 
 // ==================== CONVERSION-RATE HELPERS ====================
-// Settled ShopVOX-era months: from ERA_START up to (but excluding) the previous
-// and current month — those two cohorts are still converting, so they're left
-// out. Pre-ERA_START months are excluded too (mixed-source imports).
-function settledEraMonths() {
-  const now = new Date();
-  const prev = new Date(now.getFullYear(), now.getMonth()-1, 1);
-  const prevYM = prev.getFullYear()+'-'+String(prev.getMonth()+1).padStart(2,'0');
-  return ALL_MONTHS.filter(m => m >= ERA_START && m < prevYM);
-}
-// "Hist conv rate" = sum of cohort orders ÷ sum of enquiries across settled era
-// months. null when there are no settled months yet (renders as "—").
-function histConvRate(emp) {
-  const ms = settledEraMonths();
-  if (!ms.length) return null;
-  const d = getDataForMonths(emp, ms);
-  const e = d.reduce((s,r)=>s+r.enq,0), o = d.reduce((s,r)=>s+r.ordersConv,0);
-  return e > 0 ? o/e : null;
-}
 // "Conv rate (this month's quotes)" = the current calendar month's cohort
 // convRate field (converted quotes raised this month ÷ enquiries this month),
 // exactly as the aggregator computed it. null when the rep has no current row.
@@ -796,6 +798,41 @@ function thisMonthConv(emp) {
   const curYM = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
   const r = (DATA[emp]||[]).find(d => d.date === curYM);
   return r ? r.convRate : null;
+}
+
+// "Earlier months" reference block under the Team Overview table: each rep's
+// cohort convRate field for last month and the month before. These are NOT
+// final — they tick up as earlier-month quotes convert — hence the heading.
+// Pre-ERA_START months show "—" (Clarity transition), even if a value exists.
+function buildEarlierMonthsRef() {
+  const el = document.getElementById('teamEarlierRef');
+  if (!el) return;
+  const now = new Date();
+  const lm = new Date(now.getFullYear(), now.getMonth()-1, 1);
+  const mb = new Date(now.getFullYear(), now.getMonth()-2, 1);
+  const lmYM = lm.getFullYear()+'-'+String(lm.getMonth()+1).padStart(2,'0');
+  const mbYM = mb.getFullYear()+'-'+String(mb.getMonth()+1).padStart(2,'0');
+  const convFor = (emp, ym) => {
+    if (ym < ERA_START) return null;                         // pre-era → "—"
+    const r = (DATA[emp]||[]).find(d => d.date === ym);
+    return r ? r.convRate : null;
+  };
+  const fmtRef = v => v==null ? '—' : (v*100).toFixed(1)+'%';
+  const metricRows = [
+    { label:'Last month conv rate ('+monthLabel(lmYM)+')',   ym:lmYM },
+    { label:'Month before conv rate ('+monthLabel(mbYM)+')', ym:mbYM },
+  ];
+  let html = '<div class="earlier-ref-title">Earlier months — updates as quotes convert</div>';
+  html += '<table><thead><tr><th>Conversion</th>';
+  EMPLOYEES.forEach(e => { const c=getEmployeeColour(e); html+=`<th><span class="employee-dot" style="background:${c.solid}"></span>${e.split(' ')[0]}</th>`; });
+  html += '</tr></thead><tbody>';
+  metricRows.forEach(mr => {
+    html += `<tr><td class="ref-metric">${mr.label}</td>`;
+    EMPLOYEES.forEach(emp => { html += `<td>${fmtRef(convFor(emp, mr.ym))}</td>`; });
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+  el.innerHTML = html;
 }
 
 // ==================== CHARTS ====================
@@ -864,7 +901,7 @@ function handlePeriodChange() { document.getElementById('dateRange').classList.t
 function handleTeamPeriodChange() { document.getElementById('teamDateRange').classList.toggle('visible', document.getElementById('teamPeriod').value==='custom'); updateTeam(); }
 
 // ==================== INDIVIDUAL: BUILD METRIC HTML ====================
-function buildIndividualMetrics(containerId, curr, prev, colour, emp, convLabel) {
+function buildIndividualMetrics(containerId, curr, prev, colour, convLabel, cohortLabel) {
   if (!curr) { document.getElementById(containerId).innerHTML = '<div class="data-note">No data available.</div>'; return; }
 
   const keyMetrics = [
@@ -872,13 +909,17 @@ function buildIndividualMetrics(containerId, curr, prev, colour, emp, convLabel)
     // Cohort rate for quotes raised in this panel's month — the aggregator
     // field, untouched. Labelled so it can't be read as orders ÷ quotes.
     { label:convLabel||"Conv rate (this month's quotes)", curr:curr.convRate, prev:prev?prev.convRate:0, format:'pct', key:true },
-    // Settled-era cohort orders ÷ enquiries; period-independent, no comparison.
-    { label:'Hist conv rate', curr:histConvRate(emp), format:'pct', key:true, noCompare:true },
     { label:'Avg Order Value', curr:curr.aov, prev:prev?prev.aov:0, format:'currency', key:true },
   ];
+  // Orders confirmed = cohort (same-month quotes) + carry-over (earlier-month
+  // quotes). The two breakdown cards sum to the total card.
+  const ordCohort = curr.ordersConv;
+  const ordCarry  = curr.orders - curr.ordersConv;
   const volumeMetrics = [
     { label:'Enquiries', curr:curr.enq, prev:prev?prev.enq:0, format:'num' },
-    { label:'Orders confirmed', curr:curr.orders, prev:prev?prev.orders:0, format:'num' },
+    { label:'Orders confirmed (total)', curr:curr.orders, prev:prev?prev.orders:0, format:'num' },
+    { label:'— '+(cohortLabel||"from this month's quotes"), curr:ordCohort, format:'num', sub:true, noCompare:true },
+    { label:"— from earlier months' quotes", curr:ordCarry, format:'num', sub:true, noCompare:true },
     { label:'Enquiry Value', curr:curr.valueEnq, prev:prev?prev.valueEnq:0, format:'currency' },
   ];
 
@@ -888,7 +929,7 @@ function buildIndividualMetrics(containerId, curr, prev, colour, emp, convLabel)
       const valStr = isNull ? '—'
         : m.format==='currency'?fmt(m.curr):m.format==='pct'?fmtPct(m.curr):m.format==='pctRaw'?fmtPctRaw(m.curr):m.curr.toLocaleString();
       const comp = (m.noCompare||isNull) ? { html:'' } : compareArrow(m.curr, m.prev);
-      const cls = m.key ? 'mtd-card key-metric' : 'mtd-card';
+      const cls = (m.key ? 'mtd-card key-metric' : 'mtd-card') + (m.sub ? ' mtd-card-sub' : '');
       return `<div class="${cls}" style="border-top: 3px solid ${colour.solid}">
         <div class="mtd-label">${m.label}</div>
         <div class="mtd-value">${valStr}</div>
@@ -904,7 +945,7 @@ function buildIndividualMetrics(containerId, curr, prev, colour, emp, convLabel)
   document.getElementById(containerId).innerHTML = `
     <div class="metric-group">
       <div class="metric-group-label">Key Performance</div>
-      <div class="mtd-grid" style="grid-template-columns: repeat(4, 1fr);">${renderCards(keyMetrics)}</div>
+      <div class="mtd-grid" style="grid-template-columns: repeat(3, 1fr);">${renderCards(keyMetrics)}</div>
     </div>
     <div class="metric-group">
       <div class="metric-group-label">Volume &amp; Value</div>
@@ -938,7 +979,7 @@ function updateMTD() {
   document.getElementById('mtdMonthLabel').textContent = monthLabelFull(curYM);
   const curr = (getDataForMonths(emp,[curYM]))[0]||null;
   const prev = (getDataForMonths(emp,[pYM]))[0]||null;
-  buildIndividualMetrics('mtdContent', curr, prev, colour, emp, "Conv rate (this month's quotes)");
+  buildIndividualMetrics('mtdContent', curr, prev, colour, "Conv rate (this month's quotes)", "from this month's quotes");
 }
 
 function updateLastMonth() {
@@ -951,7 +992,7 @@ function updateLastMonth() {
   document.getElementById('lastMonthLabel').textContent = monthLabelFull(lYM);
   const curr = (getDataForMonths(emp,[lYM]))[0]||null;
   const prev = (getDataForMonths(emp,[pYM]))[0]||null;
-  buildIndividualMetrics('lastMonthContent', curr, prev, colour, emp, "Conv rate (last month's quotes)");
+  buildIndividualMetrics('lastMonthContent', curr, prev, colour, "Conv rate (last month's quotes)", "from last month's quotes");
 }
 
 function updateHistorical() {
@@ -1015,23 +1056,23 @@ function buildTeamSummary(months) {
   const stats = EMPLOYEES.map(emp => {
     const d = getDataForMonths(emp,months);
     const tEnq=d.reduce((s,r)=>s+r.enq,0), tOrd=d.reduce((s,r)=>s+r.orders,0);
+    const tOrdCohort=d.reduce((s,r)=>s+r.ordersConv,0);   // orders from same-month quotes
+    const tOrdCarry=tOrd-tOrdCohort;                      // orders from earlier months' quotes
     const tSales=d.reduce((s,r)=>s+r.valueOrd,0);
-    // The two conversion measures are period-independent by definition:
-    //   convThisMonth = the current month's cohort rate (converted quotes ÷
-    //                   quotes raised this month) straight from the field;
-    //   convHist      = settled-era cohort orders ÷ enquiries (see histConvRate).
-    // tOrd / tSales above are the period's CONFIRMED orders & value.
-    return { name:emp, enq:tEnq, orders:tOrd,
+    // convThisMonth = the current month's cohort rate (converted quotes ÷ quotes
+    // raised this month), straight from the field — period-independent.
+    return { name:emp, enq:tEnq,
+             orders:tOrd, ordersCohort:tOrdCohort, ordersCarry:tOrdCarry,
              convThisMonth: thisMonthConv(emp),
-             convHist: histConvRate(emp),
              sales:tSales, aov:tOrd>0?tSales/tOrd:0 };
   });
   const pctCell = v => (v*100).toFixed(1)+'%';
   const rows = [
     {label:'Enquiries',key:'enq',fmt:v=>v.toLocaleString(),target:null},
-    {label:'Orders confirmed',key:'orders',fmt:v=>v.toLocaleString(),target:null},
+    {label:'Orders confirmed (total)',key:'orders',fmt:v=>v.toLocaleString(),target:null},
+    {label:'— from quotes this month',key:'ordersCohort',fmt:v=>v.toLocaleString(),target:null,sub:true},
+    {label:"— from earlier months' quotes",key:'ordersCarry',fmt:v=>v.toLocaleString(),target:null,sub:true},
     {label:"Conv rate (this month's quotes)",key:'convThisMonth',fmt:pctCell,target:TARGETS.convRate},
-    {label:'Hist conv rate',key:'convHist',fmt:pctCell,target:TARGETS.convRate},
     {label:'Total Sales',key:'sales',fmt:v=>fmt(v),target:null},
     {label:'Avg Order Value',key:'aov',fmt:v=>fmt(v),target:TARGETS.aov}
   ];
@@ -1041,12 +1082,19 @@ function buildTeamSummary(months) {
   rows.forEach(row => {
     const vals = stats.map(s=>s[row.key]).filter(v=>v!=null);
     const best = vals.length ? Math.max(...vals) : null;
-    html += `<tr><td class="metric-label">${row.label}</td>`;
+    const trCls = row.sub ? ' class="sub-row"' : '';
+    const labelCls = row.sub ? 'metric-label sub-label' : 'metric-label';
+    html += `<tr${trCls}><td class="${labelCls}">${row.label}</td>`;
     stats.forEach(s => {
       const v=s[row.key];
       if (v==null) { html += '<td class="cell-na">—</td>'; return; }
-      const isBest=v===best&&v>0;
-      let cls = isBest ? 'cell-best' : row.target!=null ? (v>=row.target?'cell-above-target':'cell-below-target') : '';
+      let cls;
+      if (row.sub) {
+        cls = 'cell-sub';                          // breakdown rows: no highlight
+      } else {
+        const isBest=v===best&&v>0;
+        cls = isBest ? 'cell-best' : row.target!=null ? (v>=row.target?'cell-above-target':'cell-below-target') : '';
+      }
       html += `<td class="${cls}">${row.fmt(v)}</td>`;
     });
     html += '</tr>';
@@ -1102,6 +1150,7 @@ function buildTeamCharts(months) {
 function updateTeam() {
   const months = getFilteredMonths('teamPeriod','teamDateFrom','teamDateTo');
   buildTeamSummary(months);
+  buildEarlierMonthsRef();
   buildTeamCharts(months);
 
   // Surface the "current month excluded" rule so it's not silent magic
