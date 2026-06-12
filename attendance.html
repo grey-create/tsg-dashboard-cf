@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>TSG · Attendance &amp; Time — May 2026</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#0e1217; --panel:#161c24; --panel2:#1c242e; --line:#26303c;
+  --text:#e8edf2; --muted:#8a98a8; --blue:#4e9eff; --amber:#ffb454;
+  --green:#3ecf8e; --red:#ff6b6b; --purple:#b78aff;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font:15px/1.5 -apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;padding-bottom:60px}
+.wrap{max-width:1180px;margin:0 auto;padding:0 24px}
+header{padding:34px 0 10px;border-bottom:1px solid var(--line);margin-bottom:28px}
+header .eyebrow{color:var(--blue);font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase}
+header h1{font-size:30px;font-weight:800;letter-spacing:-.02em;margin:4px 0 2px}
+header .sub{color:var(--muted);font-size:13.5px;max-width:760px;padding-bottom:18px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin-bottom:30px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px}
+.card .v{font-size:30px;font-weight:800;letter-spacing:-.02em}
+.card .l{color:var(--muted);font-size:12.5px;margin-top:2px}
+.card .hint{font-size:11.5px;color:var(--muted);margin-top:6px;opacity:.8}
+.b{color:var(--blue)}.a{color:var(--amber)}.g{color:var(--green)}.r{color:var(--red)}.p{color:var(--purple)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px 22px}
+.panel.full{grid-column:1/-1}
+.panel h2{font-size:15px;font-weight:700;margin-bottom:2px}
+.panel .note{color:var(--muted);font-size:12.5px;margin-bottom:14px}
+.chartbox{position:relative}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th{color:var(--muted);font-weight:600;text-align:left;padding:7px 10px;border-bottom:1px solid var(--line);font-size:12px;text-transform:uppercase;letter-spacing:.06em}
+td{padding:7px 10px;border-bottom:1px solid var(--line)}
+tr:last-child td{border-bottom:none}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+.chip{display:inline-block;background:var(--panel2);border:1px solid var(--line);border-radius:99px;padding:2px 10px;font-size:12px;margin:2px 3px 2px 0;color:var(--text)}
+.chip b{color:var(--amber)}
+.flag{background:rgba(255,180,84,.08);border:1px solid rgba(255,180,84,.35);border-radius:10px;padding:12px 14px;font-size:13px;margin-top:14px}
+.flag b{color:var(--amber)}
+.ok{color:var(--green);font-weight:700}
+footer{color:var(--muted);font-size:12px;margin-top:34px;border-top:1px solid var(--line);padding-top:16px}
+footer li{margin-left:18px;margin-bottom:4px}
+@media(max-width:820px){.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<script src="/nav.js"></script>
+<div class="wrap">
+<header>
+  <div class="eyebrow">The Sign Group · internal</div>
+  <h1>Attendance &amp; Time — May 2026</h1>
+  <div class="sub">From Factorial clock-in data, 1–31 May (19 working days; bank holidays 4 &amp; 25 May excluded). Covers the 30 clock-in staff — Grey, Ian, Anthony, Gillian and Chloe aren't attendance-tracked. Review draft: numbers not yet verified by team leaders.</div>
+</header>
+
+<div class="cards">
+  <div class="card"><div class="v g" id="c-laterate">–</div><div class="l">lateness rate</div><div class="hint" id="c-latehint"></div></div>
+  <div class="card"><div class="v g" id="c-neverlate">–</div><div class="l">staff never late all month</div><div class="hint">5-minute grace applied</div></div>
+  <div class="card"><div class="v a" id="c-ot">–</div><div class="l">clocked overtime (hours)</div><div class="hint" id="c-othint"></div></div>
+  <div class="card"><div class="v b" id="c-hol">–</div><div class="l">holiday days taken</div><div class="hint" id="c-bookedhint"></div></div>
+  <div class="card"><div class="v r" id="c-sick">–</div><div class="l">sick days</div><div class="hint">across 6 people</div></div>
+</div>
+
+<div class="grid">
+  <div class="panel full">
+    <h2>Overtime by person <span style="color:var(--muted);font-weight:400">— hours clocked beyond each person's own schedule</span></h2>
+    <div class="note">Amber = Workshop. Four workshop names account for most of the company total — a steady 30–130 minutes past the 16:15 finish, day after day, rather than one-off spikes.</div>
+    <div class="chartbox" style="height:520px"><canvas id="otChart"></canvas></div>
+  </div>
+
+  <div class="panel">
+    <h2>Overtime by team</h2>
+    <div class="note">Share of total clocked OT hours.</div>
+    <div class="chartbox" style="height:300px"><canvas id="teamChart"></canvas></div>
+  </div>
+
+  <div class="panel">
+    <h2>Lateness <span class="ok" style="font-size:12px">— near-zero</span></h2>
+    <div class="note" id="latenote"></div>
+    <div id="latelist"></div>
+    <div class="flag"><b>Schedule mismatch (not counted):</b> Georgia B — clock-ins hours adrift of her recorded 07:45 start, plus a mixed over/under pattern. Her Factorial work schedule looks wrong; verify before reading her numbers.</div>
+  </div>
+
+  <div class="panel">
+    <h2>Leave taken in May</h2>
+    <div class="note">Days per person — holiday, sick and other (WFH, appointments, unpaid etc). Half days count 0.5.</div>
+    <div class="chartbox" style="height:340px"><canvas id="leaveChart"></canvas></div>
+  </div>
+
+  <div class="panel">
+    <h2>Holiday booked ahead (Jun–Dec)</h2>
+    <div class="note">Approved future bookings. Useful for spotting cover clashes early.</div>
+    <div class="chartbox" style="height:340px"><canvas id="bookedChart"></canvas></div>
+  </div>
+
+  <div class="panel full">
+    <h2>Team rollup</h2>
+    <div class="note">May totals per team.</div>
+    <table id="teamTable">
+      <thead><tr><th>Team</th><th class="num">People</th><th class="num">Late days</th><th class="num">OT hrs</th><th class="num">Short hrs</th><th class="num">Holiday days</th><th class="num">Sick days</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</div>
+
+<footer>
+  <b>Method &amp; caveats</b>
+  <ul>
+    <li>Lateness = first clock-in vs each person's scheduled start in Factorial, 5-minute grace; approved-leave days and bank holidays excluded. Apparent lates over 4 hours are treated as schedule mismatches, not lateness.</li>
+    <li>Overtime = minutes clocked beyond that day's scheduled minutes, summed; shortfall summed separately. Includes unapproved/pending time, so Factorial's approved figure may differ slightly. Part-timers are measured against their own schedules.</li>
+    <li>Remaining holiday allowance isn't shown yet (not cleanly exposed by the API) — taken + booked only.</li>
+    <li>Generated 12 Jun 2026 from Factorial. Questions or extra info you'd want on here → Grey.</li>
+  </ul>
+</footer>
+</div>
+
+<script>
+const DATA = [{"name": "Lydia M", "team": "Operations", "sched": 16, "lates": [], "ot": 3.2, "short": 0.1, "hol": 0.0, "sick": 0.0, "other": 3.0, "booked": 14.0}, {"name": "Adam C", "team": "Sales", "sched": 19, "lates": [], "ot": 0.3, "short": 0.5, "hol": 0.0, "sick": 0.0, "other": 0.0, "booked": 16.0}, {"name": "Adrien H", "team": "Workshop", "sched": 16, "lates": [], "ot": 16.9, "short": 0.0, "hol": 1.5, "sick": 0.0, "other": 1.0, "booked": 8.0}, {"name": "Alex B", "team": "LED Dept", "sched": 12, "lates": [["2026-05-18", 54]], "ot": 0.6, "short": 1.0, "hol": 7.0, "sick": 0.0, "other": 0.0, "booked": 6.5}, {"name": "Brandon P", "team": "LED Dept", "sched": 11, "lates": [], "ot": 1.2, "short": 0.0, "hol": 7.0, "sick": 0.0, "other": 0.0, "booked": 7.0}, {"name": "Catherine S", "team": "LED Dept", "sched": 17, "lates": [], "ot": 2.7, "short": 0.0, "hol": 0.0, "sick": 0.0, "other": 1.5, "booked": 6.0}, {"name": "Elaine P", "team": "WeLoveLEDs", "sched": 9, "lates": [["2026-05-11", 42]], "ot": 1.4, "short": 0.8, "hol": 7.5, "sick": 0.0, "other": 1.5, "booked": 9.0}, {"name": "Faz G", "team": "Graphics", "sched": 15, "lates": [["2026-05-20", 8]], "ot": 0.7, "short": 0.3, "hol": 3.0, "sick": 0.0, "other": 1.0, "booked": 6.0}, {"name": "Georgia B", "team": "LED Dept", "sched": 17, "lates": [], "ot": 9.7, "short": 4.8, "hol": 0.0, "sick": 2.0, "other": 0.0, "booked": 8.0}, {"name": "Jay S", "team": "Workshop", "sched": 18, "lates": [], "ot": 23.3, "short": 0.0, "hol": 1.0, "sick": 0.0, "other": 0.0, "booked": 11.0}, {"name": "Karen H", "team": "Accounts", "sched": 12, "lates": [], "ot": 1.7, "short": 0.0, "hol": 1.0, "sick": 0.0, "other": 0.0, "booked": 13.0}, {"name": "Kayleigh V", "team": "Marketing", "sched": 14, "lates": [], "ot": 2.6, "short": 0.1, "hol": 3.0, "sick": 2.0, "other": 0.0, "booked": 6.0}, {"name": "Kyle L", "team": "LED Dept", "sched": 18, "lates": [], "ot": 2.4, "short": 0.0, "hol": 1.0, "sick": 0.0, "other": 0.0, "booked": 7.0}, {"name": "Lisa G", "team": "LED Dept", "sched": 18, "lates": [], "ot": 0.5, "short": 0.2, "hol": 0.0, "sick": 1.0, "other": 0.0, "booked": 13.0}, {"name": "Luke H", "team": "Workshop", "sched": 10, "lates": [], "ot": 1.1, "short": 0.0, "hol": 7.0, "sick": 0.0, "other": 0.5, "booked": 7.0}, {"name": "Mick F", "team": "Sales", "sched": 18, "lates": [["2026-05-07", 66], ["2026-05-08", 17], ["2026-05-15", 37], ["2026-05-22", 9]], "ot": 1.0, "short": 2.2, "hol": 0.0, "sick": 0.0, "other": 1.0, "booked": 18.0}, {"name": "Pedro M", "team": "Graphics", "sched": 18, "lates": [], "ot": 1.1, "short": 0.1, "hol": 0.0, "sick": 1.0, "other": 0.0, "booked": 16.0}, {"name": "Ryan G", "team": "Operations", "sched": 19, "lates": [], "ot": 3.2, "short": 0.0, "hol": 0.0, "sick": 0.0, "other": 0.0, "booked": 24.5}, {"name": "Sarah W", "team": "LED Dept", "sched": 17, "lates": [], "ot": 3.0, "short": 0.0, "hol": 0.0, "sick": 1.0, "other": 1.0, "booked": 9.0}, {"name": "Steven R", "team": "Graphics", "sched": 18, "lates": [], "ot": 2.1, "short": 0.1, "hol": 0.0, "sick": 0.0, "other": 0.5, "booked": 10.0}, {"name": "Stu H", "team": "Vinyl Dept", "sched": 16, "lates": [], "ot": 0.8, "short": 0.2, "hol": 1.0, "sick": 0.0, "other": 2.0, "booked": 15.0}, {"name": "Trevor S", "team": "Workshop", "sched": 12, "lates": [], "ot": 0.9, "short": 1.4, "hol": 3.0, "sick": 0.0, "other": 0.0, "booked": 7.0}, {"name": "Adam C", "team": "WeLoveLEDs", "sched": 18, "lates": [], "ot": 4.3, "short": 0.0, "hol": 0.0, "sick": 0.0, "other": 1.0, "booked": 13.5}, {"name": "Becky M", "team": "Accounts", "sched": 10, "lates": [], "ot": 1.2, "short": 0.0, "hol": 0.0, "sick": 0.0, "other": 0.0, "booked": 8.0}, {"name": "Lewis H", "team": "Workshop", "sched": 15, "lates": [], "ot": 3.0, "short": 0.0, "hol": 2.5, "sick": 1.0, "other": 0.0, "booked": 4.5}, {"name": "Chad F", "team": "Workshop", "sched": 19, "lates": [], "ot": 25.4, "short": 0.0, "hol": 0.0, "sick": 0.0, "other": 0.0, "booked": 14.0}, {"name": "Tom M", "team": "Graphics", "sched": 12, "lates": [], "ot": 0.1, "short": 0.1, "hol": 6.0, "sick": 0.0, "other": 1.0, "booked": 13.0}, {"name": "Danny L", "team": "Workshop", "sched": 19, "lates": [], "ot": 22.9, "short": 0.0, "hol": 0.0, "sick": 0.0, "other": 0.0, "booked": 14.0}, {"name": "Moesha T", "team": "Sales", "sched": 18, "lates": [], "ot": 0.9, "short": 0.2, "hol": 0.5, "sick": 0.0, "other": 0.0, "booked": 9.0}, {"name": "Josh C", "team": "Vinyl Dept", "sched": 18, "lates": [], "ot": 3.2, "short": 0.0, "hol": 0.0, "sick": 0.0, "other": 0.0, "booked": 14.0}];
+const WORKSHOP = "Workshop";
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+Chart.defaults.color = css('--muted');
+Chart.defaults.borderColor = css('--line');
+Chart.defaults.font.family = getComputedStyle(document.body).fontFamily;
+
+const totOT = DATA.reduce((s,d)=>s+d.ot,0);
+const totLates = DATA.reduce((s,d)=>s+d.lates.length,0);
+const totSched = DATA.reduce((s,d)=>s+d.sched,0);
+const neverLate = DATA.filter(d=>d.lates.length===0).length;
+const totHol = DATA.reduce((s,d)=>s+d.hol,0);
+const totSick = DATA.reduce((s,d)=>s+d.sick,0);
+const totBooked = DATA.reduce((s,d)=>s+d.booked,0);
+
+document.getElementById('c-laterate').textContent = (totLates/totSched*100).toFixed(1)+'%';
+document.getElementById('c-latehint').textContent = totLates+' late clock-ins in '+totSched+' scheduled person-days';
+document.getElementById('c-neverlate').textContent = neverLate+' of '+DATA.length;
+document.getElementById('c-ot').textContent = Math.round(totOT);
+const ws = DATA.filter(d=>d.team===WORKSHOP).reduce((s,d)=>s+d.ot,0);
+document.getElementById('c-othint').textContent = Math.round(ws/totOT*100)+'% of it from the Workshop';
+document.getElementById('c-hol').textContent = totHol.toFixed(totHol%1?1:0);
+document.getElementById('c-bookedhint').textContent = totBooked.toFixed(1)+' more days booked Jun–Dec';
+document.getElementById('c-sick').textContent = totSick.toFixed(totSick%1?1:0);
+
+// OT by person
+const byOT = [...DATA].sort((a,b)=>b.ot-a.ot).filter(d=>d.ot>=0.5);
+new Chart(otChart, {type:'bar',
+  data:{labels:byOT.map(d=>d.name),datasets:[{data:byOT.map(d=>d.ot),
+    backgroundColor:byOT.map(d=>d.team===WORKSHOP?css('--amber'):css('--blue')),borderRadius:4}]},
+  options:{indexAxis:'y',maintainAspectRatio:false,plugins:{legend:{display:false},
+    tooltip:{callbacks:{label:c=>{const d=byOT[c.dataIndex];return d.ot+'h OT · '+d.short+'h short · '+d.team;}}}},
+    scales:{x:{title:{display:true,text:'hours'},grid:{color:css('--line')}},y:{grid:{display:false}}}}});
+
+// OT by team
+const teams = {};
+DATA.forEach(d=>{teams[d.team]=teams[d.team]||{n:0,lates:0,ot:0,short:0,hol:0,sick:0};
+  const t=teams[d.team];t.n++;t.lates+=d.lates.length;t.ot+=d.ot;t.short+=d.short;t.hol+=d.hol;t.sick+=d.sick;});
+const tn = Object.keys(teams).sort((a,b)=>teams[b].ot-teams[a].ot);
+const tcols = [css('--amber'),css('--blue'),css('--green'),css('--purple'),css('--red'),'#5fd4d0','#e88fc6','#9fb963','#7f93ff'];
+new Chart(teamChart, {type:'doughnut',
+  data:{labels:tn,datasets:[{data:tn.map(t=>+teams[t].ot.toFixed(1)),backgroundColor:tcols,borderColor:css('--panel'),borderWidth:2}]},
+  options:{maintainAspectRatio:false,cutout:'58%',plugins:{legend:{position:'right',labels:{boxWidth:12,padding:10}},
+    tooltip:{callbacks:{label:c=>' '+c.parsed+'h ('+Math.round(c.parsed/totOT*100)+'%)'}}}}});
+
+// lateness list
+const lateppl = DATA.filter(d=>d.lates.length).sort((a,b)=>b.lates.length-a.lates.length);
+document.getElementById('latenote').textContent = totLates+' late clock-ins all month across '+lateppl.length+' people. Everyone else: zero.';
+document.getElementById('latelist').innerHTML = lateppl.map(d=>{
+  const days = d.lates.map(l=>{const dt=new Date(l[0]+'T12:00');return '<span class="chip">'+dt.toLocaleDateString('en-GB',{weekday:'short',day:'numeric'})+' <b>+'+l[1]+'m</b></span>';}).join('');
+  return '<div style="margin-bottom:10px"><b>'+d.name+'</b> <span style="color:var(--muted);font-size:12px">'+d.team+' · '+d.lates.length+' of '+d.sched+' days</span><br>'+days+'</div>';
+}).join('');
+
+// leave taken May (stacked)
+const byLeave = DATA.filter(d=>d.hol+d.sick+d.other>0).sort((a,b)=>(b.hol+b.sick+b.other)-(a.hol+a.sick+a.other));
+new Chart(leaveChart,{type:'bar',
+  data:{labels:byLeave.map(d=>d.name),datasets:[
+    {label:'Holiday',data:byLeave.map(d=>d.hol),backgroundColor:css('--blue'),borderRadius:3},
+    {label:'Sick',data:byLeave.map(d=>d.sick),backgroundColor:css('--red'),borderRadius:3},
+    {label:'Other',data:byLeave.map(d=>d.other),backgroundColor:css('--purple'),borderRadius:3}]},
+  options:{indexAxis:'y',maintainAspectRatio:false,
+    plugins:{legend:{position:'top',labels:{boxWidth:12}}},
+    scales:{x:{stacked:true,title:{display:true,text:'days'},grid:{color:css('--line')}},y:{stacked:true,grid:{display:false}}}}});
+
+// booked ahead
+const byBooked = DATA.filter(d=>d.booked>0).sort((a,b)=>b.booked-a.booked);
+new Chart(bookedChart,{type:'bar',
+  data:{labels:byBooked.map(d=>d.name),datasets:[{data:byBooked.map(d=>d.booked),backgroundColor:css('--green'),borderRadius:3}]},
+  options:{indexAxis:'y',maintainAspectRatio:false,plugins:{legend:{display:false}},
+    scales:{x:{title:{display:true,text:'days booked'},grid:{color:css('--line')}},y:{grid:{display:false}}}}});
+
+// team table
+document.querySelector('#teamTable tbody').innerHTML = Object.keys(teams).sort().map(t=>{
+  const v=teams[t];
+  return '<tr><td>'+t+'</td><td class="num">'+v.n+'</td><td class="num">'+v.lates+'</td><td class="num">'+v.ot.toFixed(1)+'</td><td class="num">'+v.short.toFixed(1)+'</td><td class="num">'+v.hol.toFixed(1)+'</td><td class="num">'+v.sick.toFixed(1)+'</td></tr>';
+}).join('');
+</script>
+</body>
+</html>
