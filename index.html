@@ -232,6 +232,7 @@
   .brand-card.bc-small .bc-detail{padding-top:10px}
   .brand-card .bc-detail .bd-k{color:#64748b;font-weight:600;text-transform:uppercase;font-size:9px;letter-spacing:.5px;margin-bottom:1px}
   .brand-card .bc-detail .bd-v{color:#e2e8f0;font-weight:600;font-size:12px}
+  .brand-card .bc-detail .bd-sub{color:#64748b;font-weight:500;font-size:10px;line-height:1.3;margin-top:2px}
   /* Per-block "Data changed" stamp — when the figure last actually moved. */
   .brand-card .bc-stamp{font-size:10px;color:#64748b;font-weight:600;letter-spacing:.2px;margin-top:10px;padding-top:8px;border-top:1px solid #2a3a4e}
 
@@ -801,7 +802,7 @@ function render(D){
   h+='</div></div>';
   h+='<div class="bc-detail">';
   h+='<div><div class="bd-k">Invoiced</div><div class="bd-v" style="color:#4ade80">'+f(D.tsgPureInv)+deltaChip("tsgInvoiced","money")+'</div></div>';
-  h+='<div><div class="bd-k">WIP Due This Month</div><div class="bd-v" style="color:#fbbf24">'+f(D.tsgWipDue||0)+deltaChip("tsgWipDue","money")+'</div></div>';
+  h+='<div><div class="bd-k">WIP Due This Month</div><div class="bd-v" style="color:#fbbf24">'+f(D.tsgWipDue||0)+deltaChip("tsgWipDue","money")+'</div>'+wipCompletedNote()+'</div>';
   h+='<div><div class="bd-k">WIP TBC</div><div class="bd-v">'+f(D.tsgWipUndated||0)+'</div></div>';
   h+='<div><div class="bd-k">Next Month WIP</div><div class="bd-v">'+f(D.tsgWipNextMonth||0)+'</div></div>';
   h+='</div>'+stampLine(D.lc.tsgInvoiced)+'</div>';
@@ -1259,6 +1260,20 @@ function deltaChip(key, format){
   var sign=v>0?"+":"\u2212";
   var cls=v>0?"dc-pos":"dc-neg";
   return '<span class="delta-chip '+cls+'">'+sign+fmt+' today</span>';
+}
+
+// PHASE 1 WIP EXPLAINER. The WIP "today" chip nets together every reason WIP
+// moved: work invoiced out, jobs cancelled, due dates shifted to another month,
+// and new orders added in. Invoicing is usually the biggest mover and is GOOD
+// news (completed work), so on any day we invoice, WIP shows a scary red drop.
+// Until the aggregator splits the move by reason (phase 2), surface today's
+// invoiced amount right under WIP so a drop is explained at a glance. Reuses
+// SNAP_DELTAS.tsgInvoiced \u2014 the same figure the Invoiced row shows.
+function wipCompletedNote(){
+  if(!SNAP_DELTAS||SNAP_DELTAS.tsgInvoiced==null)return"";
+  var inv=SNAP_DELTAS.tsgInvoiced;
+  if(inv<=0)return"";
+  return '<div class="bd-sub">\u2192 '+f(inv)+' completed &amp; invoiced today</div>';
 }
 
 // ============================================================
