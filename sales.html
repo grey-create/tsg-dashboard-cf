@@ -133,6 +133,8 @@
     font-weight: 700; margin-bottom: 6px;
   }
   .mtd-card .mtd-value { font-size: 24px; font-weight: 800; letter-spacing: -0.3px; }
+  .mtd-card .mtd-value .mtd-bracket { font-size: 13px; font-weight: 600; color: var(--gray1); letter-spacing: 0; }
+  .ts-bracket { font-weight: 600; color: var(--gray2); }
   .mtd-card .mtd-compare { font-size: 11px; margin-top: 4px; font-weight: 500; }
   .mtd-card .mtd-compare.up { color: var(--green); }
   .mtd-card .mtd-compare.down { color: var(--red); }
@@ -701,6 +703,9 @@ async function loadData() {
       grouped[r.employee].push({
         date: ym, month: r.monthYear || ym,
         enq: Number(r.enq)||0, orders: Number(r.orders)||0,
+        // All quotes raised incl re-quotes. Falls back to genuine enquiries
+        // when an older /airtable response doesn't supply it (bracket hides).
+        quotesRaised: (r.quotesRaised != null ? Number(r.quotesRaised) : Number(r.enq)) || 0,
         // Cohort orders (no carry-over) for conversion-rate maths only. Falls
         // back to orders if an older /airtable response doesn't supply it.
         ordersConv: (r.ordersConv != null ? Number(r.ordersConv) : Number(r.orders)) || 0,
@@ -791,7 +796,7 @@ function refreshStamps() {
 
 // ==================== CONVERSION-RATE HELPERS ====================
 // "Conv rate (this month's quotes)" = the current calendar month's cohort
-// convRate field (converted quotes raised this month ÷ enquiries this month),
+// convRate field (converted ÷ ALL quotes raised this month, re-quotes included),
 // exactly as the aggregator computed it. null when the rep has no current row.
 function thisMonthConv(emp) {
   const now = new Date();
@@ -916,7 +921,10 @@ function buildIndividualMetrics(containerId, curr, prev, colour, convLabel, coho
   const ordCohort = curr.ordersConv;
   const ordCarry  = curr.orders - curr.ordersConv;
   const volumeMetrics = [
-    { label:'Enquiries', curr:curr.enq, prev:prev?prev.enq:0, format:'num' },
+    // Genuine enquiries (revisions excluded) is the headline; the re-quote total
+    // shows in brackets next to it. Bracket hides when there are no re-quotes.
+    { label:'Enquiries', curr:curr.enq, prev:prev?prev.enq:0, format:'num',
+      bracket:(curr.quotesRaised>curr.enq)?curr.quotesRaised:null, bracketSuffix:' incl. re-quotes' },
     { label:'Orders confirmed (total)', curr:curr.orders, prev:prev?prev.orders:0, format:'num' },
     { label:'— '+(cohortLabel||"from this month's quotes"), curr:ordCohort, format:'num', sub:true, noCompare:true },
     { label:"— from earlier months' quotes", curr:ordCarry, format:'num', sub:true, noCompare:true },
@@ -928,11 +936,13 @@ function buildIndividualMetrics(containerId, curr, prev, colour, convLabel, coho
       const isNull = m.curr==null;
       const valStr = isNull ? '—'
         : m.format==='currency'?fmt(m.curr):m.format==='pct'?fmtPct(m.curr):m.format==='pctRaw'?fmtPctRaw(m.curr):m.curr.toLocaleString();
+      const bracketHtml = (m.bracket!=null)
+        ? ` <span class="mtd-bracket">(${m.bracket.toLocaleString()}${m.bracketSuffix||''})</span>` : '';
       const comp = (m.noCompare||isNull) ? { html:'' } : compareArrow(m.curr, m.prev);
       const cls = (m.key ? 'mtd-card key-metric' : 'mtd-card') + (m.sub ? ' mtd-card-sub' : '');
       return `<div class="${cls}" style="border-top: 3px solid ${colour.solid}">
         <div class="mtd-label">${m.label}</div>
-        <div class="mtd-value">${valStr}</div>
+        <div class="mtd-value">${valStr}${bracketHtml}</div>
         ${comp.html}
       </div>`;
     }).join('');
@@ -1008,8 +1018,10 @@ function updateHistorical() {
     return;
   }
   const tEnq=data.reduce((s,d)=>s+d.enq,0), tOrd=data.reduce((s,d)=>s+d.orders,0);
+  const tQR=data.reduce((s,d)=>s+d.quotesRaised,0);   // all quotes incl re-quotes
   const tOrdConv=data.reduce((s,d)=>s+d.ordersConv,0);
-  const avgConv=tEnq>0?tOrdConv/tEnq:0, tSales=data.reduce((s,d)=>s+d.valueOrd,0);
+  // Conversion ÷ ALL quotes raised (re-quotes drag it down), matching the rule.
+  const avgConv=tQR>0?tOrdConv/tQR:0, tSales=data.reduce((s,d)=>s+d.valueOrd,0);
   const avgAOV=tOrd>0?tSales/tOrd:0;
   const tRej=data.reduce((s,d)=>s+d.rejected,0), tFol=data.reduce((s,d)=>s+d.follow,0);
 
@@ -1056,19 +1068,21 @@ function buildTeamSummary(months) {
   const stats = EMPLOYEES.map(emp => {
     const d = getDataForMonths(emp,months);
     const tEnq=d.reduce((s,r)=>s+r.enq,0), tOrd=d.reduce((s,r)=>s+r.orders,0);
+    const tQR=d.reduce((s,r)=>s+r.quotesRaised,0);        // all quotes incl re-quotes
     const tOrdCohort=d.reduce((s,r)=>s+r.ordersConv,0);   // orders from same-month quotes
     const tOrdCarry=tOrd-tOrdCohort;                      // orders from earlier months' quotes
     const tSales=d.reduce((s,r)=>s+r.valueOrd,0);
     // convThisMonth = the current month's cohort rate (converted quotes ÷ quotes
     // raised this month), straight from the field — period-independent.
-    return { name:emp, enq:tEnq,
+    return { name:emp, enq:tEnq, quotesRaised:tQR,
              orders:tOrd, ordersCohort:tOrdCohort, ordersCarry:tOrdCarry,
              convThisMonth: thisMonthConv(emp),
              sales:tSales, aov:tOrd>0?tSales/tOrd:0 };
   });
   const pctCell = v => (v*100).toFixed(1)+'%';
   const rows = [
-    {label:'Enquiries',key:'enq',fmt:v=>v.toLocaleString(),target:null},
+    {label:'Enquiries (quotes raised)',key:'enq',fmt:v=>v.toLocaleString(),target:null,
+     fmtFull:(v,s)=> v.toLocaleString() + (s.quotesRaised>v?` <span class="ts-bracket">(${s.quotesRaised.toLocaleString()})</span>`:'')},
     {label:'Orders confirmed (total)',key:'orders',fmt:v=>v.toLocaleString(),target:null},
     {label:'— from quotes this month',key:'ordersCohort',fmt:v=>v.toLocaleString(),target:null,sub:true},
     {label:"— from earlier months' quotes",key:'ordersCarry',fmt:v=>v.toLocaleString(),target:null,sub:true},
@@ -1095,7 +1109,7 @@ function buildTeamSummary(months) {
         const isBest=v===best&&v>0;
         cls = isBest ? 'cell-best' : row.target!=null ? (v>=row.target?'cell-above-target':'cell-below-target') : '';
       }
-      html += `<td class="${cls}">${row.fmt(v)}</td>`;
+      html += `<td class="${cls}">${row.fmtFull?row.fmtFull(v,s):row.fmt(v)}</td>`;
     });
     html += '</tr>';
   });
@@ -1192,7 +1206,7 @@ function updateTeamDeepDive() {
 
   const totals = EMPLOYEES.map(emp=>{
     const d=getDataForMonths(emp,months);
-    if(mc.key==='convRate'){const o=d.reduce((s,r)=>s+r.ordersConv,0),e=d.reduce((s,r)=>s+r.enq,0);return e>0?o/e:0;}
+    if(mc.key==='convRate'){const o=d.reduce((s,r)=>s+r.ordersConv,0),qr=d.reduce((s,r)=>s+r.quotesRaised,0);return qr>0?o/qr:0;}
     if(mc.key==='aov'){const s=d.reduce((s,r)=>s+r.valueOrd,0),o=d.reduce((s,r)=>s+r.orders,0);return o>0?s/o:0;}
     return d.reduce((s,r)=>s+r[mc.key],0);
   });
@@ -1233,8 +1247,11 @@ function updateRankings() {
   const stats=EMPLOYEES.map(emp=>{
     const d=getDataForMonths(emp,months);
     const tE=d.reduce((s,r)=>s+r.enq,0),tO=d.reduce((s,r)=>s+r.orders,0),tS=d.reduce((s,r)=>s+r.valueOrd,0);
+    const tQR=d.reduce((s,r)=>s+r.quotesRaised,0);   // all quotes incl re-quotes
     const tOConv=d.reduce((s,r)=>s+r.ordersConv,0);
-    return{name:emp,months:d.length,enq:tE,convRate:tE>0?tOConv/tE:0,sales:tS,aov:tO>0?tS/tO:0};
+    // Conversion = converted (cohort orders) ÷ ALL quotes raised (re-quotes drag
+    // it down). Leaderboard still RANKS on genuine enquiries (enq) below.
+    return{name:emp,months:d.length,enq:tE,quotesRaised:tQR,convRate:tQR>0?tOConv/tQR:0,sales:tS,aov:tO>0?tS/tO:0};
   });
   const short=stats.filter(s=>s.months<months.length&&s.months>0);
   const exclusionPrefix = ['last3','last6','last12','all'].includes(period)
@@ -1243,20 +1260,21 @@ function updateRankings() {
   const noteText = exclusionPrefix + (short.length>0?'Note: '+short.map(s=>`${s.name} has ${s.months} month${s.months>1?'s':''} of data`).join('. ')+'.':'');
   document.getElementById('rankNote').textContent = noteText.trim();
 
-  function render(tid,key,format) {
+  function render(tid,key,format,bracketKey) {
     const sorted=[...stats].filter(s=>s[key]>0||s.months>0).sort((a,b)=>b[key]-a[key]);
     const mx=sorted.length>0?sorted[0][key]:1;
     let h='<thead><tr><th>#</th><th>Employee</th><th style="width:55%">Performance</th></tr></thead><tbody>';
     sorted.forEach((s,i)=>{
       const c=getEmployeeColour(s.name),pct=mx>0?(s[key]/mx*100):0;
-      const v=format==='currency'?fmt(s[key]):format==='pct'?fmtPct(s[key]):format==='pctRaw'?fmtPctRaw(s[key]):s[key].toLocaleString();
+      let v=format==='currency'?fmt(s[key]):format==='pct'?fmtPct(s[key]):format==='pctRaw'?fmtPctRaw(s[key]):s[key].toLocaleString();
+      if(bracketKey&&s[bracketKey]>s[key])v+=` <span class="ts-bracket">(${s[bracketKey].toLocaleString()})</span>`;
       const note=s.months<months.length?` <span style="font-size:10px;color:#999">(${s.months}mo)</span>`:'';
       h+=`<tr><td><span class="rank-badge rank-${i+1}">${i+1}</span></td><td><span class="employee-dot" style="background:${c.solid}"></span>${s.name}${note}</td><td><div class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:${pct}%;background:${c.solid}"></div></div><div class="bar-value">${v}</div></div></td></tr>`;
     });
     h+='</tbody>';
     document.getElementById(tid).innerHTML=h;
   }
-  render('rankEnq','enq','number');render('rankConv','convRate','pct');render('rankSales','sales','currency');
+  render('rankEnq','enq','number','quotesRaised');render('rankConv','convRate','pct');render('rankSales','sales','currency');
   render('rankAOV','aov','currency');
 }
 

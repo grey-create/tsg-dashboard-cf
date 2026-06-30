@@ -183,6 +183,7 @@ export async function onRequest(context) {
     tsgDateTbcWip:   "fldawMfEfJYteXExp",
     tsgNmWip:        "fldCqORdC0NOpBmRh",
     tsgEnquiries:    "fldYmRps2Ahi7kjtc",
+    tsgQuotesRaised: "fldn9tmT0cBMdsNco",
     tsgOrders:       "fldegXrbpiYOpDrfw",
     tsgConvRate:     "fldVz705DPc9pWwWz",
     tsgValueOrd:     "fldj3sYAKBvQrMMaS",
@@ -420,6 +421,9 @@ export async function onRequest(context) {
           monthYear:   f[MS.monthLabel] || "",
           month:       f[MS.monthLabel] || "",
           enquiries: Number(f[MS.tsgEnquiries]) || 0,
+          // All non-voided quotes raised this month (revisions included). Genuine
+          // first-time enquiries are `enquiries`; conversion is Orders ÷ this.
+          quotesRaised: Number(f[MS.tsgQuotesRaised]) || 0,
           orders,
           convRate:  f[MS.tsgConvRate] || 0,
           aov:       orders > 0 ? valOrd / orders : 0,

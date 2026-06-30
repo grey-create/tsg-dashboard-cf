@@ -582,7 +582,7 @@ D.combInv=D.tsgInv+D.wllInv+D.nvInv;
 
   // New Sales
   D.nsVal=curConv.salesConfirmed||0;D.nsTgt=curConv.newSalesTarget||curInv.tsgNewSalesTarget||0;
-  D.nsEnq=curConv.enquiries||0;D.nsOrd=curConv.orders||0;
+  D.nsEnq=curConv.enquiries||0;D.nsQuotes=curConv.quotesRaised||0;D.nsOrd=curConv.orders||0;
   D.nsConv=normConv(curConv.convRate);D.nsMargin=normConv(curConv.margin);D.nsAov=curConv.aov||0;
 
   D.nsHistory=[];
@@ -820,6 +820,7 @@ function render(D){
   h+='</div></div>';
   h+='<div class="bc-detail">';
   h+='<div><div class="bd-k">Enquiries</div><div class="bd-v">'+(D.nsEnq||0)+deltaChip("enquiries","count")+'</div></div>';
+  h+='<div><div class="bd-k">Quotes Raised</div><div class="bd-v">'+(D.nsQuotes||0)+'</div><div class="bd-sub">incl. revisions</div></div>';
   h+='<div><div class="bd-k">Orders Placed</div><div class="bd-v">'+(D.nsOrd||0)+deltaChip("ordersPlaced","count")+'</div></div>';
   h+='<div><div class="bd-k">Conversion Rate</div><div class="bd-v" style="color:#6BD4EC">'+(D.nsConv||0)+'%</div></div>';
   h+='<div><div class="bd-k">Avg Order Value</div><div class="bd-v">'+f(D.nsAov||0)+'</div></div>';

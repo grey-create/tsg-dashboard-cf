@@ -30,7 +30,8 @@ export async function onRequest(context) {
     monthStart:     "fld9GRtl0yfIkbyY3",
     employee:       "fldtiueqbxIfZhVO6",  // singleSelect
     monthLabel:     "fldDRQyEYyYYUZ1nQ",
-    enquiries:      "fldzMO8fCNTyxY6NT",
+    enquiries:      "fldzMO8fCNTyxY6NT",   // GENUINE enquiries (revisions excluded)
+    quotesRaised:   "fldulnh9KJEyhu7rb",   // ALL quotes raised incl re-quotes
     orders:         "fld4lnBLps0ld1mYs",
     convRate:       "fldnfnuz5dK97ZrsI",  // percent (decimal 0–1)
     quotesRejected: "fldj8M0G0ImIprbEw",
@@ -150,6 +151,9 @@ export async function onRequest(context) {
           date:       f[F.monthStart],
           employee:   selName(f[F.employee]),
           enq:        Number(f[F.enquiries]) || 0,
+          // All quotes raised incl re-quotes — shown in brackets next to the
+          // genuine enquiries count and used as the conversion-rate denominator.
+          quotesRaised: Number(f[F.quotesRaised]) || 0,
           // Displayed orders / value include carry-over (confirmed total).
           orders:     ordersConfirmed,
           valueOrd:   valueConfirmed,
