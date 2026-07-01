@@ -5,23 +5,25 @@
 //
 // MONTH-ROLLOVER FIX (2026-07-01):
 //   Daily Snapshots are month-CUMULATIVE (each field resets to ~0 on the 1st).
-//   On the first day(s) of a new month the baseline row belongs to the previous
-//   month and still holds that month's full total, so today - baseline read as
-//   a huge negative (e.g. -£225k invoiced). When today and the baseline are in
-//   different months we now treat the baseline as ZERO, so every delta reads as
-//   this month's build-up so far (month-to-date) instead of a scary minus. The
-//   response carries deltasAreMonthToDate:true so the front end can label the
-//   chips "this month" rather than "today".
+//   On the 1st the most-recent prior row belongs to LAST month and still holds
+//   that month's full total, so a raw "today - baseline" is a big negative
+//   (e.g. New Sales £1,679 today minus June's £196k). The dashboard was
+//   showing those as greyed-out / muted chips.
 //
-// Response shape:
-//   {
-//     today:     { date, monthStart, tsgInvoiced, ... },
-//     baseline:  { ...same fields, from the most recent day before today, or null },
-//     deltas:    { tsgInvoiced, ... }  — today - baseline (or today - 0 at rollover),
-//                                        or null when baseline unknown
-//     deltasAreMonthToDate: bool       — true when the baseline crossed a month
-//                                        boundary, so deltas == month-to-date
-//   }
+//   Fix: when today and the baseline row are in DIFFERENT months, we replace
+//   the baseline with a SYNTHETIC ZERO row stamped with THIS month (date = 1st
+//   of the month). So:
+//     - the deltas become today's month-to-date figures (today - 0), which are
+//       positive and therefore render in colour, not muted;
+//     - the baseline the page receives is in the SAME month as today, so any
+//       "different month => suppress" logic on the front end doesn't fire.
+//   Net effect: on the 1st the chips show this month's build-up from zero, in
+//   colour, ignoring the previous month entirely. From the 2nd onward the
+//   baseline is a genuine same-month row again, so it's the normal day-vs-
+//   yesterday comparison. It self-limits to the 1st.
+//
+//   `deltasAreMonthToDate: true` is also returned so the front end can label
+//   the chips "this month" instead of "today" on the 1st (optional polish).
 
 const AIRTABLE_BASE  = "appiOWhszaVriPxDw";
 const SNAPSHOT_TABLE = "tblxPyJfXonP1DMxX";
@@ -46,11 +48,8 @@ const F = {
   ordersCancelledCumul: "fld6AUiOq2m6rLsas", // number, only-goes-up counter (voided SOs created this month)
 };
 
-// Keys that are month-cumulative (they reset on the 1st). At a month rollover
-// the baseline is treated as zero for these so the delta reads as month-to-date.
-// This is every numeric field the snapshot carries — all of them reset with the
-// month — so the whole delta set becomes month-to-date at the boundary.
-const CUMULATIVE_KEYS = [
+// Every numeric field a snapshot carries — all of them reset with the month.
+const NUM_KEYS = [
   "tsgInvoiced","tsgWipDue","tsgTotal","wllInvoiced","nvInvoiced",
   "newSalesVal","ordersPlaced","enquiries","quotesTotal",
   "ordersCreatedCumul","ordersCancelledCumul",
@@ -100,13 +99,20 @@ export async function onRequest(context) {
       if (today && !baseline)                      { baseline = r; break;    }
     }
 
-    // Month-rollover guard: if the baseline belongs to a different month than
-    // today, the cumulative counters have reset, so a raw diff is a false
-    // minus. Treat the baseline as zero → deltas become month-to-date.
+    // Month-rollover guard. If the real baseline is in a different month than
+    // today, swap it for a synthetic zero row stamped with THIS month, so the
+    // deltas read as month-to-date (positive, in colour) and nothing on the
+    // front end sees a cross-month baseline.
     const monthChanged = !!(baseline && today && monthOf(today) !== monthOf(baseline));
+    const effectiveBaseline = monthChanged ? zeroBaseline(today) : baseline;
 
-    const deltas = baseline ? computeDeltas(today, baseline, monthChanged) : null;
-    return jsonResponse({ today, baseline, deltas, deltasAreMonthToDate: monthChanged });
+    const deltas = effectiveBaseline ? computeDeltas(today, effectiveBaseline) : null;
+    return jsonResponse({
+      today,
+      baseline: effectiveBaseline,
+      deltas,
+      deltasAreMonthToDate: monthChanged,
+    });
 
   } catch (err) {
     return jsonResponse({ error: err.message }, 500);
@@ -119,6 +125,20 @@ function monthOf(row) {
   if (row.monthStart) return String(row.monthStart).slice(0, 7);
   if (row.date)       return String(row.date).slice(0, 7);
   return null;
+}
+
+// A zero-valued baseline stamped with today's month, dated the 1st. Used at a
+// month rollover so the comparison starts from zero and reads as in-month.
+function zeroBaseline(today) {
+  const monthStart = today.monthStart || (today.date ? today.date.slice(0, 7) + "-01" : null);
+  const b = {
+    id:         null,
+    date:       monthStart,   // 1st of the current month
+    monthStart: monthStart,
+    lastUpdated: null,
+  };
+  for (const k of NUM_KEYS) b[k] = 0;
+  return b;
 }
 
 function mapRow(r) {
@@ -142,14 +162,9 @@ function mapRow(r) {
   };
 }
 
-// When monthChanged, the baseline is treated as zero so each delta == today's
-// month-to-date figure (never a cross-month negative).
-function computeDeltas(today, baseline, monthChanged) {
+function computeDeltas(today, baseline) {
   const d = {};
-  for (const k of CUMULATIVE_KEYS) {
-    const base = monthChanged ? 0 : baseline[k];
-    d[k] = +(today[k] - base).toFixed(2);
-  }
+  for (const k of NUM_KEYS) d[k] = +(today[k] - baseline[k]).toFixed(2);
   return d;
 }
 
