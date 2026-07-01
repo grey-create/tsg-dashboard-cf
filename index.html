@@ -1206,12 +1206,17 @@ function buildFYCharts(D){
 // pre-computed deltas; we just render the deltas.
 // ============================================================
 var SNAP_DELTAS = null; // {tsgInvoiced, tsgWipDue, tsgTotal, wllInvoiced, nvInvoiced, newSalesVal, ordersPlaced, enquiries, quotesTotal} | null
+var SNAP_MTD = false;   // true when /snapshots deltas are month-to-date (baseline crossed a month boundary → chips read "this month", not "today")
 
 async function loadSnapshotDeltas(){
   try{
     var res=await fetch("/snapshots",{cache:"no-store"});
     if(!res.ok)return null;
     var j=await res.json();
+    // At a month rollover the /snapshots deltas are month-to-date (baseline
+    // zeroed), flagged by deltasAreMonthToDate — thread it through so the chips
+    // read "this month" instead of a scary cross-month "today" figure.
+    SNAP_MTD=!!(j&&j.deltasAreMonthToDate);
     return j&&j.deltas?j.deltas:null;
   }catch(e){return null;}
 }
@@ -1225,6 +1230,10 @@ async function loadSnapshotDeltas(){
 // On clean days with only orders OR only cancellations, the chip simplifies.
 function deltaChip(key, format){
   if(!SNAP_DELTAS)return"";
+  // On the 1st of a month the /snapshots baseline is last month's, so deltas are
+  // month-to-date (see snapshots.js). Render those as a neutral "X this month"
+  // figure rather than a signed "+X today" (which would read as a false swing).
+  var suffix=SNAP_MTD?' this month':' today';
 
   // Special case: orders breakdown chip
   if(key==="ordersPlaced"){
@@ -1235,6 +1244,7 @@ function deltaChip(key, format){
     if(created==null||cancelled==null){
       if(SNAP_DELTAS.ordersPlaced==null)return"";
       var nv=SNAP_DELTAS.ordersPlaced;
+      if(SNAP_MTD)return '<span class="delta-chip dc-zero">'+Math.max(0,Math.round(nv))+suffix+'</span>';
       if(nv===0)return'<span class="delta-chip dc-zero">\u00B10 today</span>';
       var nsign=nv>0?"+":"\u2212";
       var ncls=nv>0?"dc-pos":"dc-neg";
@@ -1242,20 +1252,26 @@ function deltaChip(key, format){
     }
     created=Math.round(created);
     cancelled=Math.round(cancelled);
-    if(created===0&&cancelled===0)return'<span class="delta-chip dc-zero">\u00B10 today</span>';
+    if(created===0&&cancelled===0)return'<span class="delta-chip dc-zero">\u00B10'+suffix+'</span>';
     // Build the breakdown text
     var parts=[];
     if(created>0)parts.push('+'+created+' ordered');
     if(cancelled>0)parts.push(cancelled+' cancelled');
-    // Tone: green if more orders than cancels, red if more cancels, amber if equal
+    // Month-to-date at rollover \u2192 neutral tone (these are the month's totals so
+    // far, not today's activity). Otherwise tone by net direction.
     var net=created-cancelled;
-    var cls=net>0?"dc-pos":(net<0?"dc-neg":"dc-zero");
-    return '<span class="delta-chip '+cls+'">'+parts.join(', ')+' today</span>';
+    var cls=SNAP_MTD?"dc-zero":(net>0?"dc-pos":(net<0?"dc-neg":"dc-zero"));
+    return '<span class="delta-chip '+cls+'">'+parts.join(', ')+suffix+'</span>';
   }
 
   // Standard chip for all other keys
   if(SNAP_DELTAS[key]==null)return"";
   var v=SNAP_DELTAS[key];
+  // Month-to-date at rollover: v is this month's build-up so far \u2014 neutral chip.
+  if(SNAP_MTD){
+    var mv=format==="money"?f(Math.max(0,v)):Math.max(0,Math.round(v));
+    return '<span class="delta-chip dc-zero">'+mv+suffix+'</span>';
+  }
   if(v===0)return'<span class="delta-chip dc-zero">\u00B10 today</span>';
   var fmt=format==="money"?f(Math.abs(v)):Math.abs(Math.round(v));
   var sign=v>0?"+":"\u2212";

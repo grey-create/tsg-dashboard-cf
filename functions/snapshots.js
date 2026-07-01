@@ -3,15 +3,24 @@
 // so the dashboard can compute "+X today" deltas without each client doing
 // its own arithmetic.
 //
+// MONTH-ROLLOVER FIX (2026-07-01):
+//   Daily Snapshots are month-CUMULATIVE (each field resets to ~0 on the 1st).
+//   On the first day(s) of a new month the baseline row belongs to the previous
+//   month and still holds that month's full total, so today - baseline read as
+//   a huge negative (e.g. -£225k invoiced). When today and the baseline are in
+//   different months we now treat the baseline as ZERO, so every delta reads as
+//   this month's build-up so far (month-to-date) instead of a scary minus. The
+//   response carries deltasAreMonthToDate:true so the front end can label the
+//   chips "this month" rather than "today".
+//
 // Response shape:
 //   {
-//     today:     { date, tsgInvoiced, tsgWipDue, tsgTotal, wllInvoiced,
-//                  nvInvoiced, newSalesVal, ordersPlaced, enquiries,
-//                  quotesTotal, lastUpdated },
+//     today:     { date, monthStart, tsgInvoiced, ... },
 //     baseline:  { ...same fields, from the most recent day before today, or null },
-//     deltas:    { tsgInvoiced, tsgWipDue, tsgTotal, wllInvoiced, nvInvoiced,
-//                  newSalesVal, ordersPlaced, enquiries, quotesTotal }
-//                  — all = today - baseline, or null when baseline unknown
+//     deltas:    { tsgInvoiced, ... }  — today - baseline (or today - 0 at rollover),
+//                                        or null when baseline unknown
+//     deltasAreMonthToDate: bool       — true when the baseline crossed a month
+//                                        boundary, so deltas == month-to-date
 //   }
 
 const AIRTABLE_BASE  = "appiOWhszaVriPxDw";
@@ -37,6 +46,16 @@ const F = {
   ordersCancelledCumul: "fld6AUiOq2m6rLsas", // number, only-goes-up counter (voided SOs created this month)
 };
 
+// Keys that are month-cumulative (they reset on the 1st). At a month rollover
+// the baseline is treated as zero for these so the delta reads as month-to-date.
+// This is every numeric field the snapshot carries — all of them reset with the
+// month — so the whole delta set becomes month-to-date at the boundary.
+const CUMULATIVE_KEYS = [
+  "tsgInvoiced","tsgWipDue","tsgTotal","wllInvoiced","nvInvoiced",
+  "newSalesVal","ordersPlaced","enquiries","quotesTotal",
+  "ordersCreatedCumul","ordersCancelledCumul",
+];
+
 export async function onRequest(context) {
   const { env } = context;
   try {
@@ -61,7 +80,7 @@ export async function onRequest(context) {
 
     if (rows.length === 0) {
       // No snapshots yet — frontend treats this as "no delta available"
-      return jsonResponse({ today: null, baseline: null, deltas: null });
+      return jsonResponse({ today: null, baseline: null, deltas: null, deltasAreMonthToDate: false });
     }
 
     // Today's London date
@@ -81,12 +100,25 @@ export async function onRequest(context) {
       if (today && !baseline)                      { baseline = r; break;    }
     }
 
-    const deltas = baseline ? computeDeltas(today, baseline) : null;
-    return jsonResponse({ today, baseline, deltas });
+    // Month-rollover guard: if the baseline belongs to a different month than
+    // today, the cumulative counters have reset, so a raw diff is a false
+    // minus. Treat the baseline as zero → deltas become month-to-date.
+    const monthChanged = !!(baseline && today && monthOf(today) !== monthOf(baseline));
+
+    const deltas = baseline ? computeDeltas(today, baseline, monthChanged) : null;
+    return jsonResponse({ today, baseline, deltas, deltasAreMonthToDate: monthChanged });
 
   } catch (err) {
     return jsonResponse({ error: err.message }, 500);
   }
+}
+
+// The month a snapshot row belongs to. Prefer the Month Start field
+// ("YYYY-MM-01"); fall back to the first 7 chars of the date ("YYYY-MM").
+function monthOf(row) {
+  if (row.monthStart) return String(row.monthStart).slice(0, 7);
+  if (row.date)       return String(row.date).slice(0, 7);
+  return null;
 }
 
 function mapRow(r) {
@@ -110,12 +142,14 @@ function mapRow(r) {
   };
 }
 
-function computeDeltas(today, baseline) {
-  const keys = ["tsgInvoiced","tsgWipDue","tsgTotal","wllInvoiced","nvInvoiced",
-                "newSalesVal","ordersPlaced","enquiries","quotesTotal",
-                "ordersCreatedCumul","ordersCancelledCumul"];
+// When monthChanged, the baseline is treated as zero so each delta == today's
+// month-to-date figure (never a cross-month negative).
+function computeDeltas(today, baseline, monthChanged) {
   const d = {};
-  for (const k of keys) d[k] = +(today[k] - baseline[k]).toFixed(2);
+  for (const k of CUMULATIVE_KEYS) {
+    const base = monthChanged ? 0 : baseline[k];
+    d[k] = +(today[k] - base).toFixed(2);
+  }
   return d;
 }
 
