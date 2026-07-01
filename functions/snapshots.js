@@ -3,27 +3,30 @@
 // so the dashboard can compute "+X today" deltas without each client doing
 // its own arithmetic.
 //
-// MONTH-ROLLOVER FIX (2026-07-01):
-//   Daily Snapshots are month-CUMULATIVE (each field resets to ~0 on the 1st).
-//   On the 1st the most-recent prior row belongs to LAST month and still holds
-//   that month's full total, so a raw "today - baseline" is a big negative
-//   (e.g. New Sales £1,679 today minus June's £196k). The dashboard was
-//   showing those as greyed-out / muted chips.
+// MONTH-ROLLOVER FIX (2026-07-01, rev 2):
+//   The chips show "what changed today" = today's snapshot minus yesterday's.
+//   That works every day EXCEPT the 1st, when yesterday's row belongs to LAST
+//   month. Two different kinds of figure behave differently across that
+//   boundary, so we treat them differently:
 //
-//   Fix: when today and the baseline row are in DIFFERENT months, we replace
-//   the baseline with a SYNTHETIC ZERO row stamped with THIS month (date = 1st
-//   of the month). So:
-//     - the deltas become today's month-to-date figures (today - 0), which are
-//       positive and therefore render in colour, not muted;
-//     - the baseline the page receives is in the SAME month as today, so any
-//       "different month => suppress" logic on the front end doesn't fire.
-//   Net effect: on the 1st the chips show this month's build-up from zero, in
-//   colour, ignoring the previous month entirely. From the 2nd onward the
-//   baseline is a genuine same-month row again, so it's the normal day-vs-
-//   yesterday comparison. It self-limits to the 1st.
+//   FLOW figures (Invoiced, New Sales, Enquiries, Orders, WLL/NV invoiced,
+//   the order counters) accumulate through a month and RESET to 0 on the 1st.
+//   Their correct "today's change" on the 1st is measured from 0 — which on the
+//   1st equals today's activity (the month is one day old). So baseline = 0.
 //
-//   `deltasAreMonthToDate: true` is also returned so the front end can label
-//   the chips "this month" instead of "today" on the 1st (optional polish).
+//   STOCK figures (WIP Due This Month, and the TSG Total that contains it) are
+//   a point-in-time balance that CARRIES OVER — on the 1st it's mostly work
+//   ordered weeks ago, not anything that moved today. A 0 baseline would make
+//   the chip claim the whole book changed today (e.g. "+£82,998"), which is
+//   wrong. We don't hold yesterday's value for THIS month's WIP, so on the 1st
+//   we peg the baseline to today's own value => the chip shows no movement
+//   (±0) rather than a misleading number. From the 2nd onward it's the normal
+//   day-over-day WIP change again.
+//
+//   The synthetic baseline is stamped with THIS month so nothing on the front
+//   end reads it as a cross-month comparison. `deltasAreMonthToDate:false` is
+//   returned so the chips render as the normal daily chips (no "this month"
+//   label) — the numbers already ARE today's change. Self-limits to the 1st.
 
 const AIRTABLE_BASE  = "appiOWhszaVriPxDw";
 const SNAPSHOT_TABLE = "tblxPyJfXonP1DMxX";
@@ -48,12 +51,18 @@ const F = {
   ordersCancelledCumul: "fld6AUiOq2m6rLsas", // number, only-goes-up counter (voided SOs created this month)
 };
 
-// Every numeric field a snapshot carries — all of them reset with the month.
+// Every numeric field a snapshot carries.
 const NUM_KEYS = [
   "tsgInvoiced","tsgWipDue","tsgTotal","wllInvoiced","nvInvoiced",
   "newSalesVal","ordersPlaced","enquiries","quotesTotal",
   "ordersCreatedCumul","ordersCancelledCumul",
 ];
+
+// STOCK fields = point-in-time balances that carry over the month boundary
+// (not monthly tallies). On the 1st these must NOT be zero-based, or the chip
+// shows the whole carried-over book as if it changed today. Everything else is
+// a FLOW that genuinely resets to 0 at month start.
+const STOCK_KEYS = ["tsgWipDue", "tsgTotal"];
 
 export async function onRequest(context) {
   const { env } = context;
@@ -100,18 +109,21 @@ export async function onRequest(context) {
     }
 
     // Month-rollover guard. If the real baseline is in a different month than
-    // today, swap it for a synthetic zero row stamped with THIS month, so the
-    // deltas read as month-to-date (positive, in colour) and nothing on the
-    // front end sees a cross-month baseline.
+    // today (i.e. it's the 1st), swap it for a start-of-month baseline stamped
+    // with THIS month: flows start from 0 (so their delta = today's activity),
+    // stocks are pegged to today's value (so their delta = 0, not the whole
+    // carried-over book). Deltas then read as "today's change" for every chip.
     const monthChanged = !!(baseline && today && monthOf(today) !== monthOf(baseline));
-    const effectiveBaseline = monthChanged ? zeroBaseline(today) : baseline;
+    const effectiveBaseline = monthChanged ? startOfMonthBaseline(today) : baseline;
 
     const deltas = effectiveBaseline ? computeDeltas(today, effectiveBaseline) : null;
+    // false on purpose: the numbers already ARE today's change, so the chips
+    // should render as the normal daily chips (no "this month" label).
     return jsonResponse({
       today,
       baseline: effectiveBaseline,
       deltas,
-      deltasAreMonthToDate: monthChanged,
+      deltasAreMonthToDate: false,
     });
 
   } catch (err) {
@@ -127,9 +139,11 @@ function monthOf(row) {
   return null;
 }
 
-// A zero-valued baseline stamped with today's month, dated the 1st. Used at a
-// month rollover so the comparison starts from zero and reads as in-month.
-function zeroBaseline(today) {
+// A start-of-month baseline stamped with today's month, dated the 1st.
+// Flows start from 0 (they reset each month); stocks are pegged to today's own
+// value so their delta is 0 (we don't hold the real start-of-day WIP for the
+// new month, and the carried-over balance is not "today's change").
+function startOfMonthBaseline(today) {
   const monthStart = today.monthStart || (today.date ? today.date.slice(0, 7) + "-01" : null);
   const b = {
     id:         null,
@@ -137,7 +151,7 @@ function zeroBaseline(today) {
     monthStart: monthStart,
     lastUpdated: null,
   };
-  for (const k of NUM_KEYS) b[k] = 0;
+  for (const k of NUM_KEYS) b[k] = STOCK_KEYS.includes(k) ? today[k] : 0;
   return b;
 }
 
